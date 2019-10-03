@@ -15,7 +15,7 @@ Folgende Merkmale zeichnen CCU-Jack aus:
 
 ## Projekt
 
-Ziel vom CCU-Jack ist es, möglichst einfach Datenpunkte zwischen CCUs und auch anderen Systemen auszutauschen. Der CCU-Jack wurde komplett neu entwickelt. Vorgänger vom CCU-Jack sind schon längere Zeit in Betrieb und tauschen hunderte von Datenpunkten zwischen mehreren CCUs, Internet-Relays und Front-Ends in Echtzeit aus.
+Ziel vom CCU-Jack ist es, möglichst einfach Datenpunkte zwischen CCUs und auch anderen Systemen auszutauschen und Applikationen eine Erkundungsmöglichkeit der Datenpunkte zu bieten. Der CCU-Jack wurde komplett neu entwickelt. Vorgänger vom CCU-Jack sind schon längere Zeit in Betrieb und tauschen hunderte von Datenpunkten zwischen mehreren CCUs, Internet-Relays und Front-Ends in Echtzeit aus.
 
 Für die Version 1.0 ist noch die Funktionalität VEAP-Client geplant. Dadurch ist es möglich mehrere CCU-Jacks bzw. VEAP-Server untereinander zu verbinden. Verbindungen sollen dann einfach per Web-Browser angelegt werden können.
 
