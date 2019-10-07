@@ -29,6 +29,9 @@ Zurzeit besitzt CCU-Jack noch Beta-Status. Es sollten also vor der Verwendung Si
 
 Bei einer Installation als Add-On auf der CCU können die Startparameter in der Datei `/usr/local/etc/config/rc.d/ccu-jack` angepasst werden. In der Regel ist dies nicht notwendig. Log-Meldungen werden vom Add-On nicht ausgegeben oder gespeichert. Bei Bedarf kann die genannte Datei aber abgeändert werden, sodass die Log-Meldungen in eine Datei geschrieben werden.
 
+In der Firewall der CCU müssen die zwei Ports 2121 und 2122 freigegeben werden:
+![CCU-Firewall](doc/ccu-firewall.png)
+
 ## Kommandozeilenoptionen
 
 Die Kommandozeilenoptionen vom CCU-Jack werden beim Start mit der Option `-h` aufgelistet:
