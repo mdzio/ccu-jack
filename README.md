@@ -245,61 +245,77 @@ curl http://localhost:2121/device/OEQ0123456/1
 Antwort:
 ```json
 {
-  "address": "OEQ0123456:1",
-  "aesActive": 1,
-  "availableFirmware": "",
-  "children": null,
-  "direction": 1,
-  "firmware": "",
-  "flags": 1,
-  "functions": [
-    "Sicherheit"
-  ],
-  "group": "",
-  "identifier": "1",
-  "index": 1,
-  "interface": "",
-  "linkSourceRoles": "KEYMATIC SWITCH WINDOW_SWITCH_RECEIVER WINMATIC",
-  "linkTargetRoles": "",
-  "paramsets": [
-    "LINK",
-    "MASTER",
-    "VALUES"
-  ],
-  "parent": "OEQ0123456",
-  "parentType": "HM-Sec-SC-2",
-  "rfAddress": 0,
-  "roaming": 0,
-  "rooms": [
-    "Wohnzimmer"
-  ],
-  "rxMode": 0,
-  "team": "",
-  "teamChannels": null,
-  "teamTag": "",
-  "title": "Türzustand Terrasse",
-  "type": "SHUTTER_CONTACT",
-  "version": 16,
-  "~links": [
-    {
-      "rel": "parameter",
-      "href": "LOWBAT",
-      "title": "LOWBAT"
-    },
-    {
-      "rel": "parameter",
-      "href": "STATE",
-      "title": "STATE"
-    },
-    {
-      "rel": "device",
-      "href": "..",
-      "title": "Türkontakt Terrasse"
-    },
-    ...
-  ]
+
+    "address": "OEQ0123456:1",
+    "aesActive": 1,
+    "availableFirmware": "",
+    "children": null,
+    "direction": 1,
+    "firmware": "",
+    "flags": 1,
+    "group": "",
+    "identifier": "1",
+    "index": 1,
+    "interface": "",
+    "linkSourceRoles": "KEYMATIC SWITCH WINDOW_SWITCH_RECEIVER WINMATIC",
+    "linkTargetRoles": "",
+    "paramsets": [
+        "LINK",
+        "MASTER",
+        "VALUES"
+    ],
+    "parent": "OEQ0123456",
+    "parentType": "HM-Sec-SC-2",
+    "rfAddress": 0,
+    "roaming": 0,
+    "rxMode": 0,
+    "team": "",
+    "teamChannels": null,
+    "teamTag": "",
+    "title": "Türzustand Terrasse",
+    "type": "SHUTTER_CONTACT",
+    "version": 16,
+    "~links": [
+        {
+            "rel": "parameter",
+            "href": "INSTALL_TEST",
+            "title": "INSTALL_TEST"
+        },
+        {
+            "rel": "parameter",
+            "href": "LOWBAT",
+            "title": "LOWBAT"
+        },
+        {
+            "rel": "parameter",
+            "href": "STATE",
+            "title": "STATE"
+        },
+        {
+            "rel": "parameter",
+            "href": "ERROR",
+            "title": "ERROR"
+        },
+        {
+            "rel": "device",
+            "href": "..",
+            "title": "Türkontakt Terrasse"
+        },
+        {
+            "rel": "room",
+            "href": "/room/1248",
+            "title": "Wohnzimmer"
+        },
+        {
+            "rel": "function",
+            "href": "/function/1243",
+            "title": "Sicherheit"
+        }
+    ]
 }
 ```
+
+Bei den `~links` sind ebenfalls Verweise auf die Räume (`"rel":"room"`) und Gewerke (`"rel":"function"`) des Kanals zu finden. In den `title`-Eigenschaften sind in der Regel die benutzerspezifischen Namen zu finden. Die Abfrageadresse eines Datenpuntkes ändert sich also nicht, wenn der Kanal in der CCU umbenannt wird. Das gleiche gilt auch für Systemvariablen.
 
 ### Erkundung von /device/OEQ0123456/1/STATE (Parameter STATE)
 
@@ -337,6 +353,75 @@ Antwort:
 ```
 
 Der Dienst `PV Service` kennzeichnet einen Datenpunkt. Durch Anhängen von `/~pv` an die Adresse des Datenpunktes kann auf den aktuellen Wert zugegriffen werden.
+
+### Erkundung von /room (Räume)
+
+```
+curl http://localhost:2121/room
+```
+Antwort:
+```json
+{
+    "description": "Rooms of the ReGaHss",
+    "identifier": "room",
+    "title": "Rooms",
+    "~links": [
+        {
+            "rel": "room",
+            "href": "1248",
+            "title": "Wohnzimmer"
+        },
+        {
+            "rel": "room",
+            "href": "2194",
+            "title": "Außengelände"
+        },
+        {
+            "rel": "room",
+            "href": "6510",
+            "title": "Bad"
+        },
+        ...
+    ]
+}
+```
+
+Das oben genannte gilt analog für die Erkundung der Gewerke (`/function`).
+
+### Erkundung von /room/123 (Raum)
+
+```
+curl http://localhost:2121/room/1248
+```
+Antwort:
+```json
+{
+    "identifier": "1248",
+    "title": "Wohnzimmer",
+    "~links": [
+        {
+            "rel": "collection",
+            "href": "..",
+            "title": "Rooms"
+        },
+        {
+            "rel": "channel",
+            "href": "/device/GEQ0123456/1",
+            "title": "Bewegung Wohnzimmer"
+        },
+        {
+            "rel": "channel",
+            "href": "/device/GEQ0012345/1",
+            "title": "Rollladen Esstisch"
+        },
+        ...
+    ]
+}
+```
+
+In der `~links`-Eigenschaft werden die einem Raum zugewiesenen Kanäle aufgelistet. Über den enthaltenen Verweis kann direkt zu den Datenpunkten gesprungen werden.
+
+Das Gleiche gilt analog für ein Gewerk.
 
 ### Erkundung von /~vendor (Herstellerinformationen)
 
