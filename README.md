@@ -67,6 +67,18 @@ Folgende Angaben gelten für eine Installation als Add-On auf einer CCU3 (Raspbe
 * 1,7 Millisekunden Latenz für das Lesen eines Datenpunktes.
 * 8.800 Datenpunkte können von 100 Clients pro Sekunde gesichert mit HTTPS-Verschlüsselung gelesen werden.
 
+## Web-basierte Benutzerschnittelle
+
+Die web-basierte Benutzerschnittstelle des CCU-Jacks ist über die Adressen `http://<host>:2121/ui` und `https://<host>:2122/ui` zu erreichen. `<host>` ist durch den Rechnernamen oder die IP-Adresse des Rechners zu ersetzen, auf dem CCU-Jack gestartet worden ist. Wenn es der lokale Rechner ist, kann auch `localhost` verwendet werden.
+
+Mit Hilfe des Navigators können alle verfügbaren Datenpunkte erkundet werden:
+
+![Navigator](doc/web-ui-navigator.png)
+
+Bei Variablen wird auch der Wert angezeigt und aktuell gehalten:
+
+![Navigator mit Variable](doc/web-ui-navigator-var.png)
+
 ## Beispiele für die Android App _HTTP Shortcuts_
 
 CCU-Jack ermöglicht der kostenlosen Android App _HTTP Shortcuts_ einfachen Zugriff auf die Datenpunkte der CCU. So können beispielsweise Geräte direkt vom Home-Screen geschaltet werden. Beispiele sind auf einer [eigenen Seite](https://github.com/mdzio/ccu-jack/blob/master/doc/httpshortcuts.md) zu finden.
