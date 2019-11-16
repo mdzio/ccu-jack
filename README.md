@@ -67,7 +67,7 @@ Folgende Angaben gelten für eine Installation als Add-On auf einer CCU3 (Raspbe
 * 1,7 Millisekunden Latenz für das Lesen eines Datenpunktes.
 * 8.800 Datenpunkte können von 100 Clients pro Sekunde gesichert mit HTTPS-Verschlüsselung gelesen werden.
 
-## Web-basierte Benutzerschnittelle
+## Web-basierte Benutzerschnittstelle
 
 Die web-basierte Benutzerschnittstelle des CCU-Jacks ist über die Adressen `http://<host>:2121/ui` und `https://<host>:2122/ui` zu erreichen. `<host>` ist durch den Rechnernamen oder die IP-Adresse des Rechners zu ersetzen, auf dem CCU-Jack gestartet worden ist. Wenn es der lokale Rechner ist, kann auch `localhost` verwendet werden.
 
