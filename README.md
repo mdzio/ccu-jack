@@ -12,12 +12,13 @@ Folgende Merkmale zeichnen CCU-Jack aus:
 * Unterstützung von HTTP/2 und Verbindungssicherheit auf dem Stand der Technik.
 * Fertige Distributionen für viele Zielsysteme (CCU2, CCU3/RM, Windows, Linux, macOS).
 * Die Verwendung des VEAP-Protokolls ermöglicht einfachste Anbindung von Applikationen und Frameworks (z.B. Angular, React, Vue). Zudem ist das Protokoll nicht CCU-spezifisch. Entwickelte Client-Applikationen könnnen auch mit anderen VEAP-Servern verwendet werden.
+* Web-basierte Benutzerschnittstelle mit der alle Datenpunkte erkundet und die Werte überwacht werden können.
 
 ## Projekt
 
 Ziel vom CCU-Jack ist es, möglichst einfach Datenpunkte zwischen CCUs und auch anderen Systemen auszutauschen und Applikationen eine Erkundungsmöglichkeit der Datenpunkte zu bieten. Der CCU-Jack wurde komplett neu entwickelt. Vorgänger vom CCU-Jack sind schon längere Zeit in Betrieb und tauschen hunderte von Datenpunkten zwischen mehreren CCUs, Internet-Relays und Front-Ends in Echtzeit aus.
 
-Für die Version 1.0 ist noch die Funktionalität VEAP-Client geplant. Dadurch ist es möglich mehrere CCU-Jacks bzw. VEAP-Server untereinander zu verbinden. Verbindungen sollen dann einfach per Web-Browser angelegt werden können.
+Für die Version 1.0 ist noch die Funktionalität VEAP-Client geplant. Dadurch ist es möglich mehrere CCU-Jacks bzw. VEAP-Server untereinander zu verbinden. Verbindungen sollen dann einfach per Web-Browser angelegt werden können. Langfristig sollen weitere Protokolle unterstützt werden (z.B. MQTT, Modbus).
 
 ## Download
 
@@ -27,9 +28,10 @@ Zurzeit besitzt CCU-Jack noch Beta-Status. Es sollten also vor der Verwendung Si
 
 ### Installation als Add-On auf der CCU
 
-Bei einer Installation als Add-On auf der CCU können die Startparameter in der Datei `/usr/local/etc/config/rc.d/ccu-jack` angepasst werden. In der Regel ist dies nicht notwendig. Log-Meldungen werden vom Add-On nicht ausgegeben oder gespeichert. Bei Bedarf kann die genannte Datei aber abgeändert werden, sodass die Log-Meldungen in eine Datei geschrieben werden.
+Bei einer Installation als Add-On auf der CCU können die Startparameter in der Datei `/usr/local/etc/config/rc.d/ccu-jack` angepasst werden. In der Regel ist dies nicht notwendig. Log-Meldungen werden in die Datei `/var/log/ccu-jack.log` geschrieben.
 
 In der Firewall der CCU müssen die zwei Ports 2121 und 2122 freigegeben werden:
+
 ![CCU-Firewall](doc/ccu-firewall.png)
 
 ## Kommandozeilenoptionen
@@ -38,28 +40,30 @@ Die Kommandozeilenoptionen vom CCU-Jack werden beim Start mit der Option `-h` au
 ```
 usage of ccu-jack:
   -addr address
-        address of the host (default "127.0.0.1")
+    	address of the host (default "127.0.0.1")
   -ccu address
-        address of the CCU (default "127.0.0.1")
+    	address of the CCU (default "127.0.0.1")
   -host name
-        host name for certificate generation (normally autodetected)
+    	host name for certificate generation (normally autodetected)
   -id identifier
-        additional identifier for the XMLRPC init method (default "CCU-Jack")
+    	additional identifier for the XMLRPC init method (default "CCU-Jack")
   -interfaces types
-        types of the CCU communication interfaces (comma separated): BidCosWired, BidCosRF, System, HmIPRF, VirtualDevices (default BidCosRF)
+    	types of the CCU communication interfaces (comma separated): BidCosWired, BidCosRF, System, HmIPRF, VirtualDevices (default BidCosRF)
   -log severity
-        specifies the minimum severity of printed log messages: off, error, warning, info, debug or trace (default INFO)
+    	specifies the minimum severity of printed log messages: off, error, warning, info, debug or trace (default INFO)
+  -logfile file
+    	write log messages to file instead of stderr
   -password password
-        password for HTTP Basic Authentication, q.v. -user
+    	password for HTTP Basic Authentication, q.v. -user
   -port port
-        port for serving HTTP (default 2121)
+    	port for serving HTTP (default 2121)
   -tls port
-        port for serving HTTPS (default 2122)
+    	port for serving HTTPS (default 2122)
   -user name
-        user name for HTTP Basic Authentication (disabled by default)
+    	user name for HTTP Basic Authentication (disabled by default)
 ```
 
-Log-Meldungen werden auf der Fehlerausgabe (STDERR) ausgegeben, wenn sie mindestens die mit der Option `-log` gesetzte Dringlichkeit besitzen.
+Log-Meldungen werden auf der Fehlerausgabe (STDERR) oder in die mit der Option `-logfile` angegebenen Datei ausgegeben, wenn sie mindestens die mit der Option `-log` gesetzte Dringlichkeit besitzen.
 
 ## Performance
 
@@ -75,9 +79,13 @@ Mit Hilfe des Navigators können alle verfügbaren Datenpunkte erkundet werden:
 
 ![Navigator](doc/web-ui-navigator.png)
 
-Bei Variablen wird auch der Wert angezeigt und aktuell gehalten:
+Bei Variablen wird ebenfalls der Wert angezeigt und aktuell gehalten:
 
 ![Navigator mit Variable](doc/web-ui-navigator-var.png)
+
+Variablen können für die Überwachung ausgewählt werden. Es werden in Echtzeit die aktuellen Werte angezeigt und Wertänderungen hervorgehoben:
+
+![Überwachung](doc/web-ui-watcher.png)
 
 ## Beispiele für die Android App _HTTP Shortcuts_
 
