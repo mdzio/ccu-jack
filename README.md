@@ -18,7 +18,7 @@ Folgende Merkmale zeichnen CCU-Jack aus:
 
 Ziel vom CCU-Jack ist es, möglichst einfach Datenpunkte zwischen CCUs und auch anderen Systemen auszutauschen und Applikationen eine Erkundungsmöglichkeit der Datenpunkte zu bieten. Der CCU-Jack wurde komplett neu entwickelt. Vorgänger vom CCU-Jack sind schon längere Zeit in Betrieb und tauschen hunderte von Datenpunkten zwischen mehreren CCUs, Internet-Relays und Front-Ends in Echtzeit aus.
 
-Für die Version 1.0 ist noch die Funktionalität VEAP-Client geplant. Dadurch ist es möglich mehrere CCU-Jacks bzw. VEAP-Server untereinander zu verbinden. Verbindungen sollen dann einfach per Web-Browser angelegt werden können. Langfristig sollen weitere Protokolle unterstützt werden (z.B. MQTT, Modbus).
+Für die Version 1.0 ist noch die Funktionalität VEAP-Client geplant. Dadurch ist es möglich mehrere CCU-Jacks bzw. VEAP-Server untereinander zu verbinden. Verbindungen sollen dann einfach per Web-Browser angelegt werden können.
 
 ## Download
 
@@ -33,6 +33,15 @@ Bei einer Installation als Add-On auf der CCU können die Startparameter in der 
 In der Firewall der CCU müssen die zwei Ports 2121 und 2122 freigegeben werden:
 
 ![CCU-Firewall](doc/ccu-firewall.png)
+
+## Bauen aus den Quellen
+
+Der CCU-Jack ist in der [Programmiersprache Go](https://golang.org/) (Version 1.13) geschrieben. Alle Distributionen des CCU-Jacks können sehr einfach und schnell auf allen möglichen Plattformen (u.a. Windows, Linux, MacOS) gebaut werden. Im GOPATH-Verzeichnis, dieses wird bei der Installation von Go festgelegt, müssen dafür folgende Kommandos ausgeführt werden:
+```
+go get github.com/mdzio/ccu-jack
+cd src/github.com/mdzio/ccu-jack/build
+go run .
+```
 
 ## Kommandozeilenoptionen
 
