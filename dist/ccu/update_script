@@ -1,0 +1,68 @@
+#!/bin/sh
+
+# Add-on information
+ADDON_ID=ccu-jack
+ADDON_NAME="CCU-Jack"
+ADDON_DESCR_EN="CCU-Jack provides simple and secure REST-based access to CCU data points."
+ADDON_DESCR_DE="CCU-Jack bietet einen einfachen und sicheren REST-basierten Zugriff auf die Datenpunkte der CCU."
+
+# Directories
+ADDON_DIR=/usr/local/addons/${ADDON_ID}
+ETC_DIR=/usr/local/etc
+RCD_DIR=/usr/local/etc/config/rc.d
+WWW_DIR=/usr/local/etc/config/addons/www/${ADDON_ID}
+
+# Logging to syslog is currently not supported by the CCU during the install process.
+
+if [ "$1" = "" ]; then
+  echo "${ADDON_NAME} Add-On is not for CCU1"
+  lcdtool "Add-On is not for CCU1   "
+  exit 1
+elif [ "$1" = "CCU2" ]; then
+  echo "Installing on CCU2"
+  mount -t ubifs ubi1:user /usr/local
+# A CCU3 currently masquerades as RaspberryMatic. CCU3 is currently not defined, but it can happen. 
+elif [ "$1" == "HM-RASPBERRYMATIC" -o "$1" == "CCU3" ]; then
+  echo "Installing on CCU3/RaspberryMatic"
+  mount /usr/local 2> /dev/null
+fi
+
+# Stop ccu-jack, if already installed.
+if [ -f $RCD_DIR/${ADDON_ID} ]; then
+  echo "Previous installation detected"
+  $RCD_DIR/${ADDON_ID} stop
+fi
+
+# Create directories
+mkdir -p ${ADDON_DIR}
+chmod 755 ${ADDON_DIR}
+mkdir -p ${RCD_DIR}
+chmod 755 ${RCD_DIR}
+mkdir -p ${WWW_DIR}
+chmod 755 ${WWW_DIR}
+
+# Copy addon
+cp -af addon/* ${ADDON_DIR}/
+
+# Copy startup script
+cp -af rc.d/* ${RCD_DIR}/
+
+# Copy www directory
+cp -af www/* ${WWW_DIR}/
+
+# Copy config files
+cp -af etc/* ${ETC_DIR}/
+
+# Add menu entry
+cp -af addon/update_hm_addons.tcl ${ADDON_DIR}/
+${ADDON_DIR}/update_hm_addons.tcl -a ${ADDON_ID} -name "${ADDON_NAME}" -url /addons/${ADDON_ID}/config.cgi -de "${ADDON_DESCR_DE}" -en "${ADDON_DESCR_EN}"
+
+sync
+echo "Installed"
+
+# Force a reboot on RM and CCU3, CCU2 always reboots after addon installation.
+if [ "$1" = "HM-RASPBERRYMATIC" ] || [ "$1" = "CCU3" ]; then
+  exit 10
+fi
+
+exit 0

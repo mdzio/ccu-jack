@@ -1,0 +1,106 @@
+#!/bin/sh
+
+# add-on information
+ADDON_ID=ccu-jack
+ADDON_NAME="CCU-Jack"
+ADDON_COPYRIGHT="(c) 2019 info@ccu-historian.de"
+ADDON_WWW='<a href="https://github.com/mdzio/ccu-jack" target="_blank">https://github.com/mdzio/ccu-jack</a>'
+
+# user and password for HTTP basic authentication (empty: disabled)
+OPT_USER=
+OPT_PWD=
+
+# log level for file log (/var/log/ccu-jack.log)
+# levels: off, error, warning, info, debug, trace
+OPT_LOGLEVEL=info
+
+# CCU interfaces (comma separated without spaces)
+if grep -q 'BidCos-Wired' /etc/config/InterfacesList.xml 2>/dev/null; then
+  OPT_ITFS=bidcosrf,bidcoswired,hmiprf
+else
+  OPT_ITFS=bidcosrf,hmiprf
+fi
+
+# directories
+ADDON_DIR=/usr/local/addons/${ADDON_ID}
+ETC_DIR=/usr/local/etc
+RCD_DIR=/usr/local/etc/config/rc.d
+WWW_DIR=/usr/local/etc/config/addons/www/${ADDON_ID}
+
+stop() {
+    logger -t ${ADDON_ID} -p user.debug "Stopping"
+    # stop process
+    start-stop-daemon -K -q -p /var/run/${ADDON_ID}.pid
+    logger -t ${ADDON_ID} -p user.info "Stopped"
+}
+
+start() {
+    logger -t ${ADDON_ID} -p user.debug "Starting"
+    # wait for ReGaHss startup
+    sleep 5
+    # start process
+    cd ${ADDON_DIR}
+    start-stop-daemon -S -q -b -m -p /var/run/${ADDON_ID}.pid -x ${ADDON_DIR}/${ADDON_ID} -- -interfaces "${OPT_ITFS}" -user "${OPT_USER}" -password "${OPT_PWD}" -log ${OPT_LOGLEVEL} -logfile /var/log/ccu-jack.log
+    logger -t ${ADDON_ID} -p user.info "Started"
+}
+
+info() {
+    echo "Info: <b>${ADDON_NAME} Add-On</b><br>"
+    echo "Info: ${ADDON_COPYRIGHT}<br>"
+    echo "Info: ${ADDON_WWW}"
+    echo "Name: ${ADDON_NAME}"
+    echo "Version: $(cat ${ADDON_DIR}/VERSION)"
+    echo "Operations: uninstall restart"
+    echo "Config-Url: /addons/${ADDON_ID}/config.cgi"
+    echo "Update: /addons/${ADDON_ID}/update-check.cgi"
+}
+
+uninstall() {
+    logger -t ${ADDON_ID} -p user.debug "Uninstalling"
+    
+    # stop monitoring
+    if [[ -x /usr/bin/monit ]]; then
+        monit unmonitor ${ADDON_ID}
+    fi
+    # stop process
+    stop
+    # update add-on registry
+    ${ADDON_DIR}/update_hm_addons.tcl -d ${ADDON_ID}
+    # remove files
+    rm ${RCD_DIR}/${ADDON_ID}
+    rm ${ETC_DIR}/monit-${ADDON_ID}.cfg
+    rm -rf ${ADDON_DIR}
+    rm -rf ${WWW_DIR}
+    # reload monit config
+    if [[ -x /usr/bin/monit ]]; then
+        monit reload
+    fi
+    
+    logger -t ${ADDON_ID} -p user.info "Uninstalled"
+}
+
+case "$1" in
+  ""|start)
+	  start
+	;;
+  stop)
+	  stop
+	;;
+  restart|reload)
+	  stop
+	  sleep 1
+	  start
+	;;
+  uninstall)
+    uninstall
+  ;;
+  info)
+    info
+  ;;
+  *)
+    echo "usage: ${ADDON_ID} {start|stop|restart|info|uninstall}" >&2
+    exit 1
+  ;;
+esac
+
+exit $?
