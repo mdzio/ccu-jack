@@ -10,6 +10,7 @@ Folgende Merkmale zeichnen CCU-Jack aus:
 * Umfangreiche Zusatzinformationen zu jedem Datenpunkt, z.B. Anzeigenamen, Räume, Gewerke, aber auch viele technische Informationen aus den XMLRPC-Schnittstellen und der ReGaHss.
 * Hohe Performance und minimale Belastung der CCU-Prozesse (XMLRPC-Schnittstellen, ReGaHss, CCU Web-Server).
 * Unterstützung von HTTP/2 und Verbindungssicherheit auf dem Stand der Technik.
+* Vollständige Unterstützung von Cross-origin resource sharing (CORS) für die Anbindung von Web-Applikationen.
 * Fertige Distributionen für viele Zielsysteme (CCU2, CCU3/RM, Windows, Linux, macOS).
 * Die Verwendung des VEAP-Protokolls ermöglicht einfachste Anbindung von Applikationen und Frameworks (z.B. Angular, React, Vue). Zudem ist das Protokoll nicht CCU-spezifisch. Entwickelte Client-Applikationen könnnen auch mit anderen VEAP-Servern verwendet werden.
 * Web-basierte Benutzerschnittstelle mit der alle Datenpunkte erkundet und die Werte überwacht werden können.
@@ -49,27 +50,29 @@ Die Kommandozeilenoptionen vom CCU-Jack werden beim Start mit der Option `-h` au
 ```
 usage of ccu-jack:
   -addr address
-    	address of the host (default "127.0.0.1")
+        address of the host (default "127.0.0.1")
   -ccu address
-    	address of the CCU (default "127.0.0.1")
+        address of the CCU (default "127.0.0.1")
+  -cors host
+        set host as allowed origin for CORS requests (default "*")
   -host name
-    	host name for certificate generation (normally autodetected)
+        host name for certificate generation (normally autodetected)
   -id identifier
-    	additional identifier for the XMLRPC init method (default "CCU-Jack")
+        additional identifier for the XMLRPC init method (default "CCU-Jack")
   -interfaces types
-    	types of the CCU communication interfaces (comma separated): BidCosWired, BidCosRF, System, HmIPRF, VirtualDevices (default BidCosRF)
+        types of the CCU communication interfaces (comma separated): BidCosWired, BidCosRF, System, HmIPRF, VirtualDevices (default BidCosRF)
   -log severity
-    	specifies the minimum severity of printed log messages: off, error, warning, info, debug or trace (default INFO)
+        specifies the minimum severity of printed log messages: off, error, warning, info, debug or trace (default INFO)
   -logfile file
-    	write log messages to file instead of stderr
+        write log messages to file instead of stderr
   -password password
-    	password for HTTP Basic Authentication, q.v. -user
+        password for HTTP Basic Authentication, q.v. -user
   -port port
-    	port for serving HTTP (default 2121)
+        port for serving HTTP (default 2121)
   -tls port
-    	port for serving HTTPS (default 2122)
+        port for serving HTTPS (default 2122)
   -user name
-    	user name for HTTP Basic Authentication (disabled by default)
+        user name for HTTP Basic Authentication (disabled by default)
 ```
 
 Log-Meldungen werden auf der Fehlerausgabe (STDERR) oder in die mit der Option `-logfile` angegebenen Datei ausgegeben, wenn sie mindestens die mit der Option `-log` gesetzte Dringlichkeit besitzen.
@@ -482,6 +485,12 @@ Antwort:
   ]
 }
 ```
+
+## Cross-origin resource sharing (CORS)
+
+Um fremden Web-Applikationen den Zugriff auf die VEAP-API des CCU-Jacks zu ermöglichen, wird CORS vollständig unterstützt. In der Standardkonfiguration werden alle anfragenden Quellen zugelassen (`Access-Control-Allow-Origin: *`). Falls die Authentifizierung eingeschaltet ist (s.a. Kommandozeilenoptionen `-user` und `-password`) muss die Anfragequelle explizit zugelassen werden. Dies erfolgt mit der Kommandozeilenoption `-cors`.
+
+Beispiel: Die Web-Applikation auf dem Host `https://example.com` soll mit Authentifizierung auf die VEAP-API zugreifen können. Dafür muss die Kommandozeilenoption `-cors https://example.com` gesetzt werden.
 
 ## Sicherer Zugriff über HTTPS
 

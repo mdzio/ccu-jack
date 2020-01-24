@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gorilla/handlers"
+
 	"github.com/mdzio/ccu-jack/vmodel"
 	"github.com/mdzio/go-lib/hmccu/itf"
 	"github.com/mdzio/go-lib/hmccu/script"
@@ -49,6 +51,7 @@ var (
 	ccuItfs       = itf.Types{itf.BidCosRF}
 	authUser      = flag.String("user", "", "user `name` for HTTP Basic Authentication (disabled by default)")
 	authPassword  = flag.String("password", "", "`password` for HTTP Basic Authentication, q.v. -user")
+	corsOrigin    = flag.String("cors", "*", "set `host` as allowed origin for CORS requests")
 )
 
 func init() {
@@ -240,6 +243,17 @@ func run() error {
 		handler = veapHandler
 	}
 
+	// CORS handler for VEAP
+	allowedMethods := handlers.AllowedMethods([]string{http.MethodGet, http.MethodPut})
+	if *corsOrigin == "" || *corsOrigin == "*" {
+		handler = handlers.CORS(allowedMethods)(handler)
+	} else {
+		allowedOrigins := handlers.AllowedOrigins([]string{*corsOrigin})
+		// only if origin is specified, credentials are allowed (CORS spec)
+		allowCredentials := handlers.AllowCredentials()
+		handler = handlers.CORS(allowedMethods, allowedOrigins, allowCredentials)(handler)
+	}
+
 	// register VEAP handler
 	http.Handle(veapHandler.URLPrefix+"/", handler)
 
@@ -268,6 +282,7 @@ func main() {
 	log.Info("  Server address: ", *serverAddr)
 	log.Info("  Server port: ", *serverPort)
 	log.Info("  Server port TLS: ", *serverPortTLS)
+	log.Info("  CORS origin: ", *corsOrigin)
 	log.Info("  CCU address: ", *ccuAddress)
 	log.Info("  Interfaces: ", ccuItfs.String())
 	log.Info("  Init ID: ", *initID)
