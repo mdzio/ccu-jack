@@ -41,6 +41,7 @@ var (
 		{Inc: "README.md"},
 		{Inc: "LICENSE.txt"},
 		{Inc: "build/tmp/VERSION"},
+		{Inc: "third-party-licenses/*", DstDir: "third-party-licenses"},
 		{Inc: "wd/webui/*", DstDir: "webui"},
 		{Inc: "wd/webui/ext/*", DstDir: "webui/ext"},
 	}
@@ -51,6 +52,7 @@ var (
 		{Inc: "LICENSE.txt", DstDir: "addon"},
 		{Inc: "build/tmp/VERSION", DstDir: "addon"},
 		{Inc: "dist/ccu/addon/update_hm_addons.tcl", DstDir: "addon", Exe: true},
+		{Inc: "third-party-licenses/*", DstDir: "addon/third-party-licenses"},
 		{Inc: "wd/webui/*", DstDir: "addon/webui"},
 		{Inc: "wd/webui/ext/*", DstDir: "addon/webui/ext"},
 		{Inc: "dist/ccu/rc.d/ccu-jack", DstDir: "rc.d", Exe: true},
