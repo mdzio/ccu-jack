@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mdzio/go-lib/logging"
+	"github.com/mdzio/go-logging"
 	"github.com/mdzio/go-lib/util/releng"
 )
 

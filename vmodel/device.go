@@ -7,7 +7,7 @@ import (
 
 	"github.com/mdzio/go-lib/hmccu/itf"
 	"github.com/mdzio/go-lib/hmccu/script"
-	"github.com/mdzio/go-lib/logging"
+	"github.com/mdzio/go-logging"
 	"github.com/mdzio/go-lib/veap"
 	"github.com/mdzio/go-lib/veap/model"
 )
