@@ -1,6 +1,6 @@
 # CCU-Jack
 
-CCU-Jack bietet einen einfachen und sicheren REST-basierten Zugriff auf die Datenpunkte der Zentrale (CCU) des [Hausautomations-Systems](http://de.wikipedia.org/wiki/Hausautomation) HomeMatic der Firma [eQ-3](http://www.eq-3.de/). Er implementiert dafür das [Very Easy Automation Protocol](https://github.com/mdzio/veap), welches von vielen Programmiersprachen leicht verwendet werden kann.
+CCU-Jack bietet einen einfachen und sicheren **REST**- und **MQTT**-basierten Zugriff auf die Datenpunkte der Zentrale (CCU) des [Hausautomations-Systems](http://de.wikipedia.org/wiki/Hausautomation) HomeMatic der Firma [eQ-3](http://www.eq-3.de/). Er implementiert dafür das [Very Easy Automation Protocol](https://github.com/mdzio/veap), welches von vielen Programmiersprachen leicht verwendet werden kann, und das [MQTT-Protokoll](https://de.wikipedia.org/wiki/MQTT), welches im Internet-of-Things weit verbreitet ist.
 
 ## Hauptmerkmale
 
@@ -19,7 +19,13 @@ Folgende Merkmale zeichnen CCU-Jack aus:
 
 Ziel vom CCU-Jack ist es, möglichst einfach Datenpunkte zwischen CCUs und auch anderen Systemen auszutauschen und Applikationen eine Erkundungsmöglichkeit der Datenpunkte zu bieten. Der CCU-Jack wurde komplett neu entwickelt. Vorgänger vom CCU-Jack sind schon längere Zeit in Betrieb und tauschen hunderte von Datenpunkten zwischen mehreren CCUs, Internet-Relays und Front-Ends in Echtzeit aus.
 
-Für die Version 1.0 ist noch die Funktionalität VEAP-Client geplant. Dadurch ist es möglich mehrere CCU-Jacks bzw. VEAP-Server untereinander zu verbinden. Verbindungen sollen dann einfach per Web-Browser angelegt werden können.
+### Fahrplan
+
+Nach der Implementierung von MQTT sind zukünftig erst einmal kleinere Erweiterungen geplant, um den CCU-Jack für die V1.0 abzurunden:
+
+* Setzen von Datenpunkten über die Web-UI.
+* Setzen von Datenpunkten über MQTT.
+* Verwaltung von Zugriffsrechten für die VEAP-API und MQTT.
 
 ## Download
 
@@ -31,7 +37,7 @@ Zurzeit besitzt CCU-Jack noch Beta-Status. Es sollten also vor der Verwendung Si
 
 Bei einer Installation als Add-On auf der CCU können die Startparameter in der Datei `/usr/local/etc/config/rc.d/ccu-jack` angepasst werden. In der Regel ist dies nicht notwendig. Log-Meldungen werden in die Datei `/var/log/ccu-jack.log` geschrieben.
 
-In der Firewall der CCU müssen die zwei Ports 2121 und 2122 freigegeben werden:
+In der Firewall der CCU müssen die zwei Ports 2121, 2122 und 1883 freigegeben werden:
 
 ![CCU-Firewall](doc/ccu-firewall.png)
 
@@ -50,29 +56,31 @@ Die Kommandozeilenoptionen vom CCU-Jack werden beim Start mit der Option `-h` au
 ```
 usage of ccu-jack:
   -addr address
-        address of the host (default "127.0.0.1")
+    	address of the host (default "127.0.0.1")
   -ccu address
-        address of the CCU (default "127.0.0.1")
+    	address of the CCU (default "127.0.0.1")
   -cors host
-        set host as allowed origin for CORS requests (default "*")
+    	set host as allowed origin for CORS requests (default "*")
   -host name
-        host name for certificate generation (normally autodetected)
+    	host name for certificate generation (normally autodetected)
+  -http port
+    	port for serving HTTP (default 2121)
+  -https port
+    	port for serving HTTPS (default 2122)
   -id identifier
-        additional identifier for the XMLRPC init method (default "CCU-Jack")
+    	additional identifier for the XMLRPC init method (default "CCU-Jack")
   -interfaces types
-        types of the CCU communication interfaces (comma separated): BidCosWired, BidCosRF, System, HmIPRF, VirtualDevices (default BidCosRF)
+    	types of the CCU communication interfaces (comma separated): BidCosWired, BidCosRF, System, HmIPRF, VirtualDevices (default BidCosRF)
   -log severity
-        specifies the minimum severity of printed log messages: off, error, warning, info, debug or trace (default INFO)
+    	specifies the minimum severity of printed log messages: off, error, warning, info, debug or trace (default INFO)
   -logfile file
-        write log messages to file instead of stderr
+    	write log messages to file instead of stderr
+  -mqtt port
+    	port for serving MQTT (default 1883)
   -password password
-        password for HTTP Basic Authentication, q.v. -user
-  -port port
-        port for serving HTTP (default 2121)
-  -tls port
-        port for serving HTTPS (default 2122)
+    	password for HTTP Basic Authentication, q.v. -user
   -user name
-        user name for HTTP Basic Authentication (disabled by default)
+    	user name for HTTP Basic Authentication (disabled by default)
 ```
 
 Log-Meldungen werden auf der Fehlerausgabe (STDERR) oder in die mit der Option `-logfile` angegebenen Datei ausgegeben, wenn sie mindestens die mit der Option `-log` gesetzte Dringlichkeit besitzen.
@@ -99,9 +107,15 @@ Variablen können für die Überwachung ausgewählt werden. Es werden in Echtzei
 
 ![Überwachung](doc/web-ui-watcher.png)
 
-## Beschreibung der VEAP-Dienste
+## Beschreibung der VEAP-Dienste/REST-API
 
 Mit dem [Kommandozeilenwerkzeug CURL](https://curl.haxx.se), das praktisch für alle Betriebssysteme und Plattformen verfügbar ist, können alle VEAP-Dienste (z.B. Datenpunkte lesen und setzen) des CCU-Jacks genutzt werden. Die Beschreibung ist auf einer [eigenen Seite](https://github.com/mdzio/ccu-jack/blob/master/doc/curl.md) zu finden.
+
+## Beschreibung der MQTT-Schnittstelle
+
+Der CCU-Jack enthält einen vollwertigen und leistungsfähigen MQTT-Broker (V3.1.1). Dieser kann von beliebigen Fremdapplikationen genutzt werden. Zudem werden die Wertänderungen aller Gerätedatenpunkte der CCU unter dem Topic `device/Seriennr./Kanalnr./Parametername` publiziert. Das Nachrichtenformat ist JSON und entspricht dem VEAP-Protokoll.
+
+Hinweis: Die MQTT-Schnittstelle befindet sich zurzeit noch in der Entwicklung. Das Setzen von Datenpunkten ist noch nicht implementiert, und die Topic-Struktur kann sich noch ändern. Zudem findet noch keine Benutzerauthentifizierung statt.
 
 ## Anwendungsbeispiel Android App _HTTP Shortcuts_
 

@@ -12,19 +12,20 @@ import (
 
 	"github.com/gorilla/handlers"
 
+	"github.com/mdzio/ccu-jack/mqtt"
 	"github.com/mdzio/ccu-jack/vmodel"
 	"github.com/mdzio/go-lib/hmccu/itf"
 	"github.com/mdzio/go-lib/hmccu/script"
-	"github.com/mdzio/go-logging"
 	"github.com/mdzio/go-lib/util/httputil"
 	"github.com/mdzio/go-lib/veap"
 	"github.com/mdzio/go-lib/veap/model"
+	"github.com/mdzio/go-logging"
 )
 
 const (
 	appDisplayName = "CCU-Jack"
 	appName        = "ccu-jack"
-	appDescription = "VEAP-Server for the HomeMatic CCU"
+	appDescription = "REST/MQTT-Server for the HomeMatic CCU"
 	appVendor      = "info@ccu-historian.de"
 
 	webUIDir       = "webui"
@@ -40,18 +41,20 @@ var (
 	log     = logging.Get("main")
 	logFile *os.File
 
-	logLevel      = logging.InfoLevel
-	logFilePath   = flag.String("logfile", "", "write log messages to `file` instead of stderr")
-	serverHost    = flag.String("host", "", "host `name` for certificate generation (normally autodetected)")
-	serverAddr    = flag.String("addr", "127.0.0.1", "`address` of the host")
-	serverPort    = flag.Int("port", 2121, "`port` for serving HTTP")
-	serverPortTLS = flag.Int("tls", 2122, "`port` for serving HTTPS")
-	initID        = flag.String("id", "CCU-Jack", "additional `identifier` for the XMLRPC init method")
-	ccuAddress    = flag.String("ccu", "127.0.0.1", "`address` of the CCU")
-	ccuItfs       = itf.Types{itf.BidCosRF}
-	authUser      = flag.String("user", "", "user `name` for HTTP Basic Authentication (disabled by default)")
-	authPassword  = flag.String("password", "", "`password` for HTTP Basic Authentication, q.v. -user")
-	corsOrigin    = flag.String("cors", "*", "set `host` as allowed origin for CORS requests")
+	logLevel    = logging.InfoLevel
+	logFilePath = flag.String("logfile", "", "write log messages to `file` instead of stderr")
+	serverHost  = flag.String("host", "", "host `name` for certificate generation (normally autodetected)")
+	serverAddr  = flag.String("addr", "127.0.0.1", "`address` of the host")
+	httpPort    = flag.Int("http", 2121, "`port` for serving HTTP")
+	httpPortTLS = flag.Int("https", 2122, "`port` for serving HTTPS")
+	mqttPort    = flag.Int("mqtt", 1883, "`port` for serving MQTT")
+	// mqttPortTLS  = flag.Int("mqtts", 8883, "`port` for serving Secure MQTT")
+	initID       = flag.String("id", "CCU-Jack", "additional `identifier` for the XMLRPC init method")
+	ccuAddress   = flag.String("ccu", "127.0.0.1", "`address` of the CCU")
+	ccuItfs      = itf.Types{itf.BidCosRF}
+	authUser     = flag.String("user", "", "user `name` for HTTP Basic Authentication (disabled by default)")
+	authPassword = flag.String("password", "", "`password` for HTTP Basic Authentication, q.v. -user")
+	corsOrigin   = flag.String("cors", "*", "set `host` as allowed origin for CORS requests")
 )
 
 func init() {
@@ -165,14 +168,14 @@ func run() error {
 	// file handler for static files
 	http.Handle("/ui/", http.StripPrefix("/ui", http.FileServer(http.Dir(webUIDir))))
 
-	// setup and start http server
-	serveErr := make(chan error)
+	// setup and start http(s) server
+	httpServeErr := make(chan error)
 	httpServer := &httputil.Server{
-		Addr:     ":" + strconv.Itoa(*serverPort),
-		AddrTLS:  ":" + strconv.Itoa(*serverPortTLS),
+		Addr:     ":" + strconv.Itoa(*httpPort),
+		AddrTLS:  ":" + strconv.Itoa(*httpPortTLS),
 		CertFile: serverCertFile,
 		KeyFile:  serverKeyFile,
-		ServeErr: serveErr,
+		ServeErr: httpServeErr,
 	}
 	httpServer.Startup()
 	defer httpServer.Shutdown()
@@ -186,14 +189,25 @@ func run() error {
 	// create device collection
 	deviceCol := vmodel.NewDeviceCol(root)
 
+	// setup and start MQTT server
+	mqttServeErr := make(chan error)
+	mqttServer := &mqtt.Broker{
+		Addr:     "tcp://:" + strconv.Itoa(*mqttPort),
+		ServeErr: mqttServeErr,
+		// forward events
+		Next: deviceCol,
+	}
+	mqttServer.Start()
+	defer mqttServer.Stop()
+
 	// configure interconnector
 	intercon := &itf.Interconnector{
 		CCUAddr:  *ccuAddress,
 		Types:    ccuItfs,
 		IDPrefix: *initID + "-",
-		Receiver: deviceCol,
+		Receiver: mqttServer,
 		// full URL of the DefaultServeMux for callbacks
-		ServerURL: "http://" + *serverAddr + ":" + strconv.Itoa(*serverPort),
+		ServerURL: "http://" + *serverAddr + ":" + strconv.Itoa(*httpPort),
 	}
 
 	// configure HM script client
@@ -259,7 +273,9 @@ func run() error {
 
 	// wait for shutdown or error
 	select {
-	case err := <-serveErr:
+	case err := <-httpServeErr:
+		return err
+	case err := <-mqttServeErr:
 		return err
 	case <-termSig:
 		return nil
@@ -280,8 +296,8 @@ func main() {
 	log.Info("  Log file: ", *logFilePath)
 	log.Info("  Server host name: ", *serverHost)
 	log.Info("  Server address: ", *serverAddr)
-	log.Info("  Server port: ", *serverPort)
-	log.Info("  Server port TLS: ", *serverPortTLS)
+	log.Info("  Server port: ", *httpPort)
+	log.Info("  Server port TLS: ", *httpPortTLS)
 	log.Info("  CORS origin: ", *corsOrigin)
 	log.Info("  CCU address: ", *ccuAddress)
 	log.Info("  Interfaces: ", ccuItfs.String())
