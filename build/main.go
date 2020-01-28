@@ -5,14 +5,14 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mdzio/go-logging"
 	"github.com/mdzio/go-lib/util/releng"
+	"github.com/mdzio/go-logging"
 )
 
 // build configuration
 const (
 	appName    = "ccu-jack"
-	appVersion = "0.5.0"
+	appVersion = "0.6.0"
 	appPkg     = "github.com/mdzio/ccu-jack"
 	ldFlags    = "-s -w -X main.appVersion=" + appVersion
 	buildDir   = ".."

@@ -23,9 +23,15 @@ Ziel vom CCU-Jack ist es, möglichst einfach Datenpunkte zwischen CCUs und auch 
 
 Nach der Implementierung von MQTT sind zukünftig erst einmal kleinere Erweiterungen geplant, um den CCU-Jack für die V1.0 abzurunden:
 
-* Setzen von Datenpunkten über die Web-UI.
-* Setzen von Datenpunkten über MQTT.
-* Verwaltung von Zugriffsrechten für die VEAP-API und MQTT.
+* Erweiterungen für MQTT
+  * Setzen von Gerätedatenpunkten und Systemvariablen
+  * Unterstützung für Secure-MQTT und Websockets
+  * Zugriffsberechtigungen
+* Erweiterungen VEAP-API
+  * Zugriffsberechtigungen
+* Erweiterungen der Web-UI
+  * Setzen von Datenpunkten im _Navigator_ und der _Überwachung_
+  * Benutzer- und Rechteverwaltung
 
 ## Download
 
@@ -113,7 +119,9 @@ Mit dem [Kommandozeilenwerkzeug CURL](https://curl.haxx.se), das praktisch für 
 
 ## Beschreibung der MQTT-Schnittstelle
 
-Der CCU-Jack enthält einen vollwertigen und leistungsfähigen MQTT-Broker (V3.1.1). Dieser kann von beliebigen Fremdapplikationen genutzt werden. Zudem werden die Wertänderungen aller Gerätedatenpunkte der CCU unter dem Topic `device/Seriennr./Kanalnr./Parametername` publiziert. Das Nachrichtenformat ist JSON und entspricht dem VEAP-Protokoll.
+Der CCU-Jack enthält einen vollwertigen und leistungsfähigen MQTT-Broker (V3.1.1). Dieser kann von beliebigen Fremdapplikationen genutzt werden. Zudem werden die Wertänderungen aller Gerätedatenpunkte der CCU unter dem Topic `device/Seriennr./Kanalnr./Parametername` publiziert. Das Nachrichtenformat ist JSON und entspricht dem [VEAP-Protokoll](https://github.com/mdzio/veap/blob/master/README_de.md#datenpunkt-lesen).
+
+Die Retain-Eigenschaft wird bei allen Datenpunkten gesetzt, außer der Parametername ist *INSTALL_TEST* oder beginnt mit *PRESS_*.
 
 Hinweis: Die MQTT-Schnittstelle befindet sich zurzeit noch in der Entwicklung. Das Setzen von Datenpunkten ist noch nicht implementiert, und die Topic-Struktur kann sich noch ändern. Zudem findet noch keine Benutzerauthentifizierung statt.
 
