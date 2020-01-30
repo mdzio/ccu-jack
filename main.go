@@ -48,6 +48,7 @@ var (
 	httpPort    = flag.Int("http", 2121, "`port` for serving HTTP")
 	httpPortTLS = flag.Int("https", 2122, "`port` for serving HTTPS")
 	mqttPort    = flag.Int("mqtt", 1883, "`port` for serving MQTT")
+	// TODO:
 	// mqttPortTLS  = flag.Int("mqtts", 8883, "`port` for serving Secure MQTT")
 	initID       = flag.String("id", "CCU-Jack", "additional `identifier` for the XMLRPC init method")
 	ccuAddress   = flag.String("ccu", "127.0.0.1", "`address` of the CCU")
@@ -296,8 +297,11 @@ func main() {
 	log.Info("  Log file: ", *logFilePath)
 	log.Info("  Server host name: ", *serverHost)
 	log.Info("  Server address: ", *serverAddr)
-	log.Info("  Server port: ", *httpPort)
-	log.Info("  Server port TLS: ", *httpPortTLS)
+	log.Info("  HTTP port: ", *httpPort)
+	log.Info("  HTTPS port: ", *httpPortTLS)
+	log.Info("  MQTT port: ", *mqttPort)
+	// TODO:
+	// log.Info("  Secure MQTT port: ", *mqttPortTLS)
 	log.Info("  CORS origin: ", *corsOrigin)
 	log.Info("  CCU address: ", *ccuAddress)
 	log.Info("  Interfaces: ", ccuItfs.String())

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mdzio/go-lib/hmccu/itf"
@@ -28,6 +29,7 @@ type Broker struct {
 	Next itf.Receiver
 
 	server *service.Server
+	pubMtx sync.Mutex
 	done   chan struct{}
 }
 
@@ -50,6 +52,34 @@ func (b *Broker) Start() {
 			}
 		}
 	}()
+
+	b.test()
+}
+
+func (b *Broker) test() {
+	go func() {
+		i := 0
+		for {
+			time.Sleep(1 * time.Second)
+			b.PublishPV("a/b/c", veap.PV{Value: i}, false)
+			i++
+		}
+	}()
+
+	tm, err := b.server.TopicsMgr()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	var onPublish service.OnPublishFunc = func(msg *message.PublishMessage) error {
+		log.Infof("RECV: %s: %s", msg.Topic(), msg.Payload())
+		return nil
+	}
+	tm.Subscribe([]byte("#"), message.QosExactlyOnce, &onPublish)
+	// go func() {
+	// 	time.Sleep(5 * time.Second)
+	// 	tm.Unsubscribe([]byte("#"), &onPublish)
+	// }()
 }
 
 // Stop stops the MQTT broker.
@@ -60,10 +90,56 @@ func (b *Broker) Stop() {
 	<-b.done
 }
 
+// PublishPV publishes a PV.
+func (b *Broker) PublishPV(topic string, pv veap.PV, retain bool) error {
+	// build payload
+	t := pv.Time
+	if t.IsZero() {
+		t = time.Now()
+	}
+	wpv := wirePV{
+		Time:  t.UnixNano() / 1000000,
+		Value: pv.Value,
+		State: pv.State,
+	}
+	pl, err := json.Marshal(wpv)
+	if err != nil {
+		return fmt.Errorf("Conversion of PV to JSON failed: %v", err)
+	}
+
+	if err := b.Publish(topic, pl, retain); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Publish publishes a generic payload.
+func (b *Broker) Publish(topic string, payload []byte, retain bool) error {
+	log.Tracef("Publishing %s: %s", topic, string(payload))
+	pm := message.NewPublishMessage()
+	if err := pm.SetTopic([]byte(topic)); err != nil {
+		return fmt.Errorf("Invalid topic: %v", err)
+	}
+	if err := pm.SetQoS(0); err != nil {
+		return fmt.Errorf("Invalid QoS: %v", err)
+	}
+	pm.SetRetain(retain)
+	pm.SetPayload(payload)
+	// Publish must not be called by multiple goroutines at the same time
+	b.pubMtx.Lock()
+	defer b.pubMtx.Unlock()
+	if err := b.server.Publish(pm, nil); err != nil {
+		return fmt.Errorf("Publish failed: %v", err)
+	}
+	return nil
+}
+
 // Event implements itf.Receiver.
 func (b *Broker) Event(interfaceID, address, valueKey string, value interface{}) error {
 	// publish event
-	b.publishEvent(interfaceID, address, valueKey, value)
+	if err := b.publishEvent(interfaceID, address, valueKey, value); err != nil {
+		log.Errorf("Publish of event failed: %v", err)
+	}
 	// forward event
 	return b.Next.Event(interfaceID, address, valueKey, value)
 }
@@ -98,31 +174,18 @@ func (b *Broker) ReaddedDevice(interfaceID string, deletedAddresses []string) er
 	return b.Next.ReaddedDevice(interfaceID, deletedAddresses)
 }
 
-type payloadPV struct {
+type wirePV struct {
 	Time  int64       `json:"ts"`
 	Value interface{} `json:"v"`
 	State veap.State  `json:"s"`
 }
 
-func (b *Broker) publishEvent(interfaceID, address, valueKey string, value interface{}) {
-	// build payload
-	pv := payloadPV{
-		Time:  time.Now().UnixNano() / 1000000,
-		Value: value,
-		State: veap.StateGood,
-	}
-	pl, err := json.Marshal(pv)
-	if err != nil {
-		log.Error("Conversion of PV to JSON failed: %v", err)
-		return
-	}
-
+func (b *Broker) publishEvent(interfaceID, address, valueKey string, value interface{}) error {
 	// separate device and channel
 	var dev, ch string
 	var p int
 	if p = strings.IndexRune(address, ':'); p == -1 {
-		log.Warning("Device should not send event: ", address)
-		return
+		return fmt.Errorf("Unexpected event from a device: %s", address)
 	}
 	dev = address[0:p]
 	ch = address[p+1:]
@@ -130,26 +193,22 @@ func (b *Broker) publishEvent(interfaceID, address, valueKey string, value inter
 	// build topic
 	topic := fmt.Sprintf("device/%s/%s/%s", dev, ch, valueKey)
 
-	// publish message
-	log.Tracef("Publishing %s: %s", topic, string(pl))
-	pm := message.NewPublishMessage()
-	if err := pm.SetTopic([]byte(topic)); err != nil {
-		log.Error("Invalid topic: %v", err)
-		return
+	// build PV
+	pv := veap.PV{
+		Time:  time.Now(),
+		Value: value,
+		State: veap.StateGood,
 	}
-	if err := pm.SetQoS(0); err != nil {
-		log.Error("Invalid QoS: %v", err)
-		return
+
+	// retain all except actions
+	retain := false
+	if valueKey != "INSTALL_TEST" && !strings.HasPrefix(valueKey, "PRESS_") {
+		retain = true
 	}
-	if valueKey == "INSTALL_TEST" || strings.HasPrefix(valueKey, "PRESS_") {
-		// do not retain actions
-		pm.SetRetain(false)
-	} else {
-		pm.SetRetain(true)
+
+	// publish
+	if err := b.PublishPV(topic, pv, retain); err != nil {
+		return err
 	}
-	pm.SetPayload(pl)
-	if err := b.server.Publish(pm, nil); err != nil {
-		log.Error("Publish failed: %v", err)
-		return
-	}
+	return nil
 }
