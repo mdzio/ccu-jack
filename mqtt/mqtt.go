@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/mdzio/go-lib/hmccu/itf"
@@ -29,7 +28,6 @@ type Broker struct {
 	Next itf.Receiver
 
 	server *service.Server
-	pubMtx sync.Mutex
 	done   chan struct{}
 }
 
@@ -52,34 +50,6 @@ func (b *Broker) Start() {
 			}
 		}
 	}()
-
-	b.test()
-}
-
-func (b *Broker) test() {
-	go func() {
-		i := 0
-		for {
-			time.Sleep(1 * time.Second)
-			b.PublishPV("a/b/c", veap.PV{Value: i}, false)
-			i++
-		}
-	}()
-
-	tm, err := b.server.TopicsMgr()
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	var onPublish service.OnPublishFunc = func(msg *message.PublishMessage) error {
-		log.Infof("RECV: %s: %s", msg.Topic(), msg.Payload())
-		return nil
-	}
-	tm.Subscribe([]byte("#"), message.QosExactlyOnce, &onPublish)
-	// go func() {
-	// 	time.Sleep(5 * time.Second)
-	// 	tm.Unsubscribe([]byte("#"), &onPublish)
-	// }()
 }
 
 // Stop stops the MQTT broker.
@@ -125,9 +95,6 @@ func (b *Broker) Publish(topic string, payload []byte, retain bool) error {
 	}
 	pm.SetRetain(retain)
 	pm.SetPayload(payload)
-	// Publish must not be called by multiple goroutines at the same time
-	b.pubMtx.Lock()
-	defer b.pubMtx.Unlock()
 	if err := b.server.Publish(pm, nil); err != nil {
 		return fmt.Errorf("Publish failed: %v", err)
 	}
