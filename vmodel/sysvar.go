@@ -4,9 +4,9 @@ import (
 	"time"
 
 	"github.com/mdzio/go-lib/hmccu/script"
-	"github.com/mdzio/go-logging"
 	"github.com/mdzio/go-lib/veap"
 	"github.com/mdzio/go-lib/veap/model"
+	"github.com/mdzio/go-logging"
 )
 
 const (
@@ -137,7 +137,7 @@ func (v *sysVar) GetTitle() string {
 }
 
 func (v *sysVar) GetDescription() string {
-	return ""
+	return v.sv.Description
 }
 
 func (v *sysVar) ReadAttributes() veap.AttrValues {
