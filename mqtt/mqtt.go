@@ -13,9 +13,22 @@ import (
 	"github.com/mdzio/go-mqtt/service"
 )
 
+const (
+	deviceStatusTopic = "device/status"
+	deviceSetTopic    = "device/set"
+	// path prefix for device data points in the VEAP address space
+	deviceServicePath = "/device"
+
+	sysVarStatusTopic = "sysvar/status"
+	sysVarSetTopic    = "sysvar/set"
+	sysVarGetTopic    = "sysvar/get"
+	// path prefix for system variable data points in the VEAP address space
+	sysVarServicePath = "/sysvar"
+)
+
 var log = logging.Get("mqtt-broker")
 
-// Broker for MQTT. Broker implements itf.Receiver.
+// Broker for MQTT. Broker implements itf.Receiver to receive XML-RPC events.
 type Broker struct {
 	// Binding address for serving MQTT.
 	Addr string
@@ -24,18 +37,27 @@ type Broker struct {
 	// error is sent to the channel ServeErr.
 	ServeErr chan<- error
 
-	// Next handler for XMLRPC events.
+	// Next handler for XML-RPC events.
 	Next itf.Receiver
+
+	// Service is used to set device data points and system variables.
+	Service veap.Service
 
 	server *service.Server
 	done   chan struct{}
+
+	onSetDevice service.OnPublishFunc
+	onSetSysVar service.OnPublishFunc
+	onGetSysVar service.OnPublishFunc
 }
 
 // Start starts the MQTT broker.
 func (b *Broker) Start() {
 	b.server = &service.Server{}
+
 	// capacity must match the number of listeners/servers
 	b.done = make(chan struct{}, 1)
+
 	// start listeners
 	go func() {
 		log.Infof("Starting MQTT listener on address %s", b.Addr)
@@ -50,33 +72,104 @@ func (b *Broker) Start() {
 			}
 		}
 	}()
+
+	// subscribe set device topics
+	b.onSetDevice = func(msg *message.PublishMessage) error {
+		log.Tracef("Set device message received: %s: %s", msg.Topic(), msg.Payload())
+
+		// parse PV
+		pv, err := wireToPV(msg.Payload())
+		if err != nil {
+			return err
+		}
+
+		// map topic to VEAP address
+		topic := string(msg.Topic())
+		if !strings.HasPrefix(topic, deviceSetTopic+"/") {
+			return fmt.Errorf("Unexpected topic: %s", topic)
+		}
+
+		// path with leading /
+		path := topic[len(deviceSetTopic):]
+
+		// use VEAP service to write PV
+		if err = b.Service.WritePV(deviceServicePath+path, pv); err != nil {
+			return err
+		}
+		return nil
+	}
+	b.server.Subscribe(deviceSetTopic+"/+/+/+", message.QosExactlyOnce, &b.onSetDevice)
+
+	// subscribe set sysvar topics
+	b.onSetSysVar = func(msg *message.PublishMessage) error {
+		log.Tracef("Set sysvar message received: %s: %s", msg.Topic(), msg.Payload())
+
+		// parse PV
+		pv, err := wireToPV(msg.Payload())
+		if err != nil {
+			return err
+		}
+
+		// map topic to VEAP address
+		topic := string(msg.Topic())
+		if !strings.HasPrefix(topic, sysVarSetTopic+"/") {
+			return fmt.Errorf("Unexpected topic: %s", topic)
+		}
+
+		// path with leading /
+		path := topic[len(sysVarSetTopic):]
+
+		// use VEAP service to write PV
+		if err = b.Service.WritePV(sysVarServicePath+path, pv); err != nil {
+			return err
+		}
+		return nil
+	}
+	b.server.Subscribe(sysVarSetTopic+"/+", message.QosExactlyOnce, &b.onSetSysVar)
+
+	// subscribe get sysvar topics
+	b.onGetSysVar = func(msg *message.PublishMessage) error {
+		log.Tracef("Get sysvar message received: %s: %s", msg.Topic(), msg.Payload())
+
+		// map topic to VEAP address
+		topic := string(msg.Topic())
+		if !strings.HasPrefix(topic, sysVarGetTopic+"/") {
+			return fmt.Errorf("Unexpected topic: %s", topic)
+		}
+
+		// path with leading /
+		path := topic[len(sysVarGetTopic):]
+
+		// use VEAP service to read PV
+		pv, err := b.Service.ReadPV(sysVarServicePath + path)
+		if err != nil {
+			return err
+		}
+
+		// publish PV
+		return b.PublishPV(sysVarStatusTopic+path, pv, true)
+	}
+	b.server.Subscribe(sysVarGetTopic+"/+", message.QosExactlyOnce, &b.onGetSysVar)
 }
 
 // Stop stops the MQTT broker.
 func (b *Broker) Stop() {
 	log.Debugf("Stopping MQTT broker")
+	b.server.Unsubscribe(deviceSetTopic+"/+/+/+", &b.onSetDevice)
+	b.server.Unsubscribe(sysVarSetTopic+"/+", &b.onSetSysVar)
+	b.server.Unsubscribe(sysVarGetTopic+"/+", &b.onGetSysVar)
 	_ = b.server.Close()
+
 	// wait for shutdown (must match number of listeners/servers)
 	<-b.done
 }
 
 // PublishPV publishes a PV.
 func (b *Broker) PublishPV(topic string, pv veap.PV, retain bool) error {
-	// build payload
-	t := pv.Time
-	if t.IsZero() {
-		t = time.Now()
-	}
-	wpv := wirePV{
-		Time:  t.UnixNano() / 1000000,
-		Value: pv.Value,
-		State: pv.State,
-	}
-	pl, err := json.Marshal(wpv)
+	pl, err := pvToWire(pv)
 	if err != nil {
-		return fmt.Errorf("Conversion of PV to JSON failed: %v", err)
+		return err
 	}
-
 	if err := b.Publish(topic, pl, retain); err != nil {
 		return err
 	}
@@ -158,7 +251,7 @@ func (b *Broker) publishEvent(interfaceID, address, valueKey string, value inter
 	ch = address[p+1:]
 
 	// build topic
-	topic := fmt.Sprintf("device/%s/%s/%s", dev, ch, valueKey)
+	topic := fmt.Sprintf("%s/%s/%s/%s", deviceStatusTopic, dev, ch, valueKey)
 
 	// build PV
 	pv := veap.PV{
@@ -178,4 +271,43 @@ func (b *Broker) publishEvent(interfaceID, address, valueKey string, value inter
 		return err
 	}
 	return nil
+}
+
+func wireToPV(payload []byte) (veap.PV, error) {
+	// convert JSON to PV
+	var w wirePV
+	err := json.Unmarshal(payload, &w)
+	if err != nil {
+		return veap.PV{}, fmt.Errorf("Conversion of JSON to PV failed: %v", err)
+	}
+	if w.Value == nil {
+		return veap.PV{}, fmt.Errorf("Conversion of JSON to PV failed: No value property (v) found")
+	}
+
+	// if no timestamp is provided, use current time
+	var ts time.Time
+	if w.Time == 0 {
+		ts = time.Now()
+	} else {
+		ts = time.Unix(0, w.Time*1000000)
+	}
+
+	// if no state is provided, state is implicit GOOD
+	return veap.PV{
+		Time:  ts,
+		Value: w.Value,
+		State: w.State,
+	}, nil
+}
+
+func pvToWire(pv veap.PV) ([]byte, error) {
+	var w wirePV
+	w.Time = pv.Time.UnixNano() / 1000000
+	w.Value = pv.Value
+	w.State = pv.State
+	pl, err := json.Marshal(w)
+	if err != nil {
+		return nil, fmt.Errorf("Conversion of PV to JSON failed: %v", err)
+	}
+	return pl, nil
 }

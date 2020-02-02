@@ -12,7 +12,7 @@ import (
 // build configuration
 const (
 	appName    = "ccu-jack"
-	appVersion = "0.6.1"
+	appVersion = "0.7.0"
 	appPkg     = "github.com/mdzio/ccu-jack"
 	ldFlags    = "-s -w -X main.appVersion=" + appVersion
 	buildDir   = ".."

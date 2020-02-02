@@ -190,11 +190,23 @@ func run() error {
 	// create device collection
 	deviceCol := vmodel.NewDeviceCol(root)
 
+	// configure HM script client
+	scriptClient := &script.Client{
+		Addr: *ccuAddress,
+	}
+
+	// create system variable collection
+	sysVarCol := vmodel.NewSysVarCol(root)
+	sysVarCol.ScriptClient = scriptClient
+	sysVarCol.Start()
+	defer sysVarCol.Stop()
+
 	// setup and start MQTT server
 	mqttServeErr := make(chan error)
 	mqttServer := &mqtt.Broker{
 		Addr:     "tcp://:" + strconv.Itoa(*mqttPort),
 		ServeErr: mqttServeErr,
+		Service:  modelService,
 		// forward events
 		Next: deviceCol,
 	}
@@ -211,11 +223,6 @@ func run() error {
 		ServerURL: "http://" + *serverAddr + ":" + strconv.Itoa(*httpPort),
 	}
 
-	// configure HM script client
-	scriptClient := &script.Client{
-		Addr: *ccuAddress,
-	}
-
 	// start ReGa DOM explorer
 	reGaDOM := script.NewReGaDOM(scriptClient)
 	reGaDOM.Start()
@@ -224,12 +231,6 @@ func run() error {
 	// create room and function collections
 	vmodel.NewRoomCol(root, reGaDOM, modelService)
 	vmodel.NewFunctionCol(root, reGaDOM, modelService)
-
-	// create system variable collection
-	sysVarCol := vmodel.NewSysVarCol(root)
-	sysVarCol.ScriptClient = scriptClient
-	sysVarCol.Start()
-	defer sysVarCol.Stop()
 
 	// startup device domain (starts handling of events)
 	deviceCol.Interconnector = intercon
