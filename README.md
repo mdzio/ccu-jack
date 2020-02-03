@@ -6,12 +6,12 @@ CCU-Jack bietet einen einfachen und sicheren **REST**- und **MQTT**-basierten Zu
 
 Folgende Merkmale zeichnen CCU-Jack aus:
 * Lese- und Schreibzugriff auf alle Gerätedatenpunkte und Systemvariablen der CCU.
-* Alle Datenpunkte können über eine Baumstruktur erkundet werden.
-* Umfangreiche Zusatzinformationen zu jedem Datenpunkt, z.B. Anzeigenamen, Räume, Gewerke, aber auch viele technische Informationen aus den XMLRPC-Schnittstellen und der ReGaHss.
+* Alle Datenpunkte können über die REST-API baumartig erkundet werden.
+* Umfangreiche Zusatzinformationen zu jedem Datenpunkt, z.B. Anzeigenamen, Räume, Gewerke, aber auch viele technische Informationen aus den XMLRPC-Schnittstellen und der ReGaHss stehen über die REST-API zur Verfügung.
 * Hohe Performance und minimale Belastung der CCU-Prozesse (XMLRPC-Schnittstellen, ReGaHss, CCU Web-Server).
-* Unterstützung von HTTP/2 und Verbindungssicherheit auf dem Stand der Technik.
+* Unterstützung von HTTP/2 und Verbindungssicherheit auf dem Stand der Technik. Zertifikate werden automatisch generiert.
 * Vollständige Unterstützung von Cross-origin resource sharing (CORS) für die Anbindung von Web-Applikationen.
-* Fertige Distributionen für viele Zielsysteme (CCU2, CCU3/RM, Windows, Linux, macOS).
+* Fertige Distributionen für viele Zielsysteme (**CCU2**, CCU3/RM, Windows, Linux, macOS).
 * Die Verwendung des VEAP-Protokolls ermöglicht einfachste Anbindung von Applikationen und Frameworks (z.B. Angular, React, Vue). Zudem ist das Protokoll nicht CCU-spezifisch. Entwickelte Client-Applikationen könnnen auch mit anderen VEAP-Servern verwendet werden.
 * Web-basierte Benutzerschnittstelle mit der alle Datenpunkte erkundet und die Werte überwacht werden können.
 
@@ -19,12 +19,20 @@ Folgende Merkmale zeichnen CCU-Jack aus:
 
 Ziel vom CCU-Jack ist es, möglichst einfach Datenpunkte zwischen CCUs und auch anderen Systemen auszutauschen und Applikationen eine Erkundungsmöglichkeit der Datenpunkte zu bieten. Der CCU-Jack wurde komplett neu entwickelt. Vorgänger vom CCU-Jack sind schon längere Zeit in Betrieb und tauschen hunderte von Datenpunkten zwischen mehreren CCUs, Internet-Relays und Front-Ends in Echtzeit aus.
 
+### Leitlinien für die Umsetzung
+
+Folgende Leitlinien sind bei der Entwicklung des CCU-Jacks maßgebend:
+* **Einfache Installation** (Es soll z.B. keine Kommandozeile (SSH) oder ein Editieren von Konfigurationsdateien für die Inbetriebnahme benötigt werden.)
+* **Einfache Anbindung von Fremdapplikationen** (Anderen Entwicklern soll es möglichst leicht fallen, ihre Applikationen an die CCU anzubinden. Die komplexe Ankopplung von etlichen CCU-Prozessen entfällt.)
+* **Einfache Anbindung von IoT-Geräten** (IoT-Geräte sollen ohne Programmierung, Blockly oder Flows angebunden werden können.)
+* **Sicherheit auf dem Stand der Technik** (TLS V1.3 wird unterstützt.)
+* **Robust und leistungsfähig** (Hunderte von Clients werden gleichzeitig unterstützt. CCU-Jack enthält einen der schnellsten MQTT-Server.)
+
 ### Fahrplan
 
 Nach der Implementierung von MQTT sind zukünftig erst einmal kleinere Erweiterungen geplant, um den CCU-Jack für die V1.0 abzurunden:
 
 * Erweiterungen für MQTT
-  * Setzen von Gerätedatenpunkten und Systemvariablen
   * Unterstützung für Secure-MQTT und Websockets
   * Zugriffsberechtigungen
 * Erweiterungen VEAP-API
@@ -32,6 +40,10 @@ Nach der Implementierung von MQTT sind zukünftig erst einmal kleinere Erweiteru
 * Erweiterungen der Web-UI
   * Setzen von Datenpunkten im _Navigator_ und der _Überwachung_
   * Benutzer- und Rechteverwaltung
+
+Langfristig sind dann bereits folgende Erweiterungen geplant:
+* Erweiterungen für MQTT
+  * Konfigurierbare Regeln für die Abbildung von _Topics_ und _Payloads_, um die Integration von MQTT-Geräten (z.B. [Tasmota](https://www.tasmota.info/)) zu erleichtern. 
 
 ## Download
 
@@ -94,8 +106,8 @@ Log-Meldungen werden auf der Fehlerausgabe (STDERR) oder in die mit der Option `
 ## Performance
 
 Folgende Angaben gelten für eine Installation als Add-On auf einer CCU3 (Raspberry Pi 3B):
-* 1,7 Millisekunden Latenz für das Lesen eines Datenpunktes.
-* 8.800 Datenpunkte können von 100 Clients pro Sekunde gesichert mit HTTPS-Verschlüsselung gelesen werden.
+* 1,7 Millisekunden Latenz für das Lesen eines Datenpunktes über die REST-API.
+* 8.800 Datenpunkte können von 100 Clients pro Sekunde gesichert mit HTTPS-Verschlüsselung über die REST-API gelesen werden.
 
 ## Web-basierte Benutzerschnittstelle
 
@@ -119,11 +131,28 @@ Mit dem [Kommandozeilenwerkzeug CURL](https://curl.haxx.se), das praktisch für 
 
 ## Beschreibung der MQTT-Schnittstelle
 
-Der CCU-Jack enthält einen vollwertigen und leistungsfähigen MQTT-Broker (V3.1.1). Dieser kann von beliebigen Fremdapplikationen genutzt werden. Zudem werden die Wertänderungen aller Gerätedatenpunkte der CCU unter dem Topic `device/Seriennr./Kanalnr./Parametername` publiziert. Das Nachrichtenformat ist JSON und entspricht dem [VEAP-Protokoll](https://github.com/mdzio/veap/blob/master/README_de.md#datenpunkt-lesen).
+Der CCU-Jack enthält einen vollwertigen und leistungsfähigen MQTT-Server (V3.1.1). Dieser kann von beliebigen Fremdapplikationen genutzt werden. Zudem werden die Wertänderungen aller Gerätedatenpunkte der CCU und ausgewählter Systemvariablen automatisch an den MQTT-Server gesendet und stehen daraufhin allen MQTT-Clients zur Verfügung. 
+
+Die _Topic_-Struktur ist an [mqtt-smarthome](https://github.com/mqtt-smarthome/mqtt-smarthome) angelehnt und wie folgt aufgebaut:
+Topic | Beschreibung
+------|-------------
+device/status/_Seriennr._/_Kanalnr._/_Parametername_ | Unter diesem _Topic_ werden die Wertänderungen aller Gerätedatenpunkte bekanntgegeben.
+device/set/_Seriennr._/_Kanalnr._/_Parametername_ | Über dieses _Topic_ können Gerätedatenpunkte gesetzt werden.
+sysvar/status/_ISE-ID_ | Unter diesem _Topic_ werden die Wertänderungen von Systemvariablen bekanntgegeben, wenn die Systemvariablenbeschreibung in der CCU das Schlüsselwort `MQTT` enthält, oder vorher an das _Topic_ sysvar/get/_ISE-ID_ gesendet wurde.
+sysvar/set/_ISE-ID_ | Über dieses _Topic_ können Systemvariablen gesetzt werden.
+sysvar/get/_ISE-ID_ | Über dieses _Topic_ kann das Lesen einer Systemvariablen angestoßen werden. Der aktuelle Wert wird dann unter dem _Topic_ sysvar/status/_ISE-ID_ bekanntgegeben.
+
+Systemvariablen, die in der Beschreibung das Schlüsselwort `MQTT` enthalten, werden zyklisch gelesen und, falls sich der Wert oder Zeitstempel geändert hat, wird dieser gesendet. Die Beschreibung der Systemvariablen wird beim Start und dann alle 30 Minuten gelesen. Die Werte der Systemvariablen werden sekündlich reihum gelesen. Bei z.B. 10 markierten Systemvariablen, wird also eine Systemvariable alle 10 Sekunden gelesen.
+
+Konfiguration einer Systemvariable für automatische MQTT-Übertragung:
+
+![MQTT-Systemvariable](doc/mqtt-sysvar.png)
+
+Das Nachrichtenformat ist JSON und entspricht dem Format des [VEAP-Protokolls](https://github.com/mdzio/veap/blob/master/README_de.md#datenpunkt-lesen). Beispiel: `{"v":123.456,"ts":1483228800000,"s":0}`
+
+Für das Setzen von Datenpunkten wird nur die Eigenschaft `v` benötigt. Beispiele: `{"v":123.456}` für Variablentyp Zahl, `{"v":2}` für Typ Werteliste, `{"v":true}` für Typ Logikwert/Alarm oder `{"v":"ABC"}` für Typ Zeichenkette.
 
 Die Retain-Eigenschaft wird bei allen Datenpunkten gesetzt, außer der Parametername ist *INSTALL_TEST* oder beginnt mit *PRESS_*.
-
-Hinweis: Die MQTT-Schnittstelle befindet sich zurzeit noch in der Entwicklung. Das Setzen von Datenpunkten ist noch nicht implementiert, und die Topic-Struktur kann sich noch ändern. Zudem findet noch keine Benutzerauthentifizierung statt.
 
 ## Anwendungsbeispiel Android App _HTTP Shortcuts_
 
