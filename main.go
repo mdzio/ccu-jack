@@ -161,6 +161,10 @@ func newRoot(handlerStats *veap.HandlerStats) *model.Root {
 }
 
 func run() error {
+	defer func() {
+		log.Info("Shutting down CCU-Jack")
+	}()
+
 	// react on INT or TERM signal (to ensure that no signal is missed, the
 	// buffer size must be 1)
 	termSig := make(chan os.Signal, 1)

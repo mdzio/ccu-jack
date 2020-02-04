@@ -37,7 +37,7 @@ stop() {
 start() {
     logger -t ${ADDON_ID} -p user.debug "Starting"
     # wait for ReGaHss startup
-    sleep 5
+    sleep 15
     # start process
     cd ${ADDON_DIR}
     start-stop-daemon -S -q -b -m -p /var/run/${ADDON_ID}.pid -x ${ADDON_DIR}/${ADDON_ID} -- -interfaces "${OPT_ITFS}" -user "${OPT_USER}" -password "${OPT_PWD}" -log ${OPT_LOGLEVEL} -logfile /var/log/ccu-jack.log
