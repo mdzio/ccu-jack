@@ -323,7 +323,7 @@ func (b *Broker) startSysVarReader() {
 						return
 					}
 					q := any.Q(map[string]interface{}(attrs))
-					descr := q.Map().Key(model.DescriptionProperty).String()
+					descr := q.Map().TryKey(model.DescriptionProperty).String()
 					if q.Err() != nil {
 						log.Errorf("System variable reader: %v", q.Err())
 						return
