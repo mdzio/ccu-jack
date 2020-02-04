@@ -22,19 +22,19 @@ var (
 	targetSystems = []string{
 		"win",
 		"ccu2",
-		"ccu3-rp0+1",
-		"ccu3-rp2+3",
+		"rm-rp0+1",
+		"ccu3-rm-rp2+3",
 		"linux",
 		"darwin",
 	}
 
 	goSpecs = map[string]releng.GoSpec{
-		"ccu2":       {OS: "linux", Arch: "arm", Arm: "5", LDFlags: ldFlags},
-		"ccu3-rp0+1": {OS: "linux", Arch: "arm", Arm: "6", LDFlags: ldFlags},
-		"ccu3-rp2+3": {OS: "linux", Arch: "arm", Arm: "7", LDFlags: ldFlags},
-		"win":        {OS: "windows", Arch: "amd64", LDFlags: ldFlags},
-		"linux":      {OS: "linux", Arch: "amd64", LDFlags: ldFlags},
-		"darwin":     {OS: "darwin", Arch: "amd64", LDFlags: ldFlags},
+		"ccu2":          {OS: "linux", Arch: "arm", Arm: "5", LDFlags: ldFlags},
+		"rm-rp0+1":      {OS: "linux", Arch: "arm", Arm: "6", LDFlags: ldFlags},
+		"ccu3-rm-rp2+3": {OS: "linux", Arch: "arm", Arm: "7", LDFlags: ldFlags},
+		"win":           {OS: "windows", Arch: "amd64", LDFlags: ldFlags},
+		"linux":         {OS: "linux", Arch: "amd64", LDFlags: ldFlags},
+		"darwin":        {OS: "darwin", Arch: "amd64", LDFlags: ldFlags},
 	}
 
 	files = []releng.CopySpec{
