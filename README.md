@@ -45,6 +45,9 @@ Langfristig sind dann bereits folgende Erweiterungen geplant:
 * Erweiterungen für MQTT
   * Konfigurierbare Regeln für die Abbildung von _Topics_ und _Payloads_, um die Integration von MQTT-Geräten (z.B. [Tasmota](https://www.tasmota.info/)) zu erleichtern. 
 
+Zukünftige Ideen:
+* Austausch von Datenpunkten mit anderen CCUs oder MQTT-Servern. Dadurch könnten z.B. zwei CCUs direkt gekoppelt werden, oder bestimmte Datenpunkte an einen MQTT-Server im Internet gesendet oder von dort abgeholt werden.
+
 ## Download
 
 Distributionen für die verschiedenen Zielsysteme sind auf der Seite [Releases](https://github.com/mdzio/ccu-jack/releases) zu finden. 
