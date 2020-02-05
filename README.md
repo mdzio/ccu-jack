@@ -146,6 +146,8 @@ sysvar/status/_ISE-ID_ | Unter diesem _Topic_ werden die Wertänderungen von Sys
 sysvar/set/_ISE-ID_ | Über dieses _Topic_ können Systemvariablen gesetzt werden.
 sysvar/get/_ISE-ID_ | Über dieses _Topic_ kann das Lesen einer Systemvariablen angestoßen werden. Der aktuelle Wert wird dann unter dem _Topic_ sysvar/status/_ISE-ID_ bekanntgegeben.
 
+Die _Topics_ entsprechen bis auf den Dienstbestandteil (_status_, _set_ oder _get_) den VEAP-Adressen. Die VEAP-Adresse wird oben im _Navigator_ angezeigt.
+
 Systemvariablen, die in der Beschreibung das Schlüsselwort `MQTT` enthalten, werden zyklisch gelesen und, falls sich der Wert oder Zeitstempel geändert hat, wird dieser gesendet. Die Beschreibung der Systemvariablen wird beim Start und dann alle 30 Minuten gelesen. Die Werte der Systemvariablen werden sekündlich reihum gelesen. Bei z.B. 10 markierten Systemvariablen, wird also eine Systemvariable alle 10 Sekunden gelesen.
 
 Konfiguration einer Systemvariable für automatische MQTT-Übertragung:
@@ -158,9 +160,15 @@ Für das Setzen von Datenpunkten wird nur die Eigenschaft `v` benötigt. Beispie
 
 Die Retain-Eigenschaft wird bei allen Datenpunkten gesetzt, außer der Parametername ist *INSTALL_TEST* oder beginnt mit *PRESS_*.
 
-## Anwendungsbeispiel Android App _HTTP Shortcuts_
+## Anwendungsbeispiele
 
-CCU-Jack ermöglicht der kostenlosen Android App _HTTP Shortcuts_ einfachen Zugriff auf die Datenpunkte der CCU. So können beispielsweise Geräte direkt vom Home-Screen geschaltet werden. Beispiele sind auf einer [eigenen Seite](https://github.com/mdzio/ccu-jack/blob/master/doc/httpshortcuts.md) zu finden.
+### Android App _MQTT Dash_
+
+Mit der kostenlosen Android App [MQTT Dash (IoT, Smart Home)](https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=de_DE) können Dashboards erstellt und über den CCU-Jack an die CCU angebunden werden.
+
+### Android App _HTTP Request Shortcuts_
+
+CCU-Jack ermöglicht der ebenfalls kostenlosen Android App [HTTP Request Shortcuts](https://play.google.com/store/apps/details?id=ch.rmy.android.http_shortcuts&hl=de_DE) einfachen Zugriff auf die Datenpunkte der CCU. So können beispielsweise Geräte direkt vom Home-Screen geschaltet werden. Beispiele sind auf einer [eigenen Seite](https://github.com/mdzio/ccu-jack/blob/master/doc/httpshortcuts.md) zu finden.
 
 ## Sicherheit
 
