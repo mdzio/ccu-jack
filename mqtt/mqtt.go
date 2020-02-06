@@ -1,16 +1,17 @@
 package mqtt
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"path"
 	"strings"
 	"time"
 
 	"github.com/mdzio/go-lib/util/any"
 
-	"github.com/mdzio/go-lib/hmccu/itf"
 	"github.com/mdzio/go-lib/veap"
 	"github.com/mdzio/go-lib/veap/model"
 	"github.com/mdzio/go-logging"
@@ -42,9 +43,6 @@ type Broker struct {
 	// When an error happens while serving (e.g. binding of port fails), this
 	// error is sent to the channel ServeErr.
 	ServeErr chan<- error
-
-	// Next handler for XML-RPC events.
-	Next itf.Receiver
 
 	// Service is used to set device data points and system variables.
 	Service veap.Service
@@ -208,85 +206,6 @@ func (b *Broker) Publish(topic string, payload []byte, retain bool) error {
 	return nil
 }
 
-// Event implements itf.Receiver.
-func (b *Broker) Event(interfaceID, address, valueKey string, value interface{}) error {
-	// publish event
-	if err := b.publishEvent(interfaceID, address, valueKey, value); err != nil {
-		log.Errorf("Publish of event failed: %v", err)
-	}
-	// forward event
-	return b.Next.Event(interfaceID, address, valueKey, value)
-}
-
-// NewDevices implements itf.Receiver.
-func (b *Broker) NewDevices(interfaceID string, devDescriptions []*itf.DeviceDescription) error {
-	// only forward
-	return b.Next.NewDevices(interfaceID, devDescriptions)
-}
-
-// DeleteDevices implements itf.Receiver.
-func (b *Broker) DeleteDevices(interfaceID string, addresses []string) error {
-	// only forward
-	return b.Next.DeleteDevices(interfaceID, addresses)
-}
-
-// UpdateDevice implements itf.Receiver.
-func (b *Broker) UpdateDevice(interfaceID, address string, hint int) error {
-	// only forward
-	return b.Next.UpdateDevice(interfaceID, address, hint)
-}
-
-// ReplaceDevice implements itf.Receiver.
-func (b *Broker) ReplaceDevice(interfaceID, oldDeviceAddress, newDeviceAddress string) error {
-	// only forward
-	return b.Next.ReplaceDevice(interfaceID, oldDeviceAddress, newDeviceAddress)
-}
-
-// ReaddedDevice implements itf.Receiver.
-func (b *Broker) ReaddedDevice(interfaceID string, deletedAddresses []string) error {
-	// only forward
-	return b.Next.ReaddedDevice(interfaceID, deletedAddresses)
-}
-
-type wirePV struct {
-	Time  int64       `json:"ts"`
-	Value interface{} `json:"v"`
-	State veap.State  `json:"s"`
-}
-
-func (b *Broker) publishEvent(interfaceID, address, valueKey string, value interface{}) error {
-	// separate device and channel
-	var dev, ch string
-	var p int
-	if p = strings.IndexRune(address, ':'); p == -1 {
-		return fmt.Errorf("Unexpected event from a device: %s", address)
-	}
-	dev = address[0:p]
-	ch = address[p+1:]
-
-	// build topic
-	topic := fmt.Sprintf("%s/%s/%s/%s", deviceStatusTopic, dev, ch, valueKey)
-
-	// build PV
-	pv := veap.PV{
-		Time:  time.Now(),
-		Value: value,
-		State: veap.StateGood,
-	}
-
-	// retain all except actions
-	retain := false
-	if valueKey != "INSTALL_TEST" && !strings.HasPrefix(valueKey, "PRESS_") {
-		retain = true
-	}
-
-	// publish
-	if err := b.PublishPV(topic, pv, retain); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (b *Broker) startSysVarReader() {
 	log.Debug("Starting system variable reader")
 	go func() {
@@ -372,15 +291,43 @@ func sleep(stop <-chan struct{}, duration time.Duration) error {
 	}
 }
 
+type wirePV struct {
+	Time  int64       `json:"ts"`
+	Value interface{} `json:"v"`
+	State veap.State  `json:"s"`
+}
+
+var errUnexpectetContent = errors.New("Unexpectet content")
+
 func wireToPV(payload []byte) (veap.PV, error) {
-	// convert JSON to PV
+	// try to convert JSON to wirePV
 	var w wirePV
-	err := json.Unmarshal(payload, &w)
-	if err != nil {
-		return veap.PV{}, fmt.Errorf("Conversion of JSON to PV failed: %v", err)
+	dec := json.NewDecoder(bytes.NewReader(payload))
+	dec.DisallowUnknownFields()
+	err := dec.Decode(&w)
+	if err == nil {
+		// check for unexpected content
+		c, err2 := ioutil.ReadAll(dec.Buffered())
+		if err2 != nil {
+			return veap.PV{}, fmt.Errorf("ReadAll failed: %v", err)
+		}
+		// allow only white space
+		cs := strings.TrimSpace(string(c))
+		if len(cs) != 0 {
+			err = errUnexpectetContent
+		}
 	}
-	if w.Value == nil {
-		return veap.PV{}, fmt.Errorf("Conversion of JSON to PV failed: No value property (v) found")
+
+	// if parsing failed, take whole payload as JSON value
+	if err != nil {
+		var v interface{}
+		err = json.Unmarshal(payload, &v)
+		if err == nil {
+			w = wirePV{Value: v}
+		} else {
+			// if no valid JSON content is found, use the whole payload as string
+			w = wirePV{Value: string(payload)}
+		}
 	}
 
 	// if no timestamp is provided, use current time

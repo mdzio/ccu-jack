@@ -211,18 +211,23 @@ func run() error {
 		Addr:     "tcp://:" + strconv.Itoa(*mqttPort),
 		ServeErr: mqttServeErr,
 		Service:  modelService,
-		// forward events
-		Next: deviceCol,
 	}
 	mqttServer.Start()
 	defer mqttServer.Stop()
+
+	// event receiver for MQTT
+	mqttReceiver := &mqtt.EventReceiver{
+		Broker: mqttServer,
+		// forward events
+		Next: deviceCol,
+	}
 
 	// configure interconnector
 	intercon := &itf.Interconnector{
 		CCUAddr:  *ccuAddress,
 		Types:    ccuItfs,
 		IDPrefix: *initID + "-",
-		Receiver: mqttServer,
+		Receiver: mqttReceiver,
 		// full URL of the DefaultServeMux for callbacks
 		ServerURL: "http://" + *serverAddr + ":" + strconv.Itoa(*httpPort),
 	}
