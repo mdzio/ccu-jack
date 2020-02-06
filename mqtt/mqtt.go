@@ -156,7 +156,7 @@ func (b *Broker) Start() {
 		}
 
 		// publish PV
-		return b.PublishPV(sysVarStatusTopic+path, pv, true)
+		return b.PublishPV(sysVarStatusTopic+path, pv, message.QosAtLeastOnce, true)
 	}
 	b.server.Subscribe(sysVarGetTopic+"/+", message.QosExactlyOnce, &b.onGetSysVar)
 }
@@ -177,25 +177,25 @@ func (b *Broker) Stop() {
 }
 
 // PublishPV publishes a PV.
-func (b *Broker) PublishPV(topic string, pv veap.PV, retain bool) error {
+func (b *Broker) PublishPV(topic string, pv veap.PV, qos byte, retain bool) error {
 	pl, err := pvToWire(pv)
 	if err != nil {
 		return err
 	}
-	if err := b.Publish(topic, pl, retain); err != nil {
+	if err := b.Publish(topic, pl, qos, retain); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Publish publishes a generic payload.
-func (b *Broker) Publish(topic string, payload []byte, retain bool) error {
+func (b *Broker) Publish(topic string, payload []byte, qos byte, retain bool) error {
 	log.Tracef("Publishing %s: %s", topic, string(payload))
 	pm := message.NewPublishMessage()
 	if err := pm.SetTopic([]byte(topic)); err != nil {
 		return fmt.Errorf("Invalid topic: %v", err)
 	}
-	if err := pm.SetQoS(0); err != nil {
+	if err := pm.SetQoS(qos); err != nil {
 		return fmt.Errorf("Invalid QoS: %v", err)
 	}
 	pm.SetRetain(retain)
@@ -263,7 +263,7 @@ func (b *Broker) startSysVarReader() {
 
 								// publish PV
 								topic := sysVarStatusTopic + p[len(sysVarServicePath):]
-								if err := b.PublishPV(topic, pv, true); err != nil {
+								if err := b.PublishPV(topic, pv, message.QosAtLeastOnce, true); err != nil {
 									log.Errorf("System variable reader: %v", err)
 								} else {
 									pvCache[l.Target] = pv

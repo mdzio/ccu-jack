@@ -7,6 +7,7 @@ import (
 
 	"github.com/mdzio/go-lib/hmccu/itf"
 	"github.com/mdzio/go-lib/veap"
+	"github.com/mdzio/go-mqtt/message"
 )
 
 // EventReceiver accepts XMLRPC events, publishes them to the broker and then
@@ -79,14 +80,19 @@ func (r *EventReceiver) publishEvent(interfaceID, address, valueKey string, valu
 		State: veap.StateGood,
 	}
 
-	// retain all except actions
-	retain := false
+	// select qos and retain
+	var qos byte
+	var retain bool
 	if valueKey != "INSTALL_TEST" && !strings.HasPrefix(valueKey, "PRESS_") {
 		retain = true
+		qos = message.QosAtLeastOnce
+	} else {
+		retain = false
+		qos = message.QosExactlyOnce
 	}
 
 	// publish
-	if err := r.Broker.PublishPV(topic, pv, retain); err != nil {
+	if err := r.Broker.PublishPV(topic, pv, qos, retain); err != nil {
 		return err
 	}
 	return nil
