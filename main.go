@@ -282,6 +282,10 @@ func run() error {
 	// register VEAP handler
 	http.Handle(veapHandler.URLPrefix+"/", handler)
 
+	// wait for start up to complete (do not call Close() on the servers before
+	// the start up is finished)
+	time.Sleep(1 * time.Second)
+
 	// wait for shutdown or error
 	select {
 	case err := <-httpServeErr:

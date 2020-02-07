@@ -61,7 +61,7 @@ func (b *Broker) Start() {
 	b.server = &service.Server{}
 
 	// capacity must match the number of listeners/servers
-	b.done = make(chan struct{}, 1)
+	b.done = make(chan struct{}, 2)
 	b.stopSysVarReader = make(chan struct{})
 
 	// start listeners
@@ -225,14 +225,9 @@ func (b *Broker) startSysVarReader() {
 				log.Errorf("System variable reader: %v", err)
 				return
 			}
-			if len(links) == 0 {
-				if sleep(b.stopSysVarReader, sysVarReadCycle) == errStop {
-					return
-				}
-				continue
-			}
 
 			// get attributes of each system variable
+			sleepDone := false
 			for _, l := range links {
 				if l.Role == "sysvar" {
 					p := path.Join(sysVarServicePath, l.Target)
@@ -273,7 +268,15 @@ func (b *Broker) startSysVarReader() {
 						if sleep(b.stopSysVarReader, sysVarReadCycle) == errStop {
 							return
 						}
+						sleepDone = true
 					}
+				}
+			}
+
+			// sleep if no system variables found
+			if !sleepDone {
+				if sleep(b.stopSysVarReader, sysVarReadCycle) == errStop {
+					return
 				}
 			}
 		}
