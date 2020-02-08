@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/mdzio/go-mqtt/auth"
+
 	"github.com/gorilla/handlers"
 
 	"github.com/mdzio/ccu-jack/mqtt"
@@ -205,12 +207,26 @@ func run() error {
 	sysVarCol.Start()
 	defer sysVarCol.Stop()
 
+	// MQTT authentication handler
+	var mqttAuth string
+	if *authUser != "" || *authPassword != "" {
+		const handlerID = "singleAuthHandler"
+		auth.Register(handlerID, &mqtt.SingleAuthHandler{
+			User:     *authUser,
+			Password: *authPassword,
+		})
+		mqttAuth = handlerID
+	} else {
+		mqttAuth = "mockSuccess"
+	}
+
 	// setup and start MQTT server
 	mqttServeErr := make(chan error)
 	mqttServer := &mqtt.Broker{
-		Addr:     "tcp://:" + strconv.Itoa(*mqttPort),
-		ServeErr: mqttServeErr,
-		Service:  modelService,
+		Addr:          "tcp://:" + strconv.Itoa(*mqttPort),
+		Authenticator: mqttAuth,
+		ServeErr:      mqttServeErr,
+		Service:       modelService,
 	}
 	mqttServer.Start()
 	defer mqttServer.Stop()

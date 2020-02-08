@@ -40,6 +40,9 @@ type Broker struct {
 	// Binding address for serving MQTT.
 	Addr string
 
+	// Authenticator specifies the authenticator. Default is "mockSuccess".
+	Authenticator string
+
 	// When an error happens while serving (e.g. binding of port fails), this
 	// error is sent to the channel ServeErr.
 	ServeErr chan<- error
@@ -58,7 +61,9 @@ type Broker struct {
 
 // Start starts the MQTT broker.
 func (b *Broker) Start() {
-	b.server = &service.Server{}
+	b.server = &service.Server{
+		Authenticator: b.Authenticator,
+	}
 
 	// capacity must match the number of listeners/servers
 	b.done = make(chan struct{}, 2)
