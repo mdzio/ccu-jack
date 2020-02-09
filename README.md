@@ -108,9 +108,12 @@ Log-Meldungen werden auf der Fehlerausgabe (STDERR) oder in die mit der Option `
 
 ## Performance
 
-Folgende Angaben gelten für eine Installation als Add-On auf einer CCU3 (Raspberry Pi 3B):
-* 1,7 Millisekunden Latenz für das Lesen eines Datenpunktes über die REST-API.
-* 8.800 Datenpunkte können von 100 Clients pro Sekunde gesichert mit HTTPS-Verschlüsselung über die REST-API gelesen werden.
+Folgende Angaben gelten für eine Installation als Add-On auf einer CCU3 (Raspberry Pi 3B, 4 Kerne mit 1,2 GHz):
+* VEAP (REST-API)
+  * 1,7 Millisekunden Latenz für das Lesen eines Datenpunktes über die REST-API.
+  * 8.800 CCU-Datenpunkte können von 100 Clients pro Sekunde gesichert mit HTTPS-Verschlüsselung über die REST-API gelesen werden.
+* MQTT
+  * 198.000 Nachrichten (je 64 Bytes) können pro Sekunde von 5 über Netzwerk angebundenen MQTT-Clients ausgetauscht werden. Die CPU-Last von der CCU3 ist dann bei ca. 30%. CCU-Datenpunkte sind bei diesem Test nicht involviert.
 
 ## Web-basierte Benutzerschnittstelle
 
