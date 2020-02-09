@@ -205,7 +205,7 @@ func (b *Broker) Publish(topic string, payload []byte, qos byte, retain bool) er
 	}
 	pm.SetRetain(retain)
 	pm.SetPayload(payload)
-	if err := b.server.Publish(pm, nil); err != nil {
+	if err := b.server.Publish(pm); err != nil {
 		return fmt.Errorf("Publish failed: %v", err)
 	}
 	return nil
