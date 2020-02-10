@@ -58,7 +58,7 @@ Zurzeit besitzt CCU-Jack noch Beta-Status. Es sollten also vor der Verwendung Si
 
 Bei einer Installation als Add-On auf der CCU können die Startparameter in der Datei `/usr/local/etc/config/rc.d/ccu-jack` angepasst werden. In der Regel ist dies nicht notwendig. Log-Meldungen werden in die Datei `/var/log/ccu-jack.log` geschrieben.
 
-In der Firewall der CCU müssen die zwei Ports 2121, 2122 und 1883 freigegeben werden:
+In der Firewall der CCU müssen je nach Anwendungsfall die Ports 2121 (HTTP), 2122 (HTTPS), 1883 (MQTT) und 8883 (Secure MQTT) freigegeben werden:
 
 ![CCU-Firewall](doc/ccu-firewall.png)
 
@@ -77,31 +77,33 @@ Die Kommandozeilenoptionen vom CCU-Jack werden beim Start mit der Option `-h` au
 ```
 usage of ccu-jack:
   -addr address
-    	address of the host (default "127.0.0.1")
+        address of the host (default "127.0.0.1")
   -ccu address
-    	address of the CCU (default "127.0.0.1")
+        address of the CCU (default "127.0.0.1")
   -cors host
-    	set host as allowed origin for CORS requests (default "*")
+        set host as allowed origin for CORS requests (default "*")
   -host name
-    	host name for certificate generation (normally autodetected)
+        host name for certificate generation (normally autodetected)
   -http port
-    	port for serving HTTP (default 2121)
+        port for serving HTTP (default 2121)
   -https port
-    	port for serving HTTPS (default 2122)
+        port for serving HTTPS (default 2122)
   -id identifier
-    	additional identifier for the XMLRPC init method (default "CCU-Jack")
+        additional identifier for the XMLRPC init method (default "CCU-Jack")
   -interfaces types
-    	types of the CCU communication interfaces (comma separated): BidCosWired, BidCosRF, System, HmIPRF, VirtualDevices (default BidCosRF)
+        types of the CCU communication interfaces (comma separated): BidCosWired, BidCosRF, System, HmIPRF, VirtualDevices (default BidCosRF)
   -log severity
-    	specifies the minimum severity of printed log messages: off, error, warning, info, debug or trace (default INFO)
+        specifies the minimum severity of printed log messages: off, error, warning, info, debug or trace (default INFO)
   -logfile file
-    	write log messages to file instead of stderr
+        write log messages to file instead of stderr
   -mqtt port
-    	port for serving MQTT (default 1883)
+        port for serving MQTT (default 1883)
+  -mqtts port
+        port for serving Secure MQTT (default 8883)
   -password password
-    	password for HTTP Basic Authentication, q.v. -user
+        password for HTTP Basic Authentication/MQTT, q.v. -user
   -user name
-    	user name for HTTP Basic Authentication (disabled by default)
+        user name for HTTP Basic Authentication/MQTT (disabled by default)
 ```
 
 Log-Meldungen werden auf der Fehlerausgabe (STDERR) oder in die mit der Option `-logfile` angegebenen Datei ausgegeben, wenn sie mindestens die mit der Option `-log` gesetzte Dringlichkeit besitzen.

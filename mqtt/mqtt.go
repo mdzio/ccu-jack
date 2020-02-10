@@ -2,12 +2,14 @@ package mqtt
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mdzio/go-lib/util/any"
@@ -39,20 +41,23 @@ var log = logging.Get("mqtt-broker")
 type Broker struct {
 	// Binding address for serving MQTT.
 	Addr string
-
+	// Binding address for serving Secure MQTT.
+	AddrTLS string
+	// Certificate file for Secure MQTT.
+	CertFile string
+	// Private key file for Secure MQTT.
+	KeyFile string
 	// Authenticator specifies the authenticator. Default is "mockSuccess".
 	Authenticator string
-
 	// When an error happens while serving (e.g. binding of port fails), this
 	// error is sent to the channel ServeErr.
 	ServeErr chan<- error
-
 	// Service is used to set device data points and system variables.
 	Service veap.Service
 
 	server           *service.Server
 	stopSysVarReader chan struct{}
-	done             chan struct{}
+	waitGroup        sync.WaitGroup
 
 	onSetDevice service.OnPublishFunc
 	onSetSysVar service.OnPublishFunc
@@ -65,26 +70,56 @@ func (b *Broker) Start() {
 		Authenticator: b.Authenticator,
 	}
 
-	// capacity must match the number of listeners/servers
-	b.done = make(chan struct{}, 2)
-	b.stopSysVarReader = make(chan struct{})
-
-	// start listeners
-	go func() {
-		log.Infof("Starting MQTT listener on address %s", b.Addr)
-		err := b.server.ListenAndServe(b.Addr)
-		// signal server is down (must not block)
-		b.done <- struct{}{}
-		// check for error
-		if err != nil {
-			// signal error while serving (block does not harm)
-			if b.ServeErr != nil {
-				b.ServeErr <- fmt.Errorf("Running MQTT server failed: %v", err)
+	// start MQTT listener
+	if b.Addr != "" {
+		b.waitGroup.Add(1)
+		go func() {
+			log.Infof("Starting MQTT listener on address %s", b.Addr)
+			err := b.server.ListenAndServe(b.Addr)
+			// signal server is down
+			b.waitGroup.Done()
+			// check for error
+			if err != nil {
+				// signal error while serving
+				if b.ServeErr != nil {
+					b.ServeErr <- fmt.Errorf("Running MQTT server failed: %v", err)
+				}
 			}
-		}
-	}()
+		}()
+	}
+
+	// start Secure MQTT listener
+	if b.AddrTLS != "" {
+		b.waitGroup.Add(1)
+		go func() {
+			log.Infof("Starting Secure MQTT listener on address %s", b.AddrTLS)
+			// TLS configuration
+			cer, err := tls.LoadX509KeyPair(b.CertFile, b.KeyFile)
+			if err != nil {
+				// signal error while serving
+				b.waitGroup.Done()
+				if b.ServeErr != nil {
+					b.ServeErr <- fmt.Errorf("Running Secure MQTT server failed: %v", err)
+				}
+				return
+			}
+			config := &tls.Config{Certificates: []tls.Certificate{cer}}
+			// start server
+			err = b.server.ListenAndServeTLS(b.AddrTLS, config)
+			// signal server is down
+			b.waitGroup.Done()
+			// check for error
+			if err != nil {
+				// signal error while serving
+				if b.ServeErr != nil {
+					b.ServeErr <- fmt.Errorf("Running Secure MQTT server failed: %v", err)
+				}
+			}
+		}()
+	}
 
 	// start system variable reader
+	b.stopSysVarReader = make(chan struct{})
 	b.startSysVarReader()
 
 	// subscribe set device topics
@@ -170,7 +205,6 @@ func (b *Broker) Start() {
 func (b *Broker) Stop() {
 	// stop sysvar reader
 	b.stopSysVarReader <- struct{}{}
-	<-b.done
 
 	// stop broker
 	log.Debugf("Stopping MQTT broker")
@@ -178,7 +212,8 @@ func (b *Broker) Stop() {
 	b.server.Unsubscribe(sysVarSetTopic+"/+", &b.onSetSysVar)
 	b.server.Unsubscribe(sysVarGetTopic+"/+", &b.onGetSysVar)
 	_ = b.server.Close()
-	<-b.done
+
+	b.waitGroup.Wait()
 }
 
 // PublishPV publishes a PV.
@@ -213,11 +248,12 @@ func (b *Broker) Publish(topic string, payload []byte, qos byte, retain bool) er
 
 func (b *Broker) startSysVarReader() {
 	log.Debug("Starting system variable reader")
+	b.waitGroup.Add(1)
 	go func() {
 		// defer clean up
 		defer func() {
 			log.Debug("Stopping system variable reader")
-			b.done <- struct{}{}
+			b.waitGroup.Done()
 		}()
 
 		// PV cache

@@ -43,20 +43,19 @@ var (
 	log     = logging.Get("main")
 	logFile *os.File
 
-	logLevel    = logging.InfoLevel
-	logFilePath = flag.String("logfile", "", "write log messages to `file` instead of stderr")
-	serverHost  = flag.String("host", "", "host `name` for certificate generation (normally autodetected)")
-	serverAddr  = flag.String("addr", "127.0.0.1", "`address` of the host")
-	httpPort    = flag.Int("http", 2121, "`port` for serving HTTP")
-	httpPortTLS = flag.Int("https", 2122, "`port` for serving HTTPS")
-	mqttPort    = flag.Int("mqtt", 1883, "`port` for serving MQTT")
-	// TODO:
-	// mqttPortTLS  = flag.Int("mqtts", 8883, "`port` for serving Secure MQTT")
+	logLevel     = logging.InfoLevel
+	logFilePath  = flag.String("logfile", "", "write log messages to `file` instead of stderr")
+	serverHost   = flag.String("host", "", "host `name` for certificate generation (normally autodetected)")
+	serverAddr   = flag.String("addr", "127.0.0.1", "`address` of the host")
+	httpPort     = flag.Int("http", 2121, "`port` for serving HTTP")
+	httpPortTLS  = flag.Int("https", 2122, "`port` for serving HTTPS")
+	mqttPort     = flag.Int("mqtt", 1883, "`port` for serving MQTT")
+	mqttPortTLS  = flag.Int("mqtts", 8883, "`port` for serving Secure MQTT")
 	initID       = flag.String("id", "CCU-Jack", "additional `identifier` for the XMLRPC init method")
 	ccuAddress   = flag.String("ccu", "127.0.0.1", "`address` of the CCU")
 	ccuItfs      = itf.Types{itf.BidCosRF}
-	authUser     = flag.String("user", "", "user `name` for HTTP Basic Authentication (disabled by default)")
-	authPassword = flag.String("password", "", "`password` for HTTP Basic Authentication, q.v. -user")
+	authUser     = flag.String("user", "", "user `name` for HTTP Basic Authentication/MQTT (disabled by default)")
+	authPassword = flag.String("password", "", "`password` for HTTP Basic Authentication/MQTT, q.v. -user")
 	corsOrigin   = flag.String("cors", "*", "set `host` as allowed origin for CORS requests")
 )
 
@@ -224,6 +223,9 @@ func run() error {
 	mqttServeErr := make(chan error)
 	mqttServer := &mqtt.Broker{
 		Addr:          "tcp://:" + strconv.Itoa(*mqttPort),
+		AddrTLS:       "tcp://:" + strconv.Itoa(*mqttPortTLS),
+		CertFile:      serverCertFile,
+		KeyFile:       serverKeyFile,
 		Authenticator: mqttAuth,
 		ServeErr:      mqttServeErr,
 		Service:       modelService,
@@ -330,8 +332,7 @@ func main() {
 	log.Info("  HTTP port: ", *httpPort)
 	log.Info("  HTTPS port: ", *httpPortTLS)
 	log.Info("  MQTT port: ", *mqttPort)
-	// TODO:
-	// log.Info("  Secure MQTT port: ", *mqttPortTLS)
+	log.Info("  Secure MQTT port: ", *mqttPortTLS)
 	log.Info("  CORS origin: ", *corsOrigin)
 	log.Info("  CCU address: ", *ccuAddress)
 	log.Info("  Interfaces: ", ccuItfs.String())
