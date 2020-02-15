@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/mdzio/go-lib/util/releng"
 	"github.com/mdzio/go-logging"
@@ -11,32 +10,41 @@ import (
 
 // build configuration
 const (
+	logLevel   = logging.InfoLevel
 	appName    = "ccu-jack"
-	appVersion = "0.7.3"
+	appVersion = "0.7.4"
 	appPkg     = "github.com/mdzio/ccu-jack"
 	ldFlags    = "-s -w -X main.appVersion=" + appVersion
 	buildDir   = ".."
 )
 
 var (
+	// target systems to be built
 	targetSystems = []string{
-		"win",
 		"ccu2",
 		"rm-rp0+1",
 		"ccu3-rm-rp2+3",
+		"vccu-x86",
+		"win",
 		"linux",
 		"darwin",
 	}
 
-	goSpecs = map[string]releng.GoSpec{
-		"ccu2":          {OS: "linux", Arch: "arm", Arm: "5", LDFlags: ldFlags},
-		"rm-rp0+1":      {OS: "linux", Arch: "arm", Arm: "6", LDFlags: ldFlags},
-		"ccu3-rm-rp2+3": {OS: "linux", Arch: "arm", Arm: "7", LDFlags: ldFlags},
-		"win":           {OS: "windows", Arch: "amd64", LDFlags: ldFlags},
-		"linux":         {OS: "linux", Arch: "amd64", LDFlags: ldFlags},
-		"darwin":        {OS: "darwin", Arch: "amd64", LDFlags: ldFlags},
+	// target system specifications
+	sysSpecs = map[string]struct {
+		addon  bool
+		goSpec releng.GoSpec
+	}{
+		"ccu2":          {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "5", LDFlags: ldFlags}},
+		"rm-rp0+1":      {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "6", LDFlags: ldFlags}},
+		"ccu3-rm-rp2+3": {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "7", LDFlags: ldFlags}},
+		"vccu-x86":      {true, releng.GoSpec{OS: "linux", Arch: "386", LDFlags: ldFlags}},
+		"win":           {false, releng.GoSpec{OS: "windows", Arch: "amd64", LDFlags: ldFlags}},
+		"linux":         {false, releng.GoSpec{OS: "linux", Arch: "amd64", LDFlags: ldFlags}},
+		"darwin":        {false, releng.GoSpec{OS: "darwin", Arch: "amd64", LDFlags: ldFlags}},
 	}
 
+	// files for non ccu target systems
 	files = []releng.CopySpec{
 		{Inc: "README.md"},
 		{Inc: "LICENSE.txt"},
@@ -46,7 +54,8 @@ var (
 		{Inc: "wd/webui/ext/*", DstDir: "webui/ext"},
 	}
 
-	ccuFiles = []releng.CopySpec{
+	// files for ccu target systems
+	addonFiles = []releng.CopySpec{
 		{Inc: "dist/ccu/update_script", Exe: true},
 		{Inc: "README.md", DstDir: "addon"},
 		{Inc: "LICENSE.txt", DstDir: "addon"},
@@ -73,43 +82,40 @@ func build() {
 	releng.Mkdir("build/tmp")
 	releng.WriteFile("build/tmp/VERSION", []byte(appVersion))
 
-	for _, id := range targetSystems {
-		goSpec, ok := goSpecs[id]
+	for _, ts := range targetSystems {
+		sysSpec, ok := sysSpecs[ts]
 		if !ok {
-			releng.Must(fmt.Errorf("Missing Go build specification: %s", id))
+			releng.Must(fmt.Errorf("Missing Go build specification: %s", ts))
 		}
 
 		// build binary
-		binFile := "build/tmp/" + id + "/" + appName
-		if goSpec.OS == "windows" {
+		binFile := "build/tmp/" + ts + "/" + appName
+		if sysSpec.goSpec.OS == "windows" {
 			binFile += ".exe"
 		}
-		releng.BuildGo(appPkg, binFile, goSpec)
+		releng.BuildGo(appPkg, binFile, sysSpec.goSpec)
 
 		// build archive
 		var allFiles []releng.CopySpec
-		if strings.HasPrefix(id, "ccu") {
-			allFiles = ccuFiles
+		if sysSpec.addon {
+			allFiles = addonFiles
 			allFiles = append(allFiles, releng.CopySpec{Inc: binFile, DstDir: "addon", Exe: true})
 		} else {
 			allFiles = files
 			allFiles = append(allFiles, releng.CopySpec{Inc: binFile, Exe: true})
 		}
 		var arcExt string
-		if goSpec.OS == "windows" {
+		if sysSpec.goSpec.OS == "windows" {
 			arcExt = ".zip"
 		} else {
 			arcExt = ".tar.gz"
 		}
-		releng.Archive(appName+"-"+id+"-"+appVersion+arcExt, allFiles)
+		releng.Archive(appName+"-"+ts+"-"+appVersion+arcExt, allFiles)
 	}
 }
 
 // launcher
-const (
-	logLevel = logging.InfoLevel
-	logFlags = logging.LevelFlag
-)
+const logFlags = logging.LevelFlag
 
 var log = logging.Get("releng")
 
