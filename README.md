@@ -33,7 +33,6 @@ Folgende Leitlinien sind bei der Entwicklung des CCU-Jacks maßgebend:
 Nach der Implementierung von MQTT sind zukünftig erst einmal kleinere Erweiterungen geplant, um den CCU-Jack für die V1.0 abzurunden:
 
 * Erweiterungen für MQTT
-  * Unterstützung für Secure-MQTT und Websockets
   * Zugriffsberechtigungen
 * Erweiterungen VEAP-API
   * Zugriffsberechtigungen
@@ -43,7 +42,7 @@ Nach der Implementierung von MQTT sind zukünftig erst einmal kleinere Erweiteru
 
 Langfristig sind dann bereits folgende Erweiterungen geplant:
 * Erweiterungen für MQTT
-  * Konfigurierbare Regeln für die Abbildung von _Topics_ und _Payloads_, um die Integration von MQTT-Geräten (z.B. [Tasmota](https://www.tasmota.info/)) zu erleichtern. 
+  * Konfigurierbare Regeln für die Umwandlung von _Topics_ und _Payloads_, um die Integration von MQTT-Geräten (z.B. [Tasmota](https://www.tasmota.info/)) zu erleichtern. 
 
 Zukünftige Ideen:
 * Austausch von Datenpunkten mit anderen CCUs oder MQTT-Servern. Dadurch könnten z.B. zwei CCUs direkt gekoppelt werden, oder bestimmte Datenpunkte an einen MQTT-Server im Internet gesendet oder von dort abgeholt werden.
