@@ -1,6 +1,7 @@
 package vmodel
 
 import (
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -214,14 +215,11 @@ func (d *DeviceCol) handleNew(n *deviceNotif) bool {
 		chd.ItemRole = "parameter"
 		devd.PutItem(chd)
 		// is parameter set VALUES supported?
-		f := false
-		for _, k := range ch.descr.Paramsets {
-			if k == "VALUES" {
-				f = true
-				break
-			}
-		}
-		if !f {
+		ps := ch.descr.Paramsets
+		sort.Strings(ps)
+		pidx := sort.SearchStrings(ps, "VALUES")
+		if pidx == len(ps) || ps[pidx] != "VALUES" {
+			// not found
 			continue
 		}
 		// retrieve parameter set description
