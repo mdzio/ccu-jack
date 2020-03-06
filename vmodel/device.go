@@ -1,7 +1,6 @@
 package vmodel
 
 import (
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -167,6 +166,7 @@ func (d *DeviceCol) handleNew(n *deviceNotif) bool {
 			})
 		}
 	}
+
 	// 1. create devices
 	for _, descr := range devices {
 		deviceLog.Debug("Creating device: ", descr.Address)
@@ -184,21 +184,24 @@ func (d *DeviceCol) handleNew(n *deviceNotif) bool {
 		dev.CollectionRole = "devices"
 		dev.ItemRole = "channel"
 		d.PutItem(dev)
+		// add parameter sets of devices as single VEAP object
+		for _, psID := range descr.Paramsets {
+			deviceLog.Debug("Creating parameter set: ", psID)
+			dev.PutItem(&paramset{
+				id:        psID,
+				address:   descr.Address,
+				itfClient: cln,
+				BasicItem: model.BasicItem{
+					Collection:     dev,
+					CollectionRole: "device",
+				},
+			})
+		}
 	}
+
 	// 2. create channels
 	for _, ch := range channels {
 		deviceLog.Debug("Creating channel: ", ch.descr.Address)
-		// delay or stop requested?
-		t := time.NewTimer(xmlRPCDelay)
-		select {
-		case <-d.stopRequest:
-			// clean up timer
-			if !t.Stop() {
-				<-t.C
-			}
-			return false
-		case <-t.C:
-		}
 		// find device
 		devi, ok := d.Item(ch.dev)
 		if !ok {
@@ -214,28 +217,48 @@ func (d *DeviceCol) handleNew(n *deviceNotif) bool {
 		chd.CollectionRole = "device"
 		chd.ItemRole = "parameter"
 		devd.PutItem(chd)
-		// is parameter set VALUES supported?
-		ps := ch.descr.Paramsets
-		sort.Strings(ps)
-		pidx := sort.SearchStrings(ps, "VALUES")
-		if pidx == len(ps) || ps[pidx] != "VALUES" {
-			// not found
-			continue
-		}
-		// retrieve parameter set description
-		psetDescr, err := devd.itfClient.GetParamsetDescription(ch.descr.Address, "VALUES")
-		if err != nil {
-			deviceLog.Error("Retrieving parameter set description failed: ", err)
-			continue
-		}
-		// create parameter domains
-		for _, descr := range psetDescr {
-			deviceLog.Debug("Creating parameter: ", descr.ID)
-			p := new(parameter)
-			p.descr = descr
-			p.Collection = chd
-			p.CollectionRole = "channel"
-			chd.PutItem(p)
+		// add parameter sets
+		for _, psID := range ch.descr.Paramsets {
+			if psID == "VALUES" {
+				// add parameter set VALUES
+				psetDescr, err := devd.itfClient.GetParamsetDescription(ch.descr.Address, psID)
+				if err != nil {
+					deviceLog.Error("Retrieving parameter set description failed: ", err)
+					continue
+				}
+				// delay or stop requested?
+				t := time.NewTimer(xmlRPCDelay)
+				select {
+				case <-d.stopRequest:
+					// clean up timer
+					if !t.Stop() {
+						<-t.C
+					}
+					return false
+				case <-t.C:
+				}
+				// create parameter domains
+				for _, descr := range psetDescr {
+					deviceLog.Debug("Creating parameter: ", descr.ID)
+					p := new(parameter)
+					p.descr = descr
+					p.Collection = chd
+					p.CollectionRole = "channel"
+					chd.PutItem(p)
+				}
+			} else {
+				// add other parameter sets as single VEAP objects
+				deviceLog.Debug("Creating parameter set: ", psID)
+				chd.PutItem(&paramset{
+					id:        psID,
+					address:   chd.descr.Address,
+					itfClient: devd.itfClient,
+					BasicItem: model.BasicItem{
+						Collection:     chd,
+						CollectionRole: "channel",
+					},
+				})
+			}
 		}
 	}
 	return true
@@ -580,4 +603,68 @@ func (p *parameter) updatePV(v interface{}) {
 		Value: v,
 		State: veap.StateGood,
 	}
+}
+
+type paramset struct {
+	// ID of parameter set (e.g. MASTER)
+	id string
+	// device or channel address
+	address string
+	// cached parameter set description
+	cachedDescr itf.ParamsetDescription
+	// XML-RPC client
+	itfClient *itf.RegisteredClient
+
+	model.BasicItem
+}
+
+func (ps *paramset) descr() itf.ParamsetDescription {
+	// lazy retrieving of parameter set description
+	if ps.cachedDescr == nil {
+		descr, err := ps.itfClient.GetParamsetDescription(ps.address, ps.id)
+		if err != nil {
+			deviceLog.Error("Retrieving parameter set description failed: ", err)
+			// error can't be signaled to VEAP client
+			return nil
+		}
+		ps.cachedDescr = descr
+	}
+	return ps.cachedDescr
+}
+
+// GetIdentifier implements model.Object.
+func (ps *paramset) GetIdentifier() string {
+	// use a prefix to avoid name clashes with HomeMatic identifiers
+	return "$" + ps.id
+}
+
+// GetTitle implements model.Object.
+func (ps *paramset) GetTitle() string {
+	return ps.Collection.GetTitle() + " - " + ps.GetIdentifier()
+}
+
+// GetDescription implements model.Object.
+func (ps *paramset) GetDescription() string {
+	return "Parameter set " + ps.id + " of device/channel " + ps.Collection.GetTitle()
+}
+
+// ReadAttributes implements model.Object.
+func (ps *paramset) ReadAttributes() veap.AttrValues {
+	// convert
+	attrs := make(veap.AttrValues)
+	for n, d := range ps.descr() {
+		attrs[n] = map[string]interface{}{
+			"type":       d.Type,
+			"operations": d.Operations,
+			"flags":      d.Flags,
+			"default":    d.Default,
+			"maximum":    d.Max,
+			"minimum":    d.Min,
+			"unit":       d.Unit,
+			"tabOrder":   d.TabOrder,
+			"control":    d.Control,
+			"id":         d.ID,
+		}
+	}
+	return attrs
 }

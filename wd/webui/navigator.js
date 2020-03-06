@@ -69,8 +69,8 @@ function Navigator() {
         // filter and sort additional properties
         var props = Object.keys(vobj).filter(function (key) {
             // title and description are displayed separately. ~link is a
-            // reserved VEAP property.
-            return key != "title" && key != "description" && key != "~links"
+            // reserved VEAP property. identifier is not needed.
+            return key != "identifier" && key != "title" && key != "description" && key != "~links"
         }).sort(function (a, b) {
             return a.toLowerCase().localeCompare(b.toLowerCase())
         })
@@ -118,11 +118,17 @@ function Navigator() {
         // sort links
         var links = links.sort(function (a, b) {
             // parent link first
-            if (a.href == ".." && b.href != "..") return -1
-            if (b.href == "..") return 1
+            if (a.href === "..") return -1
+            if (b.href === "..") return 1
+            // sort by relation type
+            if (a.rel != null && b.rel != null) {
+                var r = a.rel.localeCompare(b.rel)
+                if (r != 0) return r
+            }
             // sort by title
-            if (a.title && b.title)
+            if (a.title != null && b.title != null) {
                 return a.title.toLowerCase().localeCompare(b.title.toLowerCase())
+            }
             if (a.title) return -1
             if (b.title) return 1
             // sort by href
