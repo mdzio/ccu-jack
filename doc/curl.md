@@ -350,6 +350,48 @@ In der `~links`-Eigenschaft werden die einem Raum zugewiesenen Kanäle aufgelist
 
 Das Gleiche gilt analog für ein Gewerk.
 
+## Lesen einer Geräte- pzw. Kanalkonfiguration
+
+HomeMatic Geräte und die zugehörigen Kanäle können Konfigurationoptionen besitzen. Sie befinden sich im sogenannten Parametersatz MASTER. Über die REST-API des CCU-Jacks kann dieser Parametersatz gelsesen und gesetzt werden. Im Folgenden Beispiel werden die Konfigurationsdaten eines Kanals einer Innensirene gelesen.
+
+Aufruf:
+```
+curl  http://localhost:2121/device/NEQ0123456/1/$MASTER/~pv
+```
+Antwort:
+```json
+{
+    "ts": 1583613359343,
+    "v": {
+        "AES_ACTIVE": false,
+        "SOUND_ID": 64,
+        "STATUSINFO_MINDELAY": 2,
+        "STATUSINFO_RANDOM": 1,
+        "TRANSMIT_TRY_MAX": 6
+    },
+    "s": 0
+}
+```
+
+## Setzen einer Geräte- pzw. Kanalkonfiguration
+
+Das Setzen einer Geräte- pzw. Kanalkonfiguration erfolgt über die HTTP-Methode PUT. Es brauchen nur die Parameter angegeben zu werden, die auch geändert werden sollen. Im Folgenden Beispiel wird der Signalton einer Innensirene geändert.
+
+Aufruf (Linux):
+```
+curl -X PUT -d '{"v":{"SOUND_ID":64}}' http://localhost:2121/device/NEQ0123456/1/$MASTER/~pv
+```
+Aufruf (Windows):
+```
+curl -X PUT -d "{""v"":{""SOUND_ID"":64}}" http://localhost:2121/device/NEQ0123456/1/$MASTER/~pv
+```
+Antwort: 
+```
+HTTP/1.1 200 OK
+```
+
+Fehler werden über den HTTP-Status angezeigt.
+
 ## Erkundung von /~vendor (Herstellerinformationen)
 
 ```

@@ -47,6 +47,10 @@ Langfristig sind dann bereits folgende Erweiterungen geplant:
 Zukünftige Ideen:
 * Austausch von Datenpunkten mit anderen CCUs oder MQTT-Servern. Dadurch könnten z.B. zwei CCUs direkt gekoppelt werden, oder bestimmte Datenpunkte an einen MQTT-Server im Internet gesendet oder von dort abgeholt werden.
 
+## Unterstützung
+
+Die größte Benutzergemeinde und auch der Entwickler des CCU-Jacks sind im [HomeMatic-Forum](https://homematic-forum.de/forum/viewtopic.php?f=41&t=53553) zu finden.
+
 ## Download
 
 Distributionen für die verschiedenen Zielsysteme sind auf der Seite [Releases](https://github.com/mdzio/ccu-jack/releases) zu finden. 

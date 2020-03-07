@@ -654,6 +654,7 @@ func (ps *paramset) ReadAttributes() veap.AttrValues {
 
 // ReadPV implements model.PVReader.
 func (ps *paramset) ReadPV() (veap.PV, veap.Error) {
+	// call CCU interface API
 	vs, err := ps.itfClient.GetParamset(ps.address, ps.id)
 	if err != nil {
 		return veap.PV{}, veap.NewError(veap.StatusInternalServerError, err)
@@ -663,7 +664,47 @@ func (ps *paramset) ReadPV() (veap.PV, veap.Error) {
 
 // WritePV implements model.PVReader.
 func (ps *paramset) WritePV(pv veap.PV) veap.Error {
-	// TODO
+	// check and convert value
+	pvv, ok := pv.Value.(map[string]interface{})
+	if !ok {
+		return veap.NewErrorf(
+			veap.StatusBadRequest,
+			"Writing parameter set %s of %s failed: Invalid type for parameter set (expected JSON object)",
+			ps.id, ps.address,
+		)
+	}
+	vs := make(map[string]interface{})
+	for k, v := range pvv {
+		d, ok := ps.descr()[k]
+		// known parameter?
+		if !ok {
+			return veap.NewErrorf(
+				veap.StatusBadRequest,
+				"Writing parameter set %s of %s failed: Unknown parameter: %s",
+				ps.id, ps.address, k,
+			)
+		}
+		// convert JSON number/float64 to int for parameters of type INTEGER/ENUM
+		f, ok := v.(float64)
+		if (d.Type == "ENUM" || d.Type == "INTEGER") && ok {
+			v = int(f)
+		}
+		// check type
+		err := checkType(d.Type, v)
+		if err != nil {
+			return veap.NewErrorf(
+				veap.StatusBadRequest,
+				"Writing parameter set %s of %s failed: %v",
+				ps.id, ps.address, err,
+			)
+		}
+		vs[k] = v
+	}
+	// call CCU interface API
+	err := ps.itfClient.PutParamset(ps.address, ps.id, vs)
+	if err != nil {
+		return veap.NewError(veap.StatusInternalServerError, err)
+	}
 	return nil
 }
 
