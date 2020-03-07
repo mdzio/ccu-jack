@@ -1,6 +1,7 @@
 package vmodel
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -184,8 +185,16 @@ func (d *DeviceCol) handleNew(n *deviceNotif) bool {
 		dev.CollectionRole = "devices"
 		dev.ItemRole = "channel"
 		d.PutItem(dev)
-		// add parameter sets of devices as single VEAP object
+		// parameter sets of device
 		for _, psID := range descr.Paramsets {
+			// The parameter set MASTER can always be read and written. With the
+			// others (e.g. LINK, SERVICE) this is unclear. Especially with
+			// battery operated devices these cannot be read immediately.
+			// Therefore currently only MASTER is supported.
+			if psID != "VALUES" {
+				continue
+			}
+			// add parameter set as PV
 			deviceLog.Debug("Creating parameter set: ", psID)
 			dev.PutItem(&paramset{
 				id:        psID,
@@ -246,8 +255,11 @@ func (d *DeviceCol) handleNew(n *deviceNotif) bool {
 					p.CollectionRole = "channel"
 					chd.PutItem(p)
 				}
-			} else {
-				// add other parameter sets as single VEAP objects
+			} else if psID == "MASTER" {
+				// The parameter set MASTER can always be read and written. With
+				// the others (e.g. LINK, SERVICE) this is unclear. Especially
+				// with battery operated devices these cannot be read
+				// immediately. Therefore currently only MASTER is supported.
 				deviceLog.Debug("Creating parameter set: ", psID)
 				chd.PutItem(&paramset{
 					id:        psID,
@@ -552,41 +564,12 @@ func (p *parameter) WritePV(pv veap.PV) veap.Error {
 		value = int(f)
 	}
 	// check data type
-	switch p.descr.Type {
-	case "BOOL":
-		fallthrough
-	case "ACTION":
-		_, ok := value.(bool)
-		if !ok {
-			return veap.NewErrorf(veap.StatusInternalServerError, "Writing parameter %s failed: Invalid type for BOOL/ACTION: %#v",
-				ch.descr.Address+"."+p.descr.ID, value)
-		}
-	case "INTEGER":
-		fallthrough
-	case "ENUM":
-		_, ok := value.(int)
-		if !ok {
-			return veap.NewErrorf(veap.StatusInternalServerError, "Writing parameter %s failed: Invalid type for INTEGER/ENUM: %#v",
-				ch.descr.Address+"."+p.descr.ID, value)
-		}
-	case "FLOAT":
-		_, ok := value.(float64)
-		if !ok {
-			return veap.NewErrorf(veap.StatusInternalServerError, "Writing parameter %s failed: Invalid type for FLOAT: %#v",
-				ch.descr.Address+"."+p.descr.ID, value)
-		}
-	case "STRING":
-		_, ok := value.(string)
-		if !ok {
-			return veap.NewErrorf(veap.StatusInternalServerError, "Writing parameter %s failed: Invalid type for STRING: %#v",
-				ch.descr.Address+"."+p.descr.ID, value)
-		}
-	default:
-		return veap.NewErrorf(veap.StatusInternalServerError, "Writing parameter %s failed: Unsupported type: %s",
-			ch.descr.Address+"."+p.descr.ID, p.descr.Type)
+	err := checkType(p.descr.Type, value)
+	if err != nil {
+		return veap.NewErrorf(veap.StatusInternalServerError, "Writing parameter %s failed: %v", ch.descr.Address+"."+p.descr.ID, err)
 	}
 	// set value through XML-RPC
-	err := dev.itfClient.SetValue(ch.descr.Address, p.descr.ID, value)
+	err = dev.itfClient.SetValue(ch.descr.Address, p.descr.ID, value)
 	if err != nil {
 		return veap.NewError(veap.StatusInternalServerError, err)
 	}
@@ -667,4 +650,51 @@ func (ps *paramset) ReadAttributes() veap.AttrValues {
 		}
 	}
 	return attrs
+}
+
+// ReadPV implements model.PVReader.
+func (ps *paramset) ReadPV() (veap.PV, veap.Error) {
+	vs, err := ps.itfClient.GetParamset(ps.address, ps.id)
+	if err != nil {
+		return veap.PV{}, veap.NewError(veap.StatusInternalServerError, err)
+	}
+	return veap.PV{Value: vs, Time: time.Now(), State: veap.StateGood}, nil
+}
+
+// WritePV implements model.PVReader.
+func (ps *paramset) WritePV(pv veap.PV) veap.Error {
+	// TODO
+	return nil
+}
+
+func checkType(t string, v interface{}) error {
+	switch t {
+	case "BOOL":
+		fallthrough
+	case "ACTION":
+		_, ok := v.(bool)
+		if !ok {
+			return fmt.Errorf("Invalid type for BOOL/ACTION: %#v", v)
+		}
+	case "INTEGER":
+		fallthrough
+	case "ENUM":
+		_, ok := v.(int)
+		if !ok {
+			return fmt.Errorf("Invalid type for INTEGER/ENUM: %#v", v)
+		}
+	case "FLOAT":
+		_, ok := v.(float64)
+		if !ok {
+			return fmt.Errorf("Invalid type for FLOAT: %#v", v)
+		}
+	case "STRING":
+		_, ok := v.(string)
+		if !ok {
+			return fmt.Errorf("Invalid type for STRING: %#v", v)
+		}
+	default:
+		return fmt.Errorf("Unsupported type: %s", t)
+	}
+	return nil
 }
