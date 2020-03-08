@@ -191,20 +191,19 @@ func (d *DeviceCol) handleNew(n *deviceNotif) bool {
 			// others (e.g. LINK, SERVICE) this is unclear. Especially with
 			// battery operated devices these cannot be read immediately.
 			// Therefore currently only MASTER is supported.
-			if psID != "VALUES" {
-				continue
+			if psID == "MASTER" {
+				// add parameter set as PV
+				deviceLog.Debug("Creating parameter set: ", psID)
+				dev.PutItem(&paramset{
+					id:        psID,
+					address:   descr.Address,
+					itfClient: cln,
+					BasicItem: model.BasicItem{
+						Collection:     dev,
+						CollectionRole: "device",
+					},
+				})
 			}
-			// add parameter set as PV
-			deviceLog.Debug("Creating parameter set: ", psID)
-			dev.PutItem(&paramset{
-				id:        psID,
-				address:   descr.Address,
-				itfClient: cln,
-				BasicItem: model.BasicItem{
-					Collection:     dev,
-					CollectionRole: "device",
-				},
-			})
 		}
 	}
 
