@@ -3,7 +3,7 @@
 # add-on information
 ADDON_ID=ccu-jack
 ADDON_NAME="CCU-Jack"
-ADDON_COPYRIGHT="(c) 2019 info@ccu-historian.de"
+ADDON_COPYRIGHT="(c) 2019-2020 info@ccu-historian.de"
 ADDON_WWW='<a href="https://github.com/mdzio/ccu-jack" target="_blank">https://github.com/mdzio/ccu-jack</a>'
 
 # user and password for HTTP basic authentication (empty: disabled)
@@ -16,9 +16,9 @@ OPT_LOGLEVEL=info
 
 # CCU interfaces (comma separated without spaces)
 if grep -q 'BidCos-Wired' /etc/config/InterfacesList.xml 2>/dev/null; then
-  OPT_ITFS=bidcosrf,bidcoswired,hmiprf
+  OPT_ITFS=bidcosrf,hmiprf,virtualdevices,bidcoswired
 else
-  OPT_ITFS=bidcosrf,hmiprf
+  OPT_ITFS=bidcosrf,hmiprf,virtualdevices
 fi
 
 # directories
