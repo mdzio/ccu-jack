@@ -35,7 +35,7 @@ const (
 	// cycle time for reading system variables
 	sysVarReadCycle = 1000 * time.Millisecond
 	// delay time for reading back
-	sysVarReadBackDur = 400 * time.Millisecond
+	sysVarReadBackDur = 300 * time.Millisecond
 )
 
 var log = logging.Get("mqtt-broker")
