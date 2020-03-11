@@ -156,7 +156,7 @@ sysvar/get/_ISE-ID_ | Über dieses _Topic_ kann das Lesen einer Systemvariablen 
 
 Die _Topics_ entsprechen bis auf den Dienstbestandteil (_status_, _set_ oder _get_) den VEAP-Adressen. Die VEAP-Adresse wird oben im _Navigator_ angezeigt.
 
-Systemvariablen, die in der Beschreibung das Schlüsselwort `MQTT` enthalten, werden zyklisch gelesen und, falls sich der Wert oder Zeitstempel geändert hat, wird dieser gesendet. Die Beschreibung der Systemvariablen wird beim Start und dann alle 30 Minuten gelesen. Die Werte der Systemvariablen werden sekündlich reihum gelesen. Bei z.B. 10 markierten Systemvariablen, wird also eine Systemvariable alle 10 Sekunden gelesen.
+Systemvariablen, die in der Beschreibung das Schlüsselwort `MQTT` enthalten, werden zyklisch gelesen und, falls sich der Wert oder Zeitstempel geändert hat, wird dieser gesendet. Die Beschreibung der Systemvariablen wird beim Start und dann alle 30 Minuten gelesen. Die Werte der Systemvariablen werden sekündlich reihum gelesen. Bei z.B. 10 markierten Systemvariablen, wird also eine Systemvariable alle 10 Sekunden gelesen. 300 Millisekunden nach dem Setzen einer Systemvariablen über MQTT wird der aktuelle Wert nochmals gelesen und per MQTT versendet.
 
 Konfiguration einer Systemvariable für automatische MQTT-Übertragung:
 
