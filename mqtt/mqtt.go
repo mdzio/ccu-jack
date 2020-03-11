@@ -32,7 +32,10 @@ const (
 	sysVarGetTopic    = "sysvar/get"
 	// path prefix for system variable data points in the VEAP address space
 	sysVarServicePath = "/sysvar"
-	sysVarReadCycle   = 1000 * time.Millisecond
+	// cycle time for reading system variables
+	sysVarReadCycle = 1000 * time.Millisecond
+	// delay time for reading back
+	sysVarReadBackDur = 400 * time.Millisecond
 )
 
 var log = logging.Get("mqtt-broker")
@@ -55,9 +58,9 @@ type Broker struct {
 	// Service is used to set device data points and system variables.
 	Service veap.Service
 
-	server           *service.Server
-	stopSysVarReader chan struct{}
-	waitGroup        sync.WaitGroup
+	server  *service.Server
+	stop    chan struct{}
+	stopped sync.WaitGroup
 
 	onSetDevice service.OnPublishFunc
 	onSetSysVar service.OnPublishFunc
@@ -69,15 +72,16 @@ func (b *Broker) Start() {
 	b.server = &service.Server{
 		Authenticator: b.Authenticator,
 	}
+	b.stop = make(chan struct{})
 
 	// start MQTT listener
 	if b.Addr != "" {
-		b.waitGroup.Add(1)
+		b.stopped.Add(1)
 		go func() {
 			log.Infof("Starting MQTT listener on address %s", b.Addr)
 			err := b.server.ListenAndServe(b.Addr)
 			// signal server is down
-			b.waitGroup.Done()
+			b.stopped.Done()
 			// check for error
 			if err != nil {
 				// signal error while serving
@@ -90,14 +94,14 @@ func (b *Broker) Start() {
 
 	// start Secure MQTT listener
 	if b.AddrTLS != "" {
-		b.waitGroup.Add(1)
+		b.stopped.Add(1)
 		go func() {
 			log.Infof("Starting Secure MQTT listener on address %s", b.AddrTLS)
 			// TLS configuration
 			cer, err := tls.LoadX509KeyPair(b.CertFile, b.KeyFile)
 			if err != nil {
 				// signal error while serving
-				b.waitGroup.Done()
+				b.stopped.Done()
 				if b.ServeErr != nil {
 					b.ServeErr <- fmt.Errorf("Running Secure MQTT server failed: %v", err)
 				}
@@ -107,7 +111,7 @@ func (b *Broker) Start() {
 			// start server
 			err = b.server.ListenAndServeTLS(b.AddrTLS, config)
 			// signal server is down
-			b.waitGroup.Done()
+			b.stopped.Done()
 			// check for error
 			if err != nil {
 				// signal error while serving
@@ -119,7 +123,6 @@ func (b *Broker) Start() {
 	}
 
 	// start system variable reader
-	b.stopSysVarReader = make(chan struct{})
 	b.startSysVarReader()
 
 	// subscribe set device topics
@@ -172,6 +175,38 @@ func (b *Broker) Start() {
 		if err = b.Service.WritePV(sysVarServicePath+path, pv); err != nil {
 			return err
 		}
+
+		// read back current value and publish
+		b.stopped.Add(1)
+		go func() {
+			defer func() {
+				b.stopped.Done()
+			}()
+			// wait for timer or stop
+			t := time.NewTimer(sysVarReadBackDur)
+			select {
+			case <-b.stop:
+				// clean up timer
+				if !t.Stop() {
+					<-t.C
+				}
+				return
+			case <-t.C:
+			}
+			// read back
+			pv, verr := b.Service.ReadPV(sysVarServicePath + path)
+			if verr != nil {
+				log.Warning("Read back of system variable %s failed: %v", sysVarServicePath+path, verr)
+				return
+			}
+			// publish PV
+			err = b.PublishPV(sysVarStatusTopic+path, pv, message.QosAtLeastOnce, true)
+			if err != nil {
+				log.Warning("Publish of system variable %s failed: %v", sysVarServicePath+path, err)
+				return
+			}
+		}()
+
 		return nil
 	}
 	b.server.Subscribe(sysVarSetTopic+"/+", message.QosExactlyOnce, &b.onSetSysVar)
@@ -203,8 +238,8 @@ func (b *Broker) Start() {
 
 // Stop stops the MQTT broker.
 func (b *Broker) Stop() {
-	// stop sysvar reader
-	b.stopSysVarReader <- struct{}{}
+	// stop all
+	close(b.stop)
 
 	// stop broker
 	log.Debugf("Stopping MQTT broker")
@@ -213,7 +248,8 @@ func (b *Broker) Stop() {
 	b.server.Unsubscribe(sysVarGetTopic+"/+", &b.onGetSysVar)
 	_ = b.server.Close()
 
-	b.waitGroup.Wait()
+	// wait for stop
+	b.stopped.Wait()
 }
 
 // PublishPV publishes a PV.
@@ -248,12 +284,12 @@ func (b *Broker) Publish(topic string, payload []byte, qos byte, retain bool) er
 
 func (b *Broker) startSysVarReader() {
 	log.Debug("Starting system variable reader")
-	b.waitGroup.Add(1)
+	b.stopped.Add(1)
 	go func() {
 		// defer clean up
 		defer func() {
 			log.Debug("Stopping system variable reader")
-			b.waitGroup.Done()
+			b.stopped.Done()
 		}()
 
 		// PV cache
@@ -306,7 +342,7 @@ func (b *Broker) startSysVarReader() {
 								}
 							}
 						}
-						if sleep(b.stopSysVarReader, sysVarReadCycle) == errStop {
+						if sleep(b.stop, sysVarReadCycle) == errStop {
 							return
 						}
 						sleepDone = true
@@ -316,7 +352,7 @@ func (b *Broker) startSysVarReader() {
 
 			// sleep if no system variables found
 			if !sleepDone {
-				if sleep(b.stopSysVarReader, sysVarReadCycle) == errStop {
+				if sleep(b.stop, sysVarReadCycle) == errStop {
 					return
 				}
 			}
