@@ -288,21 +288,21 @@ func (d *DeviceCol) handleEvent(n *deviceNotif) {
 	// find device
 	i, ok := d.Item(dev)
 	if !ok {
-		deviceLog.Error("Device for event not found: ", dev)
+		deviceLog.Warning("Device for event not found: ", dev)
 		return
 	}
 	devDom := i.(*device)
 	// find channel
 	i, ok = devDom.Item(ch)
 	if !ok {
-		deviceLog.Error("Channel for event not found: ", n.event.address)
+		deviceLog.Warning("Channel for event not found: ", n.event.address)
 		return
 	}
 	chDom := i.(*channel)
 	// find parameter
 	i, ok = chDom.Item(n.event.valueKey)
 	if !ok {
-		deviceLog.Error("Parameter for event not found: ", n.event.address, ".", n.event.valueKey)
+		deviceLog.Warning("Parameter for event not found: ", n.event.address, ".", n.event.valueKey)
 		return
 	}
 	paramVar := i.(*parameter)
