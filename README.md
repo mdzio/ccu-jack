@@ -4,6 +4,7 @@ CCU-Jack bietet einen einfachen und sicheren **REST**- und **MQTT**-basierten Zu
 
 ## Schnelleinstieg
 
+* [Download](#download)
 * [Beschreibung REST-API](https://github.com/mdzio/ccu-jack/blob/master/doc/curl.md)
 * [Beschreibung MQTT-API](#beschreibung-der-mqtt-schnittstelle)
 
