@@ -206,6 +206,12 @@ func run() error {
 	sysVarCol.Start()
 	defer sysVarCol.Stop()
 
+	// create programs collection
+	prgCol := vmodel.NewProgramCol(root)
+	prgCol.ScriptClient = scriptClient
+	prgCol.Start()
+	defer prgCol.Stop()
+
 	// MQTT authentication handler
 	var mqttAuth string
 	if *authUser != "" || *authPassword != "" {

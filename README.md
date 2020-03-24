@@ -2,6 +2,11 @@
 
 CCU-Jack bietet einen einfachen und sicheren **REST**- und **MQTT**-basierten Zugriff auf die Datenpunkte der Zentrale (CCU) des [Hausautomations-Systems](http://de.wikipedia.org/wiki/Hausautomation) HomeMatic der Firma [eQ-3](http://www.eq-3.de/). Er implementiert dafür das [Very Easy Automation Protocol](https://github.com/mdzio/veap), welches von vielen Programmiersprachen leicht verwendet werden kann, und das [MQTT-Protokoll](https://de.wikipedia.org/wiki/MQTT), welches im Internet-of-Things weit verbreitet ist.
 
+## Schnelleinstieg
+
+* [Beschreibung REST-API](https://github.com/mdzio/ccu-jack/blob/master/doc/curl.md)
+* [Beschreibung MQTT-API](#beschreibung-der-mqtt-schnittstelle)
+
 ## Hauptmerkmale
 
 Folgende Merkmale zeichnen CCU-Jack aus:

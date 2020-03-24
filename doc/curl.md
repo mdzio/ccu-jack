@@ -1,4 +1,4 @@
-# CURL-Beispiele
+# CURL-Beispiele für die REST-API
 
 Im Folgenden werden einige Beispielaufrufe mit dem [Werkzeug CURL](https://curl.haxx.se) gezeigt. Manche Antworten wurden aus Platzgründen gekürzt.
 
@@ -391,6 +391,35 @@ HTTP/1.1 200 OK
 ```
 
 Fehler werden über den HTTP-Status angezeigt.
+
+## Programme der CCU
+
+Die Programme der CCU können über die Aufzählung `/program` erkundet werden:
+```
+curl  http://localhost:2121/program
+```
+
+Die Informationen zu einem Programm können anhand der ISE-ID abgefragt werden. Diese wird in der obigen Erkundung im Attribut `href` zurückgegeben:
+```
+curl  http://localhost:2121/program/123
+```
+
+Ein CCU-Programm ist im CCU-Jack auch eine Variable. Der Zeitpunkt der letzten Ausführung kann durch das Lesen des Variablenwertes ermittelt werden. Der Zeitstempel des Prozesswertes (Eigenschaft `ts`) entspricht dem Zeitpunkt der letzten Ausführung:
+```
+curl  http://localhost:2121/program/123/~pv
+```
+
+Ein CCU-Programm kann durch das Schreiben des Wertes `true` ausgeführt werden.
+
+Aufruf (Linux):
+```
+curl -X PUT -d '{"v":true}' http://localhost:2121/program/123/~pv
+```
+Aufruf (Windows):
+```
+curl -X PUT -d "{""v"":true}" http://localhost:2121/program/123/~pv
+```
+
 
 ## Erkundung von /~vendor (Herstellerinformationen)
 
