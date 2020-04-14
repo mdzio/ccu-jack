@@ -505,17 +505,22 @@ func (p *parameter) GetDescription() string {
 }
 
 func (p *parameter) ReadAttributes() veap.AttrValues {
+	ch := p.Collection.(*channel)
+	dev := ch.Collection.(*device)
+	mqttTopic := dev.GetIdentifier() + "/" + ch.GetIdentifier() + "/" + p.GetIdentifier()
 	return veap.AttrValues{
-		"type":       p.descr.Type,
-		"operations": p.descr.Operations,
-		"flags":      p.descr.Flags,
-		"default":    p.descr.Default,
-		"maximum":    p.descr.Max,
-		"minimum":    p.descr.Min,
-		"unit":       p.descr.Unit,
-		"tabOrder":   p.descr.TabOrder,
-		"control":    p.descr.Control,
-		"id":         p.descr.ID,
+		"type":            p.descr.Type,
+		"operations":      p.descr.Operations,
+		"flags":           p.descr.Flags,
+		"default":         p.descr.Default,
+		"maximum":         p.descr.Max,
+		"minimum":         p.descr.Min,
+		"unit":            p.descr.Unit,
+		"tabOrder":        p.descr.TabOrder,
+		"control":         p.descr.Control,
+		"id":              p.descr.ID,
+		"mqttStatusTopic": "device/status/" + mqttTopic,
+		"mqttSetTopic":    "device/set/" + mqttTopic,
 	}
 }
 

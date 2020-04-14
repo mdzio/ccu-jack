@@ -143,8 +143,11 @@ func (p *program) GetDescription() string {
 
 func (p *program) ReadAttributes() veap.AttrValues {
 	attr := veap.AttrValues{
-		"active":  p.prg.Active,
-		"visible": p.prg.Visible,
+		"active":          p.prg.Active,
+		"visible":         p.prg.Visible,
+		"mqttGetTopic":    "program/get/" + p.prg.ISEID,
+		"mqttStatusTopic": "program/status/" + p.prg.ISEID,
+		"mqttSetTopic":    "program/set/" + p.prg.ISEID,
 	}
 	return attr
 }

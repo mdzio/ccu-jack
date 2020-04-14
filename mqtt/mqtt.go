@@ -25,17 +25,21 @@ const (
 	deviceStatusTopic = "device/status"
 	deviceSetTopic    = "device/set"
 	// path prefix for device data points in the VEAP address space
-	deviceServicePath = "/device"
+	deviceVeapPath = "/device"
 
-	sysVarStatusTopic = "sysvar/status"
-	sysVarSetTopic    = "sysvar/set"
-	sysVarGetTopic    = "sysvar/get"
+	// topic prefix for system variables
+	sysVarTopic = "sysvar"
 	// path prefix for system variable data points in the VEAP address space
-	sysVarServicePath = "/sysvar"
-	// cycle time for reading system variables
-	sysVarReadCycle = 1000 * time.Millisecond
+	sysVarVeapPath = "/sysvar"
 	// delay time for reading back
 	sysVarReadBackDur = 300 * time.Millisecond
+	// cycle time for reading system variables
+	sysVarReadCycle = 1000 * time.Millisecond
+
+	// topic prefix for programs
+	prgTopic = "program"
+	// path prefix for programs in the VEAP address space
+	prgVeapPath = "/program"
 )
 
 var log = logging.Get("mqtt-broker")
@@ -58,13 +62,16 @@ type Broker struct {
 	// Service is used to set device data points and system variables.
 	Service veap.Service
 
-	server  *service.Server
-	stop    chan struct{}
-	stopped sync.WaitGroup
+	server     *service.Server
+	doneServer sync.WaitGroup
 
 	onSetDevice service.OnPublishFunc
-	onSetSysVar service.OnPublishFunc
-	onGetSysVar service.OnPublishFunc
+
+	stopSVReader chan struct{}
+	doneSVReader chan struct{}
+
+	sysVarAdapter *vadapter
+	prgAdapter    *vadapter
 }
 
 // Start starts the MQTT broker.
@@ -72,16 +79,15 @@ func (b *Broker) Start() {
 	b.server = &service.Server{
 		Authenticator: b.Authenticator,
 	}
-	b.stop = make(chan struct{})
 
 	// start MQTT listener
 	if b.Addr != "" {
-		b.stopped.Add(1)
+		b.doneServer.Add(1)
 		go func() {
 			log.Infof("Starting MQTT listener on address %s", b.Addr)
 			err := b.server.ListenAndServe(b.Addr)
 			// signal server is down
-			b.stopped.Done()
+			b.doneServer.Done()
 			// check for error
 			if err != nil {
 				// signal error while serving
@@ -94,14 +100,14 @@ func (b *Broker) Start() {
 
 	// start Secure MQTT listener
 	if b.AddrTLS != "" {
-		b.stopped.Add(1)
+		b.doneServer.Add(1)
 		go func() {
 			log.Infof("Starting Secure MQTT listener on address %s", b.AddrTLS)
 			// TLS configuration
 			cer, err := tls.LoadX509KeyPair(b.CertFile, b.KeyFile)
 			if err != nil {
 				// signal error while serving
-				b.stopped.Done()
+				b.doneServer.Done()
 				if b.ServeErr != nil {
 					b.ServeErr <- fmt.Errorf("Running Secure MQTT server failed: %v", err)
 				}
@@ -111,7 +117,7 @@ func (b *Broker) Start() {
 			// start server
 			err = b.server.ListenAndServeTLS(b.AddrTLS, config)
 			// signal server is down
-			b.stopped.Done()
+			b.doneServer.Done()
 			// check for error
 			if err != nil {
 				// signal error while serving
@@ -145,111 +151,50 @@ func (b *Broker) Start() {
 		path := topic[len(deviceSetTopic):]
 
 		// use VEAP service to write PV
-		if err = b.Service.WritePV(deviceServicePath+path, pv); err != nil {
+		if err = b.Service.WritePV(deviceVeapPath+path, pv); err != nil {
 			return err
 		}
 		return nil
 	}
 	b.server.Subscribe(deviceSetTopic+"/+/+/+", message.QosExactlyOnce, &b.onSetDevice)
 
-	// subscribe set sysvar topics
-	b.onSetSysVar = func(msg *message.PublishMessage) error {
-		log.Tracef("Set sysvar message received: %s: %s", msg.Topic(), msg.Payload())
-
-		// parse PV
-		pv, err := wireToPV(msg.Payload())
-		if err != nil {
-			return err
-		}
-
-		// map topic to VEAP address
-		topic := string(msg.Topic())
-		if !strings.HasPrefix(topic, sysVarSetTopic+"/") {
-			return fmt.Errorf("Unexpected topic: %s", topic)
-		}
-
-		// path with leading /
-		path := topic[len(sysVarSetTopic):]
-
-		// use VEAP service to write PV
-		if err = b.Service.WritePV(sysVarServicePath+path, pv); err != nil {
-			return err
-		}
-
-		// read back current value and publish
-		b.stopped.Add(1)
-		go func() {
-			defer func() {
-				b.stopped.Done()
-			}()
-			// wait for timer or stop
-			t := time.NewTimer(sysVarReadBackDur)
-			select {
-			case <-b.stop:
-				// clean up timer
-				if !t.Stop() {
-					<-t.C
-				}
-				return
-			case <-t.C:
-			}
-			// read back
-			pv, verr := b.Service.ReadPV(sysVarServicePath + path)
-			if verr != nil {
-				log.Warning("Read back of system variable %s failed: %v", sysVarServicePath+path, verr)
-				return
-			}
-			// publish PV
-			err = b.PublishPV(sysVarStatusTopic+path, pv, message.QosAtLeastOnce, true)
-			if err != nil {
-				log.Warning("Publish of system variable %s failed: %v", sysVarServicePath+path, err)
-				return
-			}
-		}()
-
-		return nil
+	// adapt VEAP system variables
+	b.sysVarAdapter = &vadapter{
+		mqttTopic:   sysVarTopic,
+		veapPath:    sysVarVeapPath,
+		readBackDur: sysVarReadBackDur,
+		mqttBroker:  b,
+		veapService: b.Service,
 	}
-	b.server.Subscribe(sysVarSetTopic+"/+", message.QosExactlyOnce, &b.onSetSysVar)
+	b.sysVarAdapter.start()
 
-	// subscribe get sysvar topics
-	b.onGetSysVar = func(msg *message.PublishMessage) error {
-		log.Tracef("Get sysvar message received: %s: %s", msg.Topic(), msg.Payload())
-
-		// map topic to VEAP address
-		topic := string(msg.Topic())
-		if !strings.HasPrefix(topic, sysVarGetTopic+"/") {
-			return fmt.Errorf("Unexpected topic: %s", topic)
-		}
-
-		// path with leading /
-		path := topic[len(sysVarGetTopic):]
-
-		// use VEAP service to read PV
-		pv, err := b.Service.ReadPV(sysVarServicePath + path)
-		if err != nil {
-			return err
-		}
-
-		// publish PV
-		return b.PublishPV(sysVarStatusTopic+path, pv, message.QosAtLeastOnce, true)
+	// adapt VEAP programs
+	b.prgAdapter = &vadapter{
+		mqttTopic:   prgTopic,
+		veapPath:    prgVeapPath,
+		mqttBroker:  b,
+		veapService: b.Service,
 	}
-	b.server.Subscribe(sysVarGetTopic+"/+", message.QosExactlyOnce, &b.onGetSysVar)
+	b.prgAdapter.start()
 }
 
 // Stop stops the MQTT broker.
 func (b *Broker) Stop() {
-	// stop all
-	close(b.stop)
+	// stop adapter
+	b.prgAdapter.stop()
+	b.sysVarAdapter.stop()
+
+	// stop system variable reader
+	close(b.stopSVReader)
+	<-b.doneSVReader
 
 	// stop broker
 	log.Debugf("Stopping MQTT broker")
 	b.server.Unsubscribe(deviceSetTopic+"/+/+/+", &b.onSetDevice)
-	b.server.Unsubscribe(sysVarSetTopic+"/+", &b.onSetSysVar)
-	b.server.Unsubscribe(sysVarGetTopic+"/+", &b.onGetSysVar)
 	_ = b.server.Close()
 
 	// wait for stop
-	b.stopped.Wait()
+	b.doneServer.Wait()
 }
 
 // PublishPV publishes a PV.
@@ -282,14 +227,25 @@ func (b *Broker) Publish(topic string, payload []byte, qos byte, retain bool) er
 	return nil
 }
 
+// Subscribe subscribes a topic.
+func (b *Broker) Subscribe(topic string, qos byte, onPublish *service.OnPublishFunc) error {
+	return b.server.Subscribe(topic, qos, onPublish)
+}
+
+// Unsubscribe unsubscribes a topic.
+func (b *Broker) Unsubscribe(topic string, onPublish *service.OnPublishFunc) error {
+	return b.server.Unsubscribe(topic, onPublish)
+}
+
 func (b *Broker) startSysVarReader() {
 	log.Debug("Starting system variable reader")
-	b.stopped.Add(1)
+	b.stopSVReader = make(chan struct{})
+	b.doneSVReader = make(chan struct{})
 	go func() {
 		// defer clean up
 		defer func() {
 			log.Debug("Stopping system variable reader")
-			b.stopped.Done()
+			b.doneSVReader <- struct{}{}
 		}()
 
 		// PV cache
@@ -297,7 +253,7 @@ func (b *Broker) startSysVarReader() {
 
 		for {
 			// get list of system variables
-			_, links, err := b.Service.ReadProperties(sysVarServicePath)
+			_, links, err := b.Service.ReadProperties(sysVarVeapPath)
 			if err != nil {
 				log.Errorf("System variable reader: %v", err)
 				return
@@ -307,7 +263,7 @@ func (b *Broker) startSysVarReader() {
 			sleepDone := false
 			for _, l := range links {
 				if l.Role == "sysvar" {
-					p := path.Join(sysVarServicePath, l.Target)
+					p := path.Join(sysVarVeapPath, l.Target)
 					attrs, _, err := b.Service.ReadProperties(p)
 					if err != nil {
 						log.Errorf("System variable reader: %v", err)
@@ -334,7 +290,7 @@ func (b *Broker) startSysVarReader() {
 							if !ok || !pv.Equal(prevPV) {
 
 								// publish PV
-								topic := sysVarStatusTopic + p[len(sysVarServicePath):]
+								topic := sysVarTopic + "/status" + p[len(sysVarVeapPath):]
 								if err := b.PublishPV(topic, pv, message.QosAtLeastOnce, true); err != nil {
 									log.Errorf("System variable reader: %v", err)
 								} else {
@@ -342,7 +298,7 @@ func (b *Broker) startSysVarReader() {
 								}
 							}
 						}
-						if sleep(b.stop, sysVarReadCycle) == errStop {
+						if sleep(b.stopSVReader, sysVarReadCycle) == errStop {
 							return
 						}
 						sleepDone = true
@@ -352,7 +308,7 @@ func (b *Broker) startSysVarReader() {
 
 			// sleep if no system variables found
 			if !sleepDone {
-				if sleep(b.stop, sysVarReadCycle) == errStop {
+				if sleep(b.stopSVReader, sysVarReadCycle) == errStop {
 					return
 				}
 			}

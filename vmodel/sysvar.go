@@ -142,9 +142,12 @@ func (v *sysVar) GetDescription() string {
 
 func (v *sysVar) ReadAttributes() veap.AttrValues {
 	attr := veap.AttrValues{
-		"unit":       v.sv.Unit,
-		"operations": v.sv.Operations,
-		"type":       v.sv.Type,
+		"unit":            v.sv.Unit,
+		"operations":      v.sv.Operations,
+		"type":            v.sv.Type,
+		"mqttGetTopic":    "sysvar/get/" + v.sv.ISEID,
+		"mqttStatusTopic": "sysvar/status/" + v.sv.ISEID,
+		"mqttSetTopic":    "sysvar/set/" + v.sv.ISEID,
 	}
 	if v.sv.Minimum != nil {
 		attr["minimum"] = v.sv.Minimum
