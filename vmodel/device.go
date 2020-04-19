@@ -508,7 +508,7 @@ func (p *parameter) ReadAttributes() veap.AttrValues {
 	ch := p.Collection.(*channel)
 	dev := ch.Collection.(*device)
 	mqttTopic := dev.GetIdentifier() + "/" + ch.GetIdentifier() + "/" + p.GetIdentifier()
-	return veap.AttrValues{
+	attrs := veap.AttrValues{
 		"type":            p.descr.Type,
 		"operations":      p.descr.Operations,
 		"flags":           p.descr.Flags,
@@ -520,8 +520,12 @@ func (p *parameter) ReadAttributes() veap.AttrValues {
 		"control":         p.descr.Control,
 		"id":              p.descr.ID,
 		"mqttStatusTopic": "device/status/" + mqttTopic,
-		"mqttSetTopic":    "device/set/" + mqttTopic,
 	}
+	// parameter writeable?
+	if p.descr.Operations&0x02 != 0 {
+		attrs["mqttSetTopic"] = "device/set/" + mqttTopic
+	}
+	return attrs
 }
 
 func (p *parameter) ReadPV() (veap.PV, veap.Error) {
