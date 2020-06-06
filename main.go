@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -56,7 +57,7 @@ var (
 	ccuItfs      = itf.Types{itf.BidCosRF}
 	authUser     = flag.String("user", "", "user `name` for HTTP Basic Authentication/MQTT (disabled by default)")
 	authPassword = flag.String("password", "", "`password` for HTTP Basic Authentication/MQTT, q.v. -user")
-	corsOrigin   = flag.String("cors", "*", "set `host` as allowed origin for CORS requests")
+	corsOrigins  = flag.String("cors", "*", "set `hosts` as allowed origins for CORS requests (comma separated)")
 )
 
 func init() {
@@ -294,10 +295,11 @@ func run() error {
 
 	// CORS handler for VEAP
 	allowedMethods := handlers.AllowedMethods([]string{http.MethodGet, http.MethodPut})
-	if *corsOrigin == "" || *corsOrigin == "*" {
+	if *corsOrigins == "" || *corsOrigins == "*" {
 		handler = handlers.CORS(allowedMethods)(handler)
 	} else {
-		allowedOrigins := handlers.AllowedOrigins([]string{*corsOrigin})
+		origins := strings.Split(*corsOrigins, ",")
+		allowedOrigins := handlers.AllowedOrigins(origins)
 		// only if origin is specified, credentials are allowed (CORS spec)
 		allowCredentials := handlers.AllowCredentials()
 		handler = handlers.CORS(allowedMethods, allowedOrigins, allowCredentials)(handler)
@@ -339,7 +341,7 @@ func main() {
 	log.Info("  HTTPS port: ", *httpPortTLS)
 	log.Info("  MQTT port: ", *mqttPort)
 	log.Info("  Secure MQTT port: ", *mqttPortTLS)
-	log.Info("  CORS origin: ", *corsOrigin)
+	log.Info("  CORS origins: ", *corsOrigins)
 	log.Info("  CCU address: ", *ccuAddress)
 	log.Info("  Interfaces: ", ccuItfs.String())
 	log.Info("  Init ID: ", *initID)
