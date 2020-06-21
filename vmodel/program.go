@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mdzio/go-lib/hmccu/script"
-	"github.com/mdzio/go-lib/veap"
-	"github.com/mdzio/go-lib/veap/model"
+	"github.com/mdzio/go-hmccu/script"
+	"github.com/mdzio/go-veap"
+	"github.com/mdzio/go-veap/model"
 	"github.com/mdzio/go-logging"
 )
 

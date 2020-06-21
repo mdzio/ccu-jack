@@ -3,8 +3,8 @@ package vmodel
 import (
 	"strings"
 
-	"github.com/mdzio/go-lib/hmccu/script"
-	"github.com/mdzio/go-lib/veap/model"
+	"github.com/mdzio/go-hmccu/script"
+	"github.com/mdzio/go-veap/model"
 )
 
 // AspectCol holds domains for the CCU rooms and functions.

@@ -17,12 +17,12 @@ import (
 
 	"github.com/mdzio/ccu-jack/mqtt"
 	"github.com/mdzio/ccu-jack/vmodel"
-	"github.com/mdzio/go-lib/hmccu/itf"
-	"github.com/mdzio/go-lib/hmccu/script"
-	"github.com/mdzio/go-lib/util/httputil"
-	"github.com/mdzio/go-lib/veap"
-	"github.com/mdzio/go-lib/veap/model"
+	"github.com/mdzio/go-hmccu/itf"
+	"github.com/mdzio/go-hmccu/script"
+	"github.com/mdzio/go-lib/httputil"
 	"github.com/mdzio/go-logging"
+	"github.com/mdzio/go-veap"
+	"github.com/mdzio/go-veap/model"
 )
 
 const (

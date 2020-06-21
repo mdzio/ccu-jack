@@ -12,10 +12,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mdzio/go-lib/util/any"
+	"github.com/mdzio/go-lib/any"
 
-	"github.com/mdzio/go-lib/veap"
-	"github.com/mdzio/go-lib/veap/model"
+	"github.com/mdzio/go-veap"
+	"github.com/mdzio/go-veap/model"
 	"github.com/mdzio/go-logging"
 	"github.com/mdzio/go-mqtt/message"
 	"github.com/mdzio/go-mqtt/service"

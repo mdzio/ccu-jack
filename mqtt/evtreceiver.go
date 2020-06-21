@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mdzio/go-lib/hmccu/itf"
-	"github.com/mdzio/go-lib/veap"
+	"github.com/mdzio/go-hmccu/itf"
+	"github.com/mdzio/go-veap"
 	"github.com/mdzio/go-mqtt/message"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mdzio/go-lib/util/releng"
+	"github.com/mdzio/go-lib/releng"
 	"github.com/mdzio/go-logging"
 )
 
