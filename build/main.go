@@ -12,7 +12,7 @@ import (
 const (
 	logLevel   = logging.InfoLevel
 	appName    = "ccu-jack"
-	appVersion = "0.9.0"
+	appVersion = "0.9.1"
 	appPkg     = "github.com/mdzio/ccu-jack"
 	ldFlags    = "-s -w -X main.appVersion=" + appVersion
 	buildDir   = ".."
@@ -48,6 +48,7 @@ var (
 	files = []releng.CopySpec{
 		{Inc: "README.md"},
 		{Inc: "LICENSE.txt"},
+		{Inc: "dist/ccu-jack.cfg"},
 		{Inc: "build/tmp/VERSION"},
 		{Inc: "third-party-licenses/*", DstDir: "third-party-licenses"},
 		{Inc: "wd/webui/*", DstDir: "webui"},
@@ -59,6 +60,7 @@ var (
 		{Inc: "dist/ccu/update_script", Exe: true},
 		{Inc: "README.md", DstDir: "addon"},
 		{Inc: "LICENSE.txt", DstDir: "addon"},
+		{Inc: "dist/ccu-jack.cfg", DstDir: "addon"},
 		{Inc: "build/tmp/VERSION", DstDir: "addon"},
 		{Inc: "dist/ccu/addon/update_hm_addons.tcl", DstDir: "addon", Exe: true},
 		{Inc: "third-party-licenses/*", DstDir: "addon/third-party-licenses"},
@@ -78,7 +80,7 @@ func build() {
 	log.Debug("Changing to build dir: ", buildDir)
 	releng.Must(os.Chdir(buildDir))
 	log.Info("Build dir: ", releng.Getwd())
-	releng.RequireFiles([]string{"README.md"})
+	releng.RequireFiles([]string{"README.md", "LICENSE.txt", "main.go"})
 	releng.Mkdir("build/tmp")
 	releng.WriteFile("build/tmp/VERSION", []byte(appVersion))
 

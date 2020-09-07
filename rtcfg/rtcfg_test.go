@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/mdzio/go-hmccu/itf"
 	"github.com/mdzio/go-logging"
 )
 
@@ -26,8 +27,18 @@ func TestStore(t *testing.T) {
 	if err == nil {
 		t.Fatal("Expected error")
 	}
-	s.Update(func(r *Root) error {
-		r.Security.AddSubject(&Subject{Identifier: "abc"})
+	s.Update(func(r *Config) error {
+		r.Logging.Level = logging.WarningLevel
+		r.CCU.Interfaces = []itf.Type{itf.BidCosRF}
+		sub := &User{Identifier: "abc"}
+		sub.SetPassword("test")
+		sub.AddPermission(&Permission{
+			Endpoint:   EndpointMQTT | EndpointVEAP,
+			Identifier: "admin",
+			Kind:       PermConfig | PermReadPV | PermWritePV,
+			PVFilter:   "/a/*",
+		})
+		r.AddUser(sub)
 		return nil
 	})
 	err = s.Write()
@@ -41,9 +52,19 @@ func TestStore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s2.View(func(r *Root) error {
-		if len(r.Security.Subjects) != 1 || r.Security.Subjects["abc"].Identifier != "abc" {
-			return errors.New("Unexpected content")
+	err = s2.View(func(r *Config) error {
+		if r.Logging.Level != logging.WarningLevel {
+			return errors.New("Unexpected logging level")
+		}
+		if len(r.CCU.Interfaces) != 1 || r.CCU.Interfaces[0] != itf.BidCosRF {
+			return errors.New("Unexpected interfaces")
+		}
+		if len(r.Users) != 1 || r.Users["abc"].Identifier != "abc" {
+			return errors.New("Unexpected subjects")
+		}
+		sub := r.Users["abc"]
+		if len(sub.Permissions) != 1 || sub.Permissions["admin"].Kind != PermConfig|PermReadPV|PermWritePV {
+			return errors.New("Unexpected permissions")
 		}
 		return nil
 	})
@@ -56,8 +77,8 @@ func TestPermissions(t *testing.T) {
 	defer func() { os.Remove(tmpFile) }()
 
 	s := &Store{FileName: tmpFile}
-	s.Update(func(r *Root) error {
-		sub := &Subject{Identifier: "sub"}
+	s.Update(func(r *Config) error {
+		sub := &User{Identifier: "sub"}
 		sub.SetPassword("pwd")
 		sub.AddPermission(&Permission{
 			Identifier: "per",
@@ -65,24 +86,24 @@ func TestPermissions(t *testing.T) {
 			Kind:       PermWritePV,
 			PVFilter:   "/A[01]/B",
 		})
-		r.Security.AddSubject(sub)
+		r.AddUser(sub)
 		return nil
 	})
 
-	err := s.View(func(r *Root) error {
-		su := r.Security.Authenticate(EndpointVEAP, "unkwon-sub", "pwd")
+	err := s.View(func(r *Config) error {
+		su := r.Authenticate(EndpointVEAP, "unkwon-sub", "pwd")
 		if su != nil {
 			return errors.New("Unexpected authentication (subject)")
 		}
-		su = r.Security.Authenticate(EndpointMQTT, "sub", "pwd")
+		su = r.Authenticate(EndpointMQTT, "sub", "pwd")
 		if su != nil {
 			return errors.New("Unexpected authentication (endpoint)")
 		}
-		su = r.Security.Authenticate(EndpointVEAP, "sub", "wrong-pwd")
+		su = r.Authenticate(EndpointVEAP, "sub", "wrong-pwd")
 		if su != nil {
 			return errors.New("Unexpected authentication (password)")
 		}
-		su = r.Security.Authenticate(EndpointVEAP, "sub", "pwd")
+		su = r.Authenticate(EndpointVEAP, "sub", "pwd")
 		if su == nil {
 			return errors.New("Authentication failed")
 		}

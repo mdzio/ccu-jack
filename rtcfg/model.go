@@ -3,62 +3,102 @@ package rtcfg
 import (
 	"path"
 
+	"github.com/mdzio/go-hmccu/itf"
+	"github.com/mdzio/go-logging"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Root is the entry object of the runtime config.
-type Root struct {
-	Security Security
+// Config is the entry object of the runtime config.
+type Config struct {
+	CCU     CCU
+	Host    Host
+	Logging Logging
+	HTTP    HTTP
+	MQTT    MQTT
+	Users   map[string]*User /* Identifier is key. */
 }
 
-// Security holds the security configuration.
-type Security struct {
-	Subjects map[string]*Subject /* Identifier is key. */
+// CCU configuration
+type CCU struct {
+	Address    string
+	Interfaces itf.Types
+	InitID     string
 }
 
-// Authenticate authenticates a subject.
-func (s *Security) Authenticate(endpoint Endpoint, identifier, password string) *Subject {
+// Host configuration
+type Host struct {
+	Name    string
+	Address string
+}
+
+// Logging configuration
+type Logging struct {
+	Level    logging.LogLevel
+	FilePath string
+}
+
+// HTTP configuration
+type HTTP struct {
+	Port        int
+	PortTLS     int
+	CORSOrigins []string
+}
+
+// MQTT configuration
+type MQTT struct {
+	Port    int
+	PortTLS int
+}
+
+// Authenticate authenticates a user.
+func (c *Config) Authenticate(endpoint Endpoint, identifier, password string) *User {
 	// find user
-	sub, ok := s.Subjects[identifier]
+	u, ok := c.Users[identifier]
 	if !ok {
 		return nil
 	}
+	// active?
+	if !u.Active {
+		return nil
+	}
 	// check all permissions
-	for _, per := range sub.Permissions {
+	for _, per := range u.Permissions {
 		// check endpoint
 		if endpoint&per.Endpoint == endpoint {
 			// check password
-			err := bcrypt.CompareHashAndPassword(sub.Password, []byte(password))
+			err := bcrypt.CompareHashAndPassword([]byte(u.EncryptedPassword), []byte(password))
 			if err != nil {
 				return nil
 			}
-			return sub
+			return u
 		}
 	}
 	return nil
 }
 
-// AddSubject adds a subject to the security config.
-func (s *Security) AddSubject(subject *Subject) {
-	if s.Subjects == nil {
-		s.Subjects = make(map[string]*Subject)
+// AddUser adds a user to the security config.
+func (c *Config) AddUser(u *User) {
+	if c.Users == nil {
+		c.Users = make(map[string]*User)
 	}
-	s.Subjects[subject.Identifier] = subject
+	c.Users[u.Identifier] = u
 }
 
-// Subject represents a user or a device.
-type Subject struct {
-	Identifier  string
-	Description string
-	Password    []byte                 // bcrypt hash
-	Permissions map[string]*Permission /* Identifier is key. */
+// User represents a user or a device.
+type User struct {
+	Identifier        string
+	Active            bool
+	Description       string
+	Password          string                 // unencrypted password (only temporary)
+	EncryptedPassword string                 // bcrypt hash
+	Permissions       map[string]*Permission /* Identifier is key. */
 }
 
 // Authorized checks whether an authorization exists. The request must contain
 // only a single endpoint and kind. pvPath is not yet checked.
-func (s *Subject) Authorized(endpoint Endpoint, kind PermKind, pvPath string) bool {
+func (u *User) Authorized(endpoint Endpoint, kind PermKind, pvPath string) bool {
 	// check all permissions
-	for _, per := range s.Permissions {
+	for _, per := range u.Permissions {
 		// check endpoint
 		if endpoint&per.Endpoint == endpoint {
 			// check kind
@@ -81,22 +121,24 @@ func (s *Subject) Authorized(endpoint Endpoint, kind PermKind, pvPath string) bo
 }
 
 // SetPassword generates a new hash for the password.
-func (s *Subject) SetPassword(password string) error {
+func (u *User) SetPassword(password string) error {
 	// hash password
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
 		return err
 	}
-	s.Password = hash
+	u.EncryptedPassword = string(hash)
+	// clear unencrypted password, if any
+	u.Password = ""
 	return nil
 }
 
-// AddPermission adds a permission to a subject.
-func (s *Subject) AddPermission(per *Permission) {
-	if s.Permissions == nil {
-		s.Permissions = make(map[string]*Permission)
+// AddPermission adds a permission to a user.
+func (u *User) AddPermission(per *Permission) {
+	if u.Permissions == nil {
+		u.Permissions = make(map[string]*Permission)
 	}
-	s.Permissions[per.Identifier] = per
+	u.Permissions[per.Identifier] = per
 }
 
 // Permission represents a allowance to access something.
@@ -115,7 +157,7 @@ type Endpoint int
 
 // Possible endpoints.
 const (
-	EndpointVEAP Endpoint = iota << 1
+	EndpointVEAP Endpoint = 1 << iota
 	EndpointMQTT
 )
 
@@ -124,7 +166,7 @@ type PermKind int
 
 // Possible kinds of a permission.
 const (
-	PermConfig PermKind = iota << 1
+	PermConfig PermKind = 1 << iota
 	PermWritePV
 	PermReadPV
 )

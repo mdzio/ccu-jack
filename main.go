@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -11,16 +10,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mdzio/go-mqtt/auth"
-
 	"github.com/gorilla/handlers"
 
 	"github.com/mdzio/ccu-jack/mqtt"
+	"github.com/mdzio/ccu-jack/rtcfg"
 	"github.com/mdzio/ccu-jack/vmodel"
 	"github.com/mdzio/go-hmccu/itf"
 	"github.com/mdzio/go-hmccu/script"
 	"github.com/mdzio/go-lib/httputil"
 	"github.com/mdzio/go-logging"
+	"github.com/mdzio/go-mqtt/auth"
 	"github.com/mdzio/go-veap"
 	"github.com/mdzio/go-veap/model"
 )
@@ -29,9 +28,11 @@ const (
 	appDisplayName = "CCU-Jack"
 	appName        = "ccu-jack"
 	appDescription = "REST/MQTT-Server for the HomeMatic CCU"
+	appCopyright   = "(C)2020"
 	appVendor      = "info@ccu-historian.de"
 
 	webUIDir       = "webui"
+	configFile     = "ccu-jack.cfg"
 	caCertFile     = "cacert.pem"
 	caKeyFile      = "cacert.key"
 	serverCertFile = "svrcert.pem"
@@ -43,74 +44,65 @@ var (
 
 	log     = logging.Get("main")
 	logFile *os.File
+	store   = rtcfg.Store{FileName: configFile}
 
-	logLevel     = logging.InfoLevel
-	logFilePath  = flag.String("logfile", "", "write log messages to `file` instead of stderr")
-	serverHost   = flag.String("host", "", "host `name` for certificate generation (normally autodetected)")
-	serverAddr   = flag.String("addr", "127.0.0.1", "`address` of the host")
-	httpPort     = flag.Int("http", 2121, "`port` for serving HTTP")
-	httpPortTLS  = flag.Int("https", 2122, "`port` for serving HTTPS")
-	mqttPort     = flag.Int("mqtt", 1883, "`port` for serving MQTT")
-	mqttPortTLS  = flag.Int("mqtts", 8883, "`port` for serving Secure MQTT")
-	initID       = flag.String("id", "CCU-Jack", "additional `identifier` for the XMLRPC init method")
-	ccuAddress   = flag.String("ccu", "127.0.0.1", "`address` of the CCU")
-	ccuItfs      = itf.Types{itf.BidCosRF}
-	authUser     = flag.String("user", "", "user `name` for HTTP Basic Authentication/MQTT (disabled by default)")
-	authPassword = flag.String("password", "", "`password` for HTTP Basic Authentication/MQTT, q.v. -user")
-	corsOrigins  = flag.String("cors", "*", "set `hosts` as allowed origins for CORS requests (comma separated)")
+	httpServer *httputil.Server
+	sysVarCol  *vmodel.SysVarCol
+	prgCol     *vmodel.ProgramCol
+	mqttServer *mqtt.Broker
+	reGaDOM    *script.ReGaDOM
+	deviceCol  *vmodel.DeviceCol
+	intercon   *itf.Interconnector
 )
 
-func init() {
-	flag.Var(
-		&logLevel,
-		"log",
-		"specifies the minimum `severity` of printed log messages: off, error, warning, info, debug or trace",
-	)
-	flag.Var(
-		&ccuItfs,
-		"interfaces",
-		"`types` of the CCU communication interfaces (comma separated): BidCosWired, BidCosRF, System, HmIPRF, VirtualDevices",
-	)
-}
-
-func logFatal(v interface{}) {
-	log.Error(v)
-	if logFile != nil {
-		logFile.Close()
-	}
-	os.Exit(1)
-}
-
 func configure() error {
-	// parse command line
-	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage of "+appName+":")
-		flag.PrintDefaults()
-	}
-	// flag.Parse calls os.Exit(2) on error
-	flag.Parse()
+	// initial log level
+	logging.SetLevel(logging.ErrorLevel)
 
-	// set log options
-	logging.SetLevel(logLevel)
-	if *logFilePath != "" {
-		var err error
-		logFile, err = os.OpenFile(*logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			return fmt.Errorf("Opening log file failed: %w", err)
-		}
-		// switch to file log
-		logging.SetWriter(logFile)
+	// read config file
+	if err := store.Read(); err != nil {
+		return err
 	}
 
-	// configure hostname
-	if *serverHost == "" {
-		name, err := os.Hostname()
-		if err != nil {
-			return err
+	// configuration may be updated
+	return store.View(func(cfg *rtcfg.Config) error {
+		// set log options
+		logging.SetLevel(cfg.Logging.Level)
+		if cfg.Logging.FilePath != "" {
+			var err error
+			logFile, err = os.OpenFile(cfg.Logging.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				return fmt.Errorf("Opening log file failed: %w", err)
+			}
+			// switch to file log
+			logging.SetWriter(logFile)
 		}
-		*serverHost = name
-	}
-	return nil
+		return nil
+	})
+}
+
+func message() {
+	// log startup message
+	log.Info(appDisplayName, " V", appVersion)
+	log.Info(appCopyright, " ", appVendor)
+
+	// log configuration
+	store.View(func(cfg *rtcfg.Config) error {
+		log.Info("Configuration:")
+		log.Info("  Log level: ", cfg.Logging.Level.String())
+		log.Info("  Log file: ", cfg.Logging.FilePath)
+		log.Info("  Server host name: ", cfg.Host.Name)
+		log.Info("  Server address: ", cfg.Host.Address)
+		log.Info("  HTTP port: ", cfg.HTTP.Port)
+		log.Info("  HTTPS port: ", cfg.HTTP.PortTLS)
+		log.Info("  CORS origins: ", strings.Join(cfg.HTTP.CORSOrigins, ","))
+		log.Info("  MQTT port: ", cfg.MQTT.Port)
+		log.Info("  Secure MQTT port: ", cfg.MQTT.PortTLS)
+		log.Info("  CCU address: ", cfg.CCU.Address)
+		log.Info("  Interfaces: ", cfg.CCU.Interfaces.String())
+		log.Info("  Init ID: ", cfg.CCU.InitID)
+		return nil
+	})
 }
 
 func certificates() error {
@@ -122,23 +114,25 @@ func certificates() error {
 	}
 
 	// generate certificates
-	log.Info("Generating certificates")
-	now := time.Now()
-	gen := &httputil.CertGenerator{
-		Hosts:          []string{*serverHost},
-		Organization:   appDisplayName,
-		NotBefore:      now,
-		NotAfter:       now.Add(10 * 365 * 24 * time.Hour),
-		CACertFile:     caCertFile,
-		CAKeyFile:      caKeyFile,
-		ServerCertFile: serverCertFile,
-		ServerKeyFile:  serverKeyFile,
-	}
-	if err := gen.Generate(); err != nil {
-		return err
-	}
-	log.Debugf("Created certificate files: %s, %s, %s, %s", caCertFile, caKeyFile, serverCertFile, serverKeyFile)
-	return nil
+	return store.View(func(cfg *rtcfg.Config) error {
+		log.Info("Generating certificates")
+		now := time.Now()
+		gen := &httputil.CertGenerator{
+			Hosts:          []string{cfg.Host.Name},
+			Organization:   appDisplayName,
+			NotBefore:      now,
+			NotAfter:       now.Add(10 * 365 * 24 * time.Hour),
+			CACertFile:     caCertFile,
+			CAKeyFile:      caKeyFile,
+			ServerCertFile: serverCertFile,
+			ServerKeyFile:  serverKeyFile,
+		}
+		if err := gen.Generate(); err != nil {
+			return err
+		}
+		log.Debugf("Created certificate files: %s, %s, %s, %s", caCertFile, caKeyFile, serverCertFile, serverKeyFile)
+		return nil
+	})
 }
 
 func newRoot(handlerStats *veap.HandlerStats) *model.Root {
@@ -157,206 +151,200 @@ func newRoot(handlerStats *veap.HandlerStats) *model.Root {
 		VendorName:        appVendor,
 		Collection:        r,
 	})
+	vmodel.NewConfig(vendor, &store)
 	model.NewHandlerStats(vendor, handlerStats)
-
 	return r
 }
 
+func startup(serveErr chan<- error) {
+	// read config
+	store.View(func(cfg *rtcfg.Config) error {
+		// file handler for static files
+		http.Handle("/ui/", http.StripPrefix("/ui", http.FileServer(http.Dir(webUIDir))))
+
+		// setup and start http(s) server
+		httpServer = &httputil.Server{
+			Addr:     ":" + strconv.Itoa(cfg.HTTP.Port),
+			AddrTLS:  ":" + strconv.Itoa(cfg.HTTP.PortTLS),
+			CertFile: serverCertFile,
+			KeyFile:  serverKeyFile,
+			ServeErr: serveErr,
+		}
+		httpServer.Startup()
+
+		// veap handler and model
+		veapHandler := &veap.Handler{}
+		root := newRoot(&veapHandler.Stats)
+		modelService := &model.Service{Root: root}
+		veapHandler.Service = modelService
+
+		// create device collection
+		deviceCol = vmodel.NewDeviceCol(root)
+
+		// configure HM script client
+		scriptClient := &script.Client{
+			Addr: cfg.CCU.Address,
+		}
+
+		// create system variable collection
+		sysVarCol = vmodel.NewSysVarCol(root)
+		sysVarCol.ScriptClient = scriptClient
+		sysVarCol.Start()
+
+		// create programs collection
+		prgCol = vmodel.NewProgramCol(root)
+		prgCol.ScriptClient = scriptClient
+		prgCol.Start()
+
+		// MQTT authentication handler
+		mqttAuth := "configAuthHandler"
+		auth.Register(mqttAuth, &mqtt.AuthHandler{Store: &store})
+
+		// setup and start MQTT server
+		mqttServer = &mqtt.Broker{
+			Addr:          "tcp://:" + strconv.Itoa(cfg.MQTT.Port),
+			AddrTLS:       "tcp://:" + strconv.Itoa(cfg.MQTT.PortTLS),
+			CertFile:      serverCertFile,
+			KeyFile:       serverKeyFile,
+			Authenticator: mqttAuth,
+			ServeErr:      serveErr,
+			Service:       modelService,
+		}
+		mqttServer.Start()
+
+		// event receiver for MQTT
+		mqttReceiver := &mqtt.EventReceiver{
+			Broker: mqttServer,
+			// forward events
+			Next: deviceCol,
+		}
+
+		// configure interconnector
+		intercon = &itf.Interconnector{
+			CCUAddr:  cfg.CCU.Address,
+			Types:    cfg.CCU.Interfaces,
+			IDPrefix: cfg.CCU.InitID + "-",
+			Receiver: mqttReceiver,
+			// full URL of the DefaultServeMux for callbacks
+			ServerURL: "http://" + cfg.Host.Address + ":" + strconv.Itoa(cfg.HTTP.Port),
+		}
+
+		// start ReGa DOM explorer
+		reGaDOM = script.NewReGaDOM(scriptClient)
+		reGaDOM.Start()
+
+		// create room and function collections
+		vmodel.NewRoomCol(root, reGaDOM, modelService)
+		vmodel.NewFunctionCol(root, reGaDOM, modelService)
+
+		// startup device domain (starts handling of events)
+		deviceCol.Interconnector = intercon
+		deviceCol.ReGaDOM = reGaDOM
+		deviceCol.ModelService = modelService
+		deviceCol.Start()
+
+		// startup interconnector
+		// (an additional handler for XMLRPC is registered at the DefaultServeMux.)
+		intercon.Start()
+
+		// authentication for VEAP
+		var handler http.Handler
+		handler = &HTTPAuthHandler{
+			Handler: veapHandler,
+			Store:   &store,
+			Realm:   "CCU-Jack VEAP-Server",
+		}
+
+		// CORS handler for VEAP
+		allowedMethods := handlers.AllowedMethods([]string{http.MethodGet, http.MethodPut})
+		if len(cfg.HTTP.CORSOrigins) == 0 {
+			handler = handlers.CORS(allowedMethods)(handler)
+		} else {
+			allowedOrigins := handlers.AllowedOrigins(cfg.HTTP.CORSOrigins)
+			// only if origin is specified, credentials are allowed (CORS spec)
+			allowCredentials := handlers.AllowCredentials()
+			handler = handlers.CORS(allowedMethods, allowedOrigins, allowCredentials)(handler)
+		}
+
+		// register VEAP handler
+		http.Handle(veapHandler.URLPrefix+"/", handler)
+		return nil
+	})
+
+	// wait for start up to complete (do not call Close() on the servers before
+	// the start up is finished)
+	time.Sleep(1 * time.Second)
+}
+
+func shutdown() {
+	intercon.Stop()
+	deviceCol.Stop()
+	reGaDOM.Stop()
+	mqttServer.Stop()
+	prgCol.Stop()
+	sysVarCol.Stop()
+	httpServer.Shutdown()
+}
+
 func run() error {
+	// log message for shut down
 	defer func() {
-		log.Info("Shutting down CCU-Jack")
+		log.Info("Shutting down")
 	}()
+
+	// setup configuration
+	if err := configure(); err != nil {
+		return err
+	}
+	// write configuration on shut down
+	defer func() {
+		store.Write()
+		store.Close()
+	}()
+
+	// startup message
+	message()
+
+	// other setups
+	if err := certificates(); err != nil {
+		return err
+	}
 
 	// react on INT or TERM signal (to ensure that no signal is missed, the
 	// buffer size must be 1)
 	termSig := make(chan os.Signal, 1)
 	signal.Notify(termSig, os.Interrupt, syscall.SIGTERM)
 
-	// file handler for static files
-	http.Handle("/ui/", http.StripPrefix("/ui", http.FileServer(http.Dir(webUIDir))))
+	// react on fatal serve errors
+	serveErr := make(chan error)
 
-	// setup and start http(s) server
-	httpServeErr := make(chan error)
-	httpServer := &httputil.Server{
-		Addr:     ":" + strconv.Itoa(*httpPort),
-		AddrTLS:  ":" + strconv.Itoa(*httpPortTLS),
-		CertFile: serverCertFile,
-		KeyFile:  serverKeyFile,
-		ServeErr: httpServeErr,
-	}
-	httpServer.Startup()
-	defer httpServer.Shutdown()
-
-	// veap handler and model
-	veapHandler := &veap.Handler{}
-	root := newRoot(&veapHandler.Stats)
-	modelService := &model.Service{Root: root}
-	veapHandler.Service = modelService
-
-	// create device collection
-	deviceCol := vmodel.NewDeviceCol(root)
-
-	// configure HM script client
-	scriptClient := &script.Client{
-		Addr: *ccuAddress,
-	}
-
-	// create system variable collection
-	sysVarCol := vmodel.NewSysVarCol(root)
-	sysVarCol.ScriptClient = scriptClient
-	sysVarCol.Start()
-	defer sysVarCol.Stop()
-
-	// create programs collection
-	prgCol := vmodel.NewProgramCol(root)
-	prgCol.ScriptClient = scriptClient
-	prgCol.Start()
-	defer prgCol.Stop()
-
-	// MQTT authentication handler
-	var mqttAuth string
-	if *authUser != "" || *authPassword != "" {
-		const handlerID = "singleAuthHandler"
-		auth.Register(handlerID, &mqtt.SingleAuthHandler{
-			User:     *authUser,
-			Password: *authPassword,
-		})
-		mqttAuth = handlerID
-	} else {
-		mqttAuth = "mockSuccess"
-	}
-
-	// setup and start MQTT server
-	mqttServeErr := make(chan error)
-	mqttServer := &mqtt.Broker{
-		Addr:          "tcp://:" + strconv.Itoa(*mqttPort),
-		AddrTLS:       "tcp://:" + strconv.Itoa(*mqttPortTLS),
-		CertFile:      serverCertFile,
-		KeyFile:       serverKeyFile,
-		Authenticator: mqttAuth,
-		ServeErr:      mqttServeErr,
-		Service:       modelService,
-	}
-	mqttServer.Start()
-	defer mqttServer.Stop()
-
-	// event receiver for MQTT
-	mqttReceiver := &mqtt.EventReceiver{
-		Broker: mqttServer,
-		// forward events
-		Next: deviceCol,
-	}
-
-	// configure interconnector
-	intercon := &itf.Interconnector{
-		CCUAddr:  *ccuAddress,
-		Types:    ccuItfs,
-		IDPrefix: *initID + "-",
-		Receiver: mqttReceiver,
-		// full URL of the DefaultServeMux for callbacks
-		ServerURL: "http://" + *serverAddr + ":" + strconv.Itoa(*httpPort),
-	}
-
-	// start ReGa DOM explorer
-	reGaDOM := script.NewReGaDOM(scriptClient)
-	reGaDOM.Start()
-	defer reGaDOM.Stop()
-
-	// create room and function collections
-	vmodel.NewRoomCol(root, reGaDOM, modelService)
-	vmodel.NewFunctionCol(root, reGaDOM, modelService)
-
-	// startup device domain (starts handling of events)
-	deviceCol.Interconnector = intercon
-	deviceCol.ReGaDOM = reGaDOM
-	deviceCol.ModelService = modelService
-	deviceCol.Start()
-	defer deviceCol.Stop()
-
-	// startup interconnector
-	// (an additional handler for XMLRPC is registered at the DefaultServeMux.)
-	intercon.Start()
-	defer intercon.Stop()
-
-	// authentication for VEAP
-	var handler http.Handler
-	if *authUser != "" || *authPassword != "" {
-		log.Info("Forcing HTTP Basic Authentication")
-		authHandler := &httputil.SingleAuthHandler{
-			Handler:  veapHandler,
-			User:     *authUser,
-			Password: *authPassword,
-			Realm:    "CCU-Jack VEAP-Server",
-		}
-		handler = authHandler
-	} else {
-		handler = veapHandler
-	}
-
-	// CORS handler for VEAP
-	allowedMethods := handlers.AllowedMethods([]string{http.MethodGet, http.MethodPut})
-	if *corsOrigins == "" || *corsOrigins == "*" {
-		handler = handlers.CORS(allowedMethods)(handler)
-	} else {
-		origins := strings.Split(*corsOrigins, ",")
-		allowedOrigins := handlers.AllowedOrigins(origins)
-		// only if origin is specified, credentials are allowed (CORS spec)
-		allowCredentials := handlers.AllowCredentials()
-		handler = handlers.CORS(allowedMethods, allowedOrigins, allowCredentials)(handler)
-	}
-
-	// register VEAP handler
-	http.Handle(veapHandler.URLPrefix+"/", handler)
-
-	// wait for start up to complete (do not call Close() on the servers before
-	// the start up is finished)
-	time.Sleep(1 * time.Second)
+	// startup components
+	startup(serveErr)
+	defer shutdown()
 
 	// wait for shutdown or error
 	select {
-	case err := <-httpServeErr:
-		return err
-	case err := <-mqttServeErr:
+	case err := <-serveErr:
 		return err
 	case <-termSig:
+		log.Trace("Shutdown signal received")
 		return nil
 	}
 }
 
 func main() {
-	// setup configuration
-	if err := configure(); err != nil {
-		logFatal(err)
+	err := run()
+	// log fatal error
+	if err != nil {
+		log.Error(err)
 	}
-
-	// startup message
-	log.Info(appDisplayName, " V", appVersion)
-	log.Info("(C)MDZ, info@ccu-historian.de")
-	log.Info("Configuration:")
-	log.Info("  Log level: ", logLevel.String())
-	log.Info("  Log file: ", *logFilePath)
-	log.Info("  Server host name: ", *serverHost)
-	log.Info("  Server address: ", *serverAddr)
-	log.Info("  HTTP port: ", *httpPort)
-	log.Info("  HTTPS port: ", *httpPortTLS)
-	log.Info("  MQTT port: ", *mqttPort)
-	log.Info("  Secure MQTT port: ", *mqttPortTLS)
-	log.Info("  CORS origins: ", *corsOrigins)
-	log.Info("  CCU address: ", *ccuAddress)
-	log.Info("  Interfaces: ", ccuItfs.String())
-	log.Info("  Init ID: ", *initID)
-
-	// other setups
-	if err := certificates(); err != nil {
-		logFatal(err)
-	}
-
-	// run
-	if err := run(); err != nil {
-		logFatal(err)
-	}
+	// close log file, if present
 	if logFile != nil {
 		logFile.Close()
+	}
+	// exit with code
+	if err != nil {
+		os.Exit(1)
 	}
 	os.Exit(0)
 }

@@ -1,20 +1,28 @@
 package mqtt
 
 import (
+	"github.com/mdzio/ccu-jack/rtcfg"
 	"github.com/mdzio/go-mqtt/auth"
 )
 
-// SingleAuthHandler forces the specified authentication from the MQTT client.
-type SingleAuthHandler struct {
-	User     string
-	Password string
+// AuthHandler handles MQTT client authentication.
+type AuthHandler struct {
+	Store *rtcfg.Store
 }
 
 // Authenticate implements auth.Authenticator.
-func (a *SingleAuthHandler) Authenticate(id string, cred interface{}) error {
+func (a *AuthHandler) Authenticate(id string, cred interface{}) error {
 	passwd := cred.(string)
-	if id != a.User || passwd != a.Password {
-		return auth.ErrAuthFailure
-	}
-	return nil
+	return a.Store.View(func(c *rtcfg.Config) error {
+		// if no user is configured, allow everything for every user
+		if len(c.Users) == 0 {
+			return nil
+		}
+		// authenticate user for MQTT
+		user := c.Authenticate(rtcfg.EndpointMQTT, id, passwd)
+		if user == nil {
+			return auth.ErrAuthFailure
+		}
+		return nil
+	})
 }

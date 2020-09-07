@@ -39,6 +39,9 @@ function Layout() {
                         m("button.btn.btn-block.my-2", {
                             onclick: function () { m.route.set("/watcher") }
                         }, viewWatcherTitle()),
+                        m("button.btn.btn-block.my-2", {
+                            onclick: function () { m.route.set("/config") }
+                        }, "Konfiguration"),
                         m(Version)
                     ),
                     m(".column.col-10.col-md-12",
@@ -65,6 +68,11 @@ m.route(document.body, "/navigator", {
     "/watcher": {
         render: function () {
             return m(Layout, m(Watcher))
+        }
+    },
+    "/config": {
+        render: function () {
+            return m(Layout, m(Config))
         }
     },
 })
