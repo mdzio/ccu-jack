@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mdzio/go-hmccu/itf"
+
 	"github.com/mdzio/ccu-jack/rtcfg"
 	"github.com/mdzio/go-lib/any"
 	"github.com/mdzio/go-veap"
@@ -65,6 +67,27 @@ func updateConfig(cfg *rtcfg.Config, v interface{}) error {
 	c := q.Map()
 	if q.Err() != nil {
 		return q.Err()
+	}
+	// CCU property present?
+	if c.Has("CCU") {
+		// CCU interface list
+		var ts itf.Types
+		is := c.Key("CCU").Map().Key("Interfaces").Slice()
+		for _, i := range is {
+			var t itf.Type
+			in := i.String()
+			// not a string?
+			if q.Err() != nil {
+				return q.Err()
+			}
+			err := t.Set(in)
+			// invalid interface name
+			if err != nil {
+				return err
+			}
+			ts = append(ts, t)
+		}
+		cfg.CCU.Interfaces = ts
 	}
 	// Users property present?
 	if c.Has("Users") {

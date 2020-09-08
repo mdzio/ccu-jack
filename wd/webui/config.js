@@ -164,12 +164,33 @@ function Config() {
         modified = true
     }
 
+    function viewCCU() {
+        const itfs = config.CCU.Interfaces
+        const wiredName = "BidCosWired"
+        return m(".form-group",
+            m("label.form-switch",
+                m("input[type=checkbox]", {
+                    checked: itfs.includes(wiredName),
+                    onchange: function (e) {
+                        if (e.target.checked) {
+                            itfs.push(wiredName)
+                        } else {
+                            const idx = itfs.indexOf(wiredName)
+                            itfs.splice(idx, 1)
+                        }
+                        modified = true
+                    }
+                }),
+                m("i.form-icon"), "BidCos-Wired Geräte (HMW-...) anbinden (Neustart vom CCU-Jack ist erforderlich!)"
+            ),
+        )
+    }
+
     function viewUsers() {
         var users = Object.values(config.Users).sort(function (a, b) {
             return a.Identifier.toLowerCase().localeCompare(b.Identifier.toLowerCase())
         })
         return [
-            m("h2", "Zugriffsberechtigungen"),
             users.length == 0 &&
             m(".toast.toast-warning",
                 m("p", "Da keine Zugriffsberechtigungen gesetzt sind, besteht Vollzugriff für unangemeldete Benutzer!")
@@ -220,7 +241,16 @@ function Config() {
                 m(".toast.toast-warning",
                     m("p", "Konfigurationsänderungen sind noch nicht gespeichert!")
                 ),
-                viewUsers(),
+                m(".accordion",
+                    m("input[type=checkbox][id=acc-ccu][hidden=hidden]"),
+                    m("label.accordion-header[for=acc-ccu]", m("i.icon.icon-arrow-right.mr-1"), "CCU-Anbindung"),
+                    m(".accordion-body", viewCCU())
+                ),
+                m(".accordion",
+                    m("input[type=checkbox][id=acc-users][hidden=hidden]"),
+                    m("label.accordion-header[for=acc-users]", m("i.icon.icon-arrow-right.mr-1"), "Zugriffsberechtigungen"),
+                    m(".accordion-body", viewUsers())
+                ),
                 modified &&
                 m(".btn-group.float-right",
                     m("button.btn.my-2", { onclick: save }, "Konfiguration speichern"),

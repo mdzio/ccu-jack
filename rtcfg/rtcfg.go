@@ -68,7 +68,9 @@ func (s *Store) Write() error {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 	// stop timer
-	s.timer.Stop()
+	if s.timer != nil {
+		s.timer.Stop()
+	}
 	// save to file
 	if s.modified {
 		// open file
@@ -95,7 +97,9 @@ func (s *Store) Close() {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 	// stop timer
-	s.timer.Stop()
+	if s.timer != nil {
+		s.timer.Stop()
+	}
 	s.modified = false
 }
 

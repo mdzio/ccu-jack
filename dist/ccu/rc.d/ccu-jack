@@ -6,21 +6,6 @@ ADDON_NAME="CCU-Jack"
 ADDON_COPYRIGHT="(c) 2019-2020 info@ccu-historian.de"
 ADDON_WWW='<a href="https://github.com/mdzio/ccu-jack" target="_blank">https://github.com/mdzio/ccu-jack</a>'
 
-# user and password for HTTP basic authentication (empty: disabled)
-OPT_USER=
-OPT_PWD=
-
-# log level for file log (/var/log/ccu-jack.log)
-# levels: off, error, warning, info, debug, trace
-OPT_LOGLEVEL=info
-
-# CCU interfaces (comma separated without spaces)
-if grep -q 'BidCos-Wired' /etc/config/InterfacesList.xml 2>/dev/null; then
-  OPT_ITFS=bidcosrf,hmiprf,virtualdevices,bidcoswired
-else
-  OPT_ITFS=bidcosrf,hmiprf,virtualdevices
-fi
-
 # directories
 ADDON_DIR=/usr/local/addons/${ADDON_ID}
 ETC_DIR=/usr/local/etc
@@ -40,7 +25,7 @@ start() {
     sleep 15
     # start process
     cd ${ADDON_DIR}
-    start-stop-daemon -S -q -b -m -p /var/run/${ADDON_ID}.pid -x ${ADDON_DIR}/${ADDON_ID} -- -interfaces "${OPT_ITFS}" -user "${OPT_USER}" -password "${OPT_PWD}" -log ${OPT_LOGLEVEL} -logfile /var/log/ccu-jack.log
+    start-stop-daemon -S -q -b -m -p /var/run/${ADDON_ID}.pid -x ${ADDON_DIR}/${ADDON_ID}
     logger -t ${ADDON_ID} -p user.info "Started"
 }
 
