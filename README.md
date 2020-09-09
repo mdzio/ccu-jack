@@ -84,42 +84,48 @@ cd src/github.com/mdzio/ccu-jack/build
 go run .
 ```
 
-## Kommandozeilenoptionen
+## Konfiguration
 
-Die Kommandozeilenoptionen vom CCU-Jack werden beim Start mit der Option `-h` aufgelistet:
+Die Konfiguration des CCU-Jacks erfolgt über die Datei `ccu-jack.cfg`, die im Installationsverzeichnis zu finden ist. Viele Konfigurationsoptionen können bereits über das Web-UI geändert werden. Ansonsten kann diese Datei mit einem Texteditor angepasst werden, während der CCU-Jack nicht gestartet ist. Das Format der Datei ist [JSON](https://de.wikipedia.org/wiki/JavaScript_Object_Notation). Bei einer Installation als Add-On auf der CCU muss in der Regel die Konfigurationsdatei nicht angepasst werden.
+
+Beispielkonfigurationsdatei:
 ```
-usage of ccu-jack:
-  -addr address
-    	address of the host (default "127.0.0.1")
-  -ccu address
-    	address of the CCU (default "127.0.0.1")
-  -cors hosts
-    	set hosts as allowed origins for CORS requests (comma separated) (default "*")
-  -host name
-    	host name for certificate generation (normally autodetected)
-  -http port
-    	port for serving HTTP (default 2121)
-  -https port
-    	port for serving HTTPS (default 2122)
-  -id identifier
-    	additional identifier for the XMLRPC init method (default "CCU-Jack")
-  -interfaces types
-    	types of the CCU communication interfaces (comma separated): BidCosWired, BidCosRF, System, HmIPRF, VirtualDevices (default BidCosRF)
-  -log severity
-    	specifies the minimum severity of printed log messages: off, error, warning, info, debug or trace (default INFO)
-  -logfile file
-    	write log messages to file instead of stderr
-  -mqtt port
-    	port for serving MQTT (default 1883)
-  -mqtts port
-    	port for serving Secure MQTT (default 8883)
-  -password password
-    	password for HTTP Basic Authentication/MQTT, q.v. -user
-  -user name
-    	user name for HTTP Basic Authentication/MQTT (disabled by default)
+{
+  "CCU": {
+    "Address": "192.168.0.10",
+    "Interfaces": [
+      "BidCosRF",
+      "HmIPRF",
+      "VirtualDevices"
+    ],
+    "InitID": "CCU-Jack"
+  },
+  "Host": {
+    "Name": "",
+    "Address": "192.168.0.11"
+  },
+  "Logging": {
+    "Level": "INFO",
+    "FilePath": "ccu-jack.log"
+  },
+  "HTTP": {
+    "Port": 2121,
+    "PortTLS": 2122,
+    "CORSOrigins": [
+      "*"
+    ]
+  },
+  "MQTT": {
+    "Port": 1883,
+    "PortTLS": 8883
+  },
+  "Users": {}
+}
 ```
 
-Log-Meldungen werden auf der Fehlerausgabe (STDERR) oder in die mit der Option `-logfile` angegebenen Datei ausgegeben, wenn sie mindestens die mit der Option `-log` gesetzte Dringlichkeit besitzen.
+Folgende zwei Optionen müssen mindestens vor dem ersten Start angepasst werden. Die IP-Adresse der CCU muss mit der Option `CCU.Address` gesetzt werden. Die IP-Adresse des Rechners, auf dem der CCU-Jack gestartet wird, muss mit der Option `Host.Address` gesetzt werden. Beide Optionen können auf `127.0.0.1` gesetzt werden, wenn der CCU-Jack direkt auf der CCU gestartet wird.
+
+Log-Meldungen werden auf der Fehlerausgabe (STDERR) oder in die mit der Option `Logging.FilePath` angegebenen Datei ausgegeben, wenn sie mindestens die mit der Option `Logging.Level` gesetzte Dringlichkeit (OFF, ERROR, WARNING, INFO, DEBUG oder TRACE) besitzen.
 
 ## Performance
 
