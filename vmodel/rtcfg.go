@@ -71,7 +71,7 @@ func updateConfig(cfg *rtcfg.Config, v interface{}) error {
 	// CCU property present?
 	if c.Has("CCU") {
 		// CCU interface list
-		var ts itf.Types
+		ts := make(itf.Types, 0) // no nil slice
 		is := c.Key("CCU").Map().Key("Interfaces").Slice()
 		for _, i := range is {
 			var t itf.Type
