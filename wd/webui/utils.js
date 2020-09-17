@@ -122,6 +122,8 @@ function veapStatusToString(status) {
             return "Zugriffsrechte fehlen (403)"
         case status == 404:
             return "Objekt/Dienst nicht vorhanden (404)"
+        case status == 405:
+            return "Methode nicht erlaubt (405)"
         case status == 422:
             return "Anfrage entspricht nicht dem VEAP-Protokoll (422)"
         case status == 500:
@@ -146,5 +148,33 @@ function errorToString(err) {
     if (err.name && err.name != "Error") {
         return err.name
     }
+    if (typeof err == "string") {
+        return err
+    }
     return "Unbekannter Fehler"
 }
+
+// parses a string as number (german locale)
+function stringToNumber(str) {
+    // test format
+    if (!/^-?((\d{4,})|(\d{1,3}(\.\d{3})*))(,\d+)?$/.test(str)) {
+        return null;
+    }
+    // remove group separators, replace decimal separator and parse
+    var val = Number.parseFloat(str.replace(/\./g, '').replace(',', '.'));
+    if (Number.isNaN(val)) {
+        return null
+    } else {
+        return val
+    }
+}
+
+// converts a number to string (german local)
+function numberToString(val, options) {
+    if (val == null) {
+        return '';
+    } else {
+        return val.toLocaleString('de-DE', options);
+    }
+}
+

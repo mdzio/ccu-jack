@@ -40,7 +40,8 @@ function UserModal() {
                                 m("input.form-input[type=text][id=id-input][placeholder=Kennung]", {
                                     class: idOk ? "is-success" : "is-error",
                                     value: user.Identifier,
-                                    oninput: function (e) { user.Identifier = e.target.value }
+                                    oninput: function (e) { user.Identifier = e.target.value },
+                                    oncreate: function (vnode) { vnode.dom.focus() }
                                 })
                             ),
                             m(".form-group",

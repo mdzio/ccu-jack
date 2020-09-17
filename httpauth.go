@@ -51,7 +51,7 @@ func (h *HTTPAuthHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	// check credentials
 	if user == nil {
-		logAuth.Warningf("Authentication request with invalid password or unknown user: %s", req.RemoteAddr)
+		logAuth.Warningf("Authentication request failed: address %s, user %s", req.RemoteAddr, name)
 		h.sendAuth(rw, req)
 		return
 	}

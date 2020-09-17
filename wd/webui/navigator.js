@@ -7,6 +7,8 @@ function Navigator() {
     var vobj, error
     // VEAP object has a process value?
     var pv = false
+    // show modal for PV?
+    var showPVModal = false
 
     // queries the VEAP object properties
     function init(addr) {
@@ -192,12 +194,17 @@ function Navigator() {
                                             }
                                         }
                                     },
-                                    watched ? m("i.icon.icon-minus") : m("i.icon.icon-plus")
+                                    watched ? m("i.icon.icon-minus") : m("i.icon.icon-plus"),
+                                ),
+                                m("button.btn.btn-sm.ml-2", { onclick: function () { showPVModal = true } },
+                                    m("i.icon.icon-edit")
                                 ),
                             ),
                         ),
                     ),
                 ),
+                showPVModal &&
+                m(PVModal, { addr: routeAddr, onclose: function () { showPVModal = false } })
             ]
         }
         return null

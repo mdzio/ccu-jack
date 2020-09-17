@@ -23,6 +23,8 @@ var WatchList = {
 
 // Watcher component
 function Watcher() {
+    // set process value address
+    var setPVAddr
 
     // views a data point row
     function viewRow(dp) {
@@ -31,8 +33,14 @@ function Watcher() {
             m("td", dp.addr),
             m(ProcessValue, { addr: dp.addr }),
             m("td",
-                { onclick: function () { WatchList.remove(dp.addr) } },
-                m("button.btn.btn-sm", m("i.icon.icon-delete"))
+                m("button.btn.btn-sm",
+                    { onclick: function () { WatchList.remove(dp.addr) } },
+                    m("i.icon.icon-delete")
+                ),
+                m("button.btn.btn-sm.ml-2",
+                    { onclick: function () { setPVAddr = dp.addr } },
+                    m("i.icon.icon-edit")
+                )
             )
         )
     }
@@ -57,7 +65,9 @@ function Watcher() {
                     m("tbody",
                         WatchList.dataPoints.map(function (dp) { return viewRow(dp) })
                     )
-                )
+                ),
+                setPVAddr != null &&
+                m(PVModal, { addr: setPVAddr, onclose: function () { setPVAddr = null } })
             ]
         }
     }

@@ -4,3 +4,4 @@ build/tmp
 ccu-jack-*.tar.gz
 ccu-jack-*.zip
 __debug_bin
+wd/ccu-jack.cfg
