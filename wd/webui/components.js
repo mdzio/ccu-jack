@@ -111,7 +111,7 @@ function PVInput() {
         },
         view: function () {
             return m(".form-group",
-                m("label.form-label[for=number-pv-input]", "Zahlenwert:"),
+                m("label.form-label[for=number-pv-input]", "Neuer Wert:"),
                 m("input.form-input[type=text][id=number-pv-input][placeholder=Zahlenwert]", {
                     class: pv != null ? "is-success" : "is-error",
                     value: txt, oninput: update,
@@ -147,7 +147,7 @@ function PVRadio() {
         },
         view: function () {
             return m(".form-group",
-                m("label.form-label", "Digitalwert:"),
+                m("label.form-label", "Neuer Wert:"),
                 m("label.form-radio",
                     m("input[type=radio][name=pv][value=1]", { checked: pv.v, onchange: update }),
                     m("i.form-icon"),
