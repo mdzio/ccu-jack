@@ -42,13 +42,7 @@ Folgende Leitlinien sind bei der Entwicklung des CCU-Jacks maßgebend:
 
 Nach der Implementierung von MQTT sind zukünftig erst einmal kleinere Erweiterungen geplant, um den CCU-Jack für die V1.0 abzurunden:
 
-* Erweiterungen für MQTT
-  * Zugriffsberechtigungen
-* Erweiterungen VEAP-API
-  * Zugriffsberechtigungen
-* Erweiterungen der Web-UI
-  * Setzen von Datenpunkten im _Navigator_ und der _Überwachung_
-  * Benutzer- und Rechteverwaltung
+* Web-Socket-Unterstützung für MQTT
 
 Langfristig sind dann bereits folgende Erweiterungen geplant:
 * Erweiterungen für MQTT
@@ -158,7 +152,7 @@ Mit dem [Kommandozeilenwerkzeug CURL](https://curl.haxx.se), das praktisch für 
 
 ## Beschreibung der MQTT-Schnittstelle
 
-Der CCU-Jack enthält einen vollwertigen und leistungsfähigen MQTT-Server (V3.1.1). Dieser kann von beliebigen Fremdapplikationen genutzt werden. Zudem werden die Wertänderungen aller Gerätedatenpunkte der CCU und ausgewählter Systemvariablen automatisch an den MQTT-Server gesendet und stehen daraufhin allen MQTT-Clients zur Verfügung.
+Der CCU-Jack enthält einen vollwertigen und leistungsfähigen MQTT-Server (V3.1.1). Dieser kann von beliebigen Fremdapplikationen genutzt werden. Zudem werden die Wertänderungen aller Gerätedatenpunkte der CCU und ausgewählter Systemvariablen automatisch an den MQTT-Server gesendet und stehen daraufhin allen MQTT-Clients zur Verfügung. Die Netzwerk-Ports können mit den Optionen `MQTT.Port` und `MQTT.PortTLS` eingestellt werden. Ein Zugriff über Web-Sockets ist über den Pfad `/ws-mqtt` des HTTP(S)-Servers möglich.
 
 Um das MQTT-Protokoll hat sich ein großes Ökosystem gebildet. Eine Übersicht ist in dieser [Link-Sammlung](https://github.com/hobbyquaker/awesome-mqtt) zu finden.
 
