@@ -8,9 +8,9 @@ import (
 
 	"github.com/mdzio/go-hmccu/itf"
 	"github.com/mdzio/go-hmccu/script"
+	"github.com/mdzio/go-logging"
 	"github.com/mdzio/go-veap"
 	"github.com/mdzio/go-veap/model"
-	"github.com/mdzio/go-logging"
 )
 
 const (
@@ -422,7 +422,9 @@ func (c *device) GetDescription() string {
 }
 
 func (c *device) ReadAttributes() veap.AttrValues {
-	return deviceDescrToAttr(c.descr)
+	attr := deviceDescrToAttr(c.descr)
+	attr["interfaceType"] = c.itfClient.ReGaHssID
+	return attr
 }
 
 type channel struct {

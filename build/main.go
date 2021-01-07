@@ -12,7 +12,7 @@ import (
 const (
 	logLevel   = logging.InfoLevel
 	appName    = "ccu-jack"
-	appVersion = "0.10.2"
+	appVersion = "0.10.7"
 	appPkg     = "github.com/mdzio/ccu-jack"
 	ldFlags    = "-s -w -X main.appVersion=" + appVersion
 	buildDir   = ".."
@@ -60,7 +60,7 @@ var (
 		{Inc: "dist/ccu/update_script", Exe: true},
 		{Inc: "README.md", DstDir: "addon"},
 		{Inc: "LICENSE.txt", DstDir: "addon"},
-		{Inc: "dist/ccu/addon/ccu-jack.cfg", DstDir: "addon"},
+		{Inc: "dist/ccu/addon/ccu-jack-default.cfg", DstDir: "addon"},
 		{Inc: "build/tmp/VERSION", DstDir: "addon"},
 		{Inc: "dist/ccu/addon/update_hm_addons.tcl", DstDir: "addon", Exe: true},
 		{Inc: "third-party-licenses/*", DstDir: "addon/third-party-licenses"},

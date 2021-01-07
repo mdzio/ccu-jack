@@ -53,6 +53,12 @@ cp -af www/* ${WWW_DIR}/
 # Copy config files
 cp -af etc/* ${ETC_DIR}/
 
+# Create configuration file, if it does not already exist.
+if [[ ! -e ${ADDON_DIR}/ccu-jack.cfg ]]; then
+  echo "Creating configuration file"
+  cp ${ADDON_DIR}/ccu-jack-default.cfg ${ADDON_DIR}/ccu-jack.cfg
+fi
+
 # Add menu entry
 cp -af addon/update_hm_addons.tcl ${ADDON_DIR}/
 ${ADDON_DIR}/update_hm_addons.tcl -a ${ADDON_ID} -name "${ADDON_NAME}" -url /addons/${ADDON_ID}/config.cgi -de "${ADDON_DESCR_DE}" -en "${ADDON_DESCR_EN}"

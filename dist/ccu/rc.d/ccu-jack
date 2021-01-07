@@ -3,7 +3,7 @@
 # add-on information
 ADDON_ID=ccu-jack
 ADDON_NAME="CCU-Jack"
-ADDON_COPYRIGHT="(c) 2019-2020 info@ccu-historian.de"
+ADDON_COPYRIGHT="(c) 2019-2021 info@ccu-historian.de"
 ADDON_WWW='<a href="https://github.com/mdzio/ccu-jack" target="_blank">https://github.com/mdzio/ccu-jack</a>'
 
 # directories
@@ -21,7 +21,7 @@ stop() {
 
 start() {
     logger -t ${ADDON_ID} -p user.debug "Starting"
-    # wait for ReGaHss startup
+    # wait for ReGaHss startup/delay restart
     sleep 15
     # start process
     cd ${ADDON_DIR}
@@ -73,7 +73,6 @@ case "$1" in
 	;;
   restart|reload)
 	  stop
-	  sleep 1
 	  start
 	;;
   uninstall)
