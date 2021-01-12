@@ -539,20 +539,20 @@ func (p *parameter) ReadPV() (veap.PV, veap.Error) {
 		devCol := dev.Collection.(*DeviceCol)
 		client := devCol.ReGaDOM.ScriptClient
 		addr := dev.itfClient.ReGaHssID + "." + ch.descr.Address + "." + p.descr.ID
-		v, ts, uncertain, err := client.ReadValue("\""+addr+"\"", p.descr.Type)
+		val, err := client.ReadValues([]script.ValObjDef{{ISEID: "\"" + addr + "\"", Type: p.descr.Type}})
 		if err != nil {
 			return veap.PV{}, veap.NewError(veap.StatusInternalServerError, err)
 		}
 		state := veap.StateGood
-		if uncertain {
+		if val[0].Uncertain {
 			state = veap.StateUncertain
 		}
 		// store and return PV
 		p.pvLock.Lock()
 		defer p.pvLock.Unlock()
 		p.pv = veap.PV{
-			Time:  ts,
-			Value: v,
+			Time:  val[0].Timestamp,
+			Value: val[0].Value,
 			State: state,
 		}
 		return p.pv, nil

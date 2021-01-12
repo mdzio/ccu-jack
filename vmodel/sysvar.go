@@ -4,9 +4,9 @@ import (
 	"time"
 
 	"github.com/mdzio/go-hmccu/script"
+	"github.com/mdzio/go-logging"
 	"github.com/mdzio/go-veap"
 	"github.com/mdzio/go-veap/model"
-	"github.com/mdzio/go-logging"
 )
 
 const (
@@ -170,15 +170,15 @@ func (v *sysVar) ReadAttributes() veap.AttrValues {
 func (v *sysVar) ReadPV() (veap.PV, veap.Error) {
 	// read value
 	cln := v.Collection.(*SysVarCol).ScriptClient
-	value, ts, uncertain, err := cln.ReadSysVar(v.sv)
+	res, err := cln.ReadSysVars(script.SysVarDefs{v.sv})
 	if err != nil {
 		return veap.PV{}, veap.NewError(veap.StatusInternalServerError, err)
 	}
 	state := veap.StateGood
-	if uncertain {
+	if res[0].Uncertain {
 		state = veap.StateUncertain
 	}
-	return veap.PV{Time: ts, Value: value, State: state}, nil
+	return veap.PV{Time: res[0].Timestamp, Value: res[0].Value, State: state}, nil
 }
 
 func (v *sysVar) WritePV(pv veap.PV) veap.Error {

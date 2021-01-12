@@ -7,18 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"path"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/mdzio/go-lib/any"
-
-	"github.com/mdzio/go-veap"
-	"github.com/mdzio/go-veap/model"
 	"github.com/mdzio/go-logging"
 	"github.com/mdzio/go-mqtt/message"
 	"github.com/mdzio/go-mqtt/service"
+	"github.com/mdzio/go-veap"
 )
 
 const (
@@ -33,8 +29,6 @@ const (
 	sysVarVeapPath = "/sysvar"
 	// delay time for reading back
 	sysVarReadBackDur = 300 * time.Millisecond
-	// cycle time for reading system variables
-	sysVarReadCycle = 1000 * time.Millisecond
 
 	// topic prefix for programs
 	prgTopic = "program"
@@ -59,16 +53,13 @@ type Broker struct {
 	// When an error happens while serving (e.g. binding of port fails), this
 	// error is sent to the channel ServeErr.
 	ServeErr chan<- error
-	// Service is used to set device data points and system variables.
+	// Service is used to write device data points and read/write system variables.
 	Service veap.Service
 
 	server     *service.Server
 	doneServer sync.WaitGroup
 
 	onSetDevice service.OnPublishFunc
-
-	stopSVReader chan struct{}
-	doneSVReader chan struct{}
 
 	sysVarAdapter *vadapter
 	prgAdapter    *vadapter
@@ -128,9 +119,6 @@ func (b *Broker) Start() {
 		}()
 	}
 
-	// start system variable reader
-	b.startSysVarReader()
-
 	// subscribe set device topics
 	b.onSetDevice = func(msg *message.PublishMessage) error {
 		log.Tracef("Set device message received: %s: %s", msg.Topic(), msg.Payload())
@@ -184,10 +172,6 @@ func (b *Broker) Stop() {
 	b.prgAdapter.stop()
 	b.sysVarAdapter.stop()
 
-	// stop system variable reader
-	close(b.stopSVReader)
-	<-b.doneSVReader
-
 	// stop broker
 	log.Debugf("Stopping MQTT broker")
 	b.server.Unsubscribe(deviceSetTopic+"/+/+/+", &b.onSetDevice)
@@ -235,96 +219,6 @@ func (b *Broker) Subscribe(topic string, qos byte, onPublish *service.OnPublishF
 // Unsubscribe unsubscribes a topic.
 func (b *Broker) Unsubscribe(topic string, onPublish *service.OnPublishFunc) error {
 	return b.server.Unsubscribe(topic, onPublish)
-}
-
-func (b *Broker) startSysVarReader() {
-	log.Debug("Starting system variable reader")
-	b.stopSVReader = make(chan struct{})
-	b.doneSVReader = make(chan struct{})
-	go func() {
-		// defer clean up
-		defer func() {
-			log.Debug("Stopping system variable reader")
-			b.doneSVReader <- struct{}{}
-		}()
-
-		// PV cache
-		pvCache := make(map[string]veap.PV)
-
-		for {
-			// get list of system variables
-			_, links, err := b.Service.ReadProperties(sysVarVeapPath)
-			if err != nil {
-				log.Errorf("System variable reader: %v", err)
-				return
-			}
-
-			// get attributes of each system variable
-			sleepDone := false
-			for _, l := range links {
-				if l.Role == "sysvar" {
-					p := path.Join(sysVarVeapPath, l.Target)
-					attrs, _, err := b.Service.ReadProperties(p)
-					if err != nil {
-						log.Errorf("System variable reader: %v", err)
-						return
-					}
-					q := any.Q(map[string]interface{}(attrs))
-					descr := q.Map().TryKey(model.DescriptionProperty).String()
-					if q.Err() != nil {
-						log.Errorf("System variable reader: %v", q.Err())
-						return
-					}
-
-					// "mqtt" in description?
-					if strings.Contains(strings.ToLower(descr), "mqtt") {
-
-						// read PV
-						pv, err := b.Service.ReadPV(p)
-						if err != nil {
-							log.Errorf("System variable reader: %v", err)
-						} else {
-
-							// PV changed?
-							prevPV, ok := pvCache[l.Target]
-							if !ok || !pv.Equal(prevPV) {
-
-								// publish PV
-								topic := sysVarTopic + "/status" + p[len(sysVarVeapPath):]
-								if err := b.PublishPV(topic, pv, message.QosAtLeastOnce, true); err != nil {
-									log.Errorf("System variable reader: %v", err)
-								} else {
-									pvCache[l.Target] = pv
-								}
-							}
-						}
-						if sleep(b.stopSVReader, sysVarReadCycle) == errStop {
-							return
-						}
-						sleepDone = true
-					}
-				}
-			}
-
-			// sleep if no system variables found
-			if !sleepDone {
-				if sleep(b.stopSVReader, sysVarReadCycle) == errStop {
-					return
-				}
-			}
-		}
-	}()
-}
-
-var errStop = errors.New("Stop request")
-
-func sleep(stop <-chan struct{}, duration time.Duration) error {
-	select {
-	case <-stop:
-		return errStop
-	case <-time.After(duration):
-		return nil
-	}
 }
 
 type wirePV struct {

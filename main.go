@@ -54,12 +54,13 @@ var (
 	modelService *model.Service
 
 	// application services
-	sysVarCol  *vmodel.SysVarCol
-	prgCol     *vmodel.ProgramCol
-	mqttServer *mqtt.Broker
-	reGaDOM    *script.ReGaDOM
-	deviceCol  *vmodel.DeviceCol
-	intercon   *itf.Interconnector
+	sysVarCol    *vmodel.SysVarCol
+	prgCol       *vmodel.ProgramCol
+	mqttServer   *mqtt.Broker
+	sysVarReader *mqtt.SysVarReader
+	reGaDOM      *script.ReGaDOM
+	deviceCol    *vmodel.DeviceCol
+	intercon     *itf.Interconnector
 )
 
 func configure() error {
@@ -276,6 +277,14 @@ func startupApp(serveErr chan<- error) {
 		Next: deviceCol,
 	}
 
+	// system variable reader for MQTT
+	sysVarReader = &mqtt.SysVarReader{
+		Service:      modelService,
+		ScriptClient: scriptClient,
+		Broker:       mqttServer,
+	}
+	sysVarReader.Start()
+
 	// configure interconnector
 	intercon = &itf.Interconnector{
 		CCUAddr:  cfg.CCU.Address,
@@ -309,6 +318,7 @@ func shutdownApp() {
 	intercon.Stop()
 	deviceCol.Stop()
 	reGaDOM.Stop()
+	sysVarReader.Stop()
 	mqttServer.Stop()
 	prgCol.Stop()
 	sysVarCol.Stop()
