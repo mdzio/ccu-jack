@@ -78,7 +78,10 @@ func TestPermissions(t *testing.T) {
 
 	s := &Store{FileName: tmpFile}
 	s.Update(func(r *Config) error {
-		sub := &User{Identifier: "sub"}
+		sub := &User{
+			Identifier: "sub",
+			Active:     true,
+		}
 		sub.SetPassword("pwd")
 		sub.AddPermission(&Permission{
 			Identifier: "per",
