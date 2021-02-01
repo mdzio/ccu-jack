@@ -23,8 +23,8 @@ var (
 	targetSystems = []string{
 		"ccu2",
 		"rm-rp0+1",
-		"ccu3-rm-rp2+3+4",
-		"rm-arm64",
+		"ccu3-rm-rp2+3",
+		"rm-rp4",
 		"vccu-x86",
 		"win",
 		"linux",
@@ -36,14 +36,14 @@ var (
 		addon  bool
 		goSpec releng.GoSpec
 	}{
-		"ccu2":            {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "5", LDFlags: ldFlags}},
-		"rm-rp0+1":        {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "6", LDFlags: ldFlags}},
-		"ccu3-rm-rp2+3+4": {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "7", LDFlags: ldFlags}},
- 		"rm-arm64":        {true, releng.GoSpec{OS: "linux", Arch: "arm64", LDFlags: ldFlags}},		
-		"vccu-x86":        {true, releng.GoSpec{OS: "linux", Arch: "386", LDFlags: ldFlags}},
-		"win":             {false, releng.GoSpec{OS: "windows", Arch: "amd64", LDFlags: ldFlags}},
-		"linux":           {false, releng.GoSpec{OS: "linux", Arch: "amd64", LDFlags: ldFlags}},
-		"darwin":          {false, releng.GoSpec{OS: "darwin", Arch: "amd64", LDFlags: ldFlags}},
+		"ccu2":          {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "5", LDFlags: ldFlags}},
+		"rm-rp0+1":      {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "6", LDFlags: ldFlags}},
+		"ccu3-rm-rp2+3": {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "7", LDFlags: ldFlags}},
+		"rm-rp4":        {true, releng.GoSpec{OS: "linux", Arch: "arm64", LDFlags: ldFlags}},
+		"vccu-x86":      {true, releng.GoSpec{OS: "linux", Arch: "386", LDFlags: ldFlags}},
+		"win":           {false, releng.GoSpec{OS: "windows", Arch: "amd64", LDFlags: ldFlags}},
+		"linux":         {false, releng.GoSpec{OS: "linux", Arch: "amd64", LDFlags: ldFlags}},
+		"darwin":        {false, releng.GoSpec{OS: "darwin", Arch: "amd64", LDFlags: ldFlags}},
 	}
 
 	// files for non ccu target systems
