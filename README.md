@@ -110,6 +110,10 @@ Beispielkonfigurationsdatei:
     "Port": 1883,
     "PortTLS": 8883
   },
+  "Certificate :  {
+    "CertificateFile": "/etc/config/cert.pem",
+    "KeyFile": "/etc/config/key.pem"     
+  },
   "Users": {}
 }
 ```
@@ -154,6 +158,8 @@ Mit dem [Kommandozeilenwerkzeug CURL](https://curl.haxx.se), das praktisch für 
 ## Beschreibung der MQTT-Schnittstelle
 
 Der CCU-Jack enthält einen vollwertigen und leistungsfähigen MQTT-Server (V3.1.1). Dieser kann von beliebigen Fremdapplikationen genutzt werden. Zudem werden die Wertänderungen aller Gerätedatenpunkte der CCU und ausgewählter Systemvariablen automatisch an den MQTT-Server gesendet und stehen daraufhin allen MQTT-Clients zur Verfügung. Die Netzwerk-Ports können mit den Optionen `MQTT.Port` und `MQTT.PortTLS` eingestellt werden. Ein Zugriff über Web-Sockets ist über den Pfad `/ws-mqtt` des HTTP(S)-Servers möglich.
+
+Mit `Certificate.CertificateFile` und `Certificate.KeyFile` kann ein bereits exisierendes Zertifikat für TLS verwendet werden.
 
 Um das MQTT-Protokoll hat sich ein großes Ökosystem gebildet. Eine Übersicht ist in dieser [Link-Sammlung](https://github.com/hobbyquaker/awesome-mqtt) zu finden.
 
@@ -206,14 +212,19 @@ Beispiel: Die Web-Applikation auf dem Host `https://example.com` soll mit Authen
 
 CCU-Jack ermöglicht einen verschlüsselten Zugriff über HTTPS, sodass auch über unsichere Netzwerke (z.B. Internet) Daten sicher ausgetauscht werden könnan. Über den Port 2122 (änderbar mit der Kommandozeilenoption `-porttls`) kann eine HTTPS-Verbindung aufgebaut werden. Die dafür benötigten Zertifikate können vorgegeben werden oder werden beim ersten Start vom CCU-Jack automatisch generiert.
 
-Benötigte Zertifikatsdateien für den Server:
+Es kann auch ein vorhandene Zertifikat verwendet werden. Dafür müssen die Optionen `Certificate.CertificateFile` auf das vorhandenen Zertifikat und `
+HTTP.KeyFile` auf das dazugehörige Private Key file gesetzt werden.
+Falls es sich um eine kombinierte PEM Datei handelt, die das Zertifikat und den Key enthält, muss die Option `Certificate.KeyFile` nicht gesetzt werden. Auf der CCU kann z.b. das bereits vorhandene Zertifikat `/etc/config/server.pem` verwendet werden.
+
+
+Alternativ können auch Zertifikatsdateien für den Server im Arbeitsverzeichnis desdes CCU-Jacks  bereitgestellt werden:
 
 Dateiname   | Funktion
 ------------|---------
 svrcert.pem | Zertifikat des Servers
 svrcert.key | Privater Schlüssel des Servers (Dieser ist geheim zu halten.)
 
-Falls die oben genannten Zertifikatsdateien im Arbeitsverzeichnis des CCU-Jacks nicht vorhanden sind, so werden automatisch zwei Zertifikate erstellt. Die Gültigkeit ist auf 10 Jahre eingestellt:
+Falls die Certificate Option nicht gesetzt ist und die oben genannten Zertifikatsdateien im Arbeitsverzeichnis des CCU-Jacks nicht vorhanden sind, so werden automatisch zwei Zertifikate erstellt. Die Gültigkeit ist auf 10 Jahre eingestellt:
 
 Dateiname   | Funktion
 ------------|---------
@@ -224,6 +235,7 @@ svrcert.key | Privater Schlüssel des Servers (Dieser ist geheim zu halten.)
 
 Für den sicheren Zugriff muss lediglich das generierte Zertifikat der Zertifizierungsstelle (`cacert.pem`) den HTTPS-Clients *über einen sicheren Kanal* bekannt gemacht werden. Das Zertifikat kann z.B. im Betriebssystem oder im Web-Browser installiert werden. Die privaten Schlüssel dürfen nie verteilt werden.
 
+ 
 Über verschiedene Programmiersprachen kann auch verschlüsselt zugegriffen werden.
 
 ### Curl
