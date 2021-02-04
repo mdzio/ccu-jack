@@ -539,7 +539,7 @@ func (p *parameter) ReadPV() (veap.PV, veap.Error) {
 		devCol := dev.Collection.(*DeviceCol)
 		client := devCol.ReGaDOM.ScriptClient
 		addr := dev.itfClient.ReGaHssID + "." + ch.descr.Address + "." + p.descr.ID
-		val, err := client.ReadValues([]script.ValObjDef{{ISEID: "\"" + addr + "\"", Type: p.descr.Type}})
+		val, err := client.ReadValues([]script.ValObjDef{{ISEID: addr, Type: p.descr.Type}})
 		if err != nil {
 			return veap.PV{}, veap.NewError(veap.StatusInternalServerError, err)
 		}
