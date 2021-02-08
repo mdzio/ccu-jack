@@ -14,7 +14,8 @@ services:
     security_opt:
       - no-new-privileges:true
     ports:
-      - 12121:2121
+      - 2121:2121
+      - 41883:1883
     restart: unless-stopped
 
 networks:
