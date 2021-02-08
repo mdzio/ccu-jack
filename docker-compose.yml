@@ -1,19 +1,13 @@
 version: "3"
-# replace ccu-jack with new name
 services:
   ccu-jack:
     image: ccu-jack
     container_name: ccu-jack
     hostname: ccu-jack
-    # import secrets
-    env_file: secrets.env
     environment:
-      # needed for linuxserver.io images
-      - PUID=$PUID
-      - PGID=$PGID
-      - TZ=$TZ
+      - TZ=Europe/Berlin
     volumes:
-      - ./ccu-jack.cfg:/app/ccu-jack.cfg
+      - ./wd/ccu-jack.cfg:/app/ccu-jack.cfg
     networks:
       - web
     security_opt:
