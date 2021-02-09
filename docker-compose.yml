@@ -1,5 +1,6 @@
 version: "3"
-# Version 0.1: first working compose file
+# Version 0.2
+# 
 services:
   ccu-jack:
     image: ccu-jack:latest
@@ -8,9 +9,10 @@ services:
     environment:
       - TZ=Europe/Berlin
     volumes:
+      # replace ./wd/ccu-jack.cfg with your own path to config
       - ./wd/ccu-jack.cfg:/go/src/app/ccu-jack.cfg:ro
-    networks:
-      - web
+    #networks:
+    #  - web
     security_opt:
       - no-new-privileges:true
     ports:
@@ -18,6 +20,6 @@ services:
       - 41883:1883
     restart: unless-stopped
 
-networks:
-  web:
-    external: true
+#networks:
+#  web:
+#    external: true
