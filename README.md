@@ -77,6 +77,20 @@ In dem Hauptverzeichnis werden dann alle Distributionen gebaut.
 
 Für die Entwicklung bietet sich die Entwicklungsumgebug [Visual Studio Code](https://code.visualstudio.com/) an. Einfach das Hauptverzeichnis öffnen. Die nötigen Extensions werden automatisch zur Installation angeboten.
 
+## Docker
+Um ccu-jack in einem Docker Container laufen zu lassen sind folgende Schritte nötig:
+
+1. Dockerfile und ggf. docker-compose.yml von github herunterladen
+2. Docker image bauen: 
+   ```docker build -t ccu-jack:latest .```
+3.  a) direkt über docker laufen lassen:
+   ```docker run --rm  -v "$PWD"/ccu-jack.cfg:/go/src/app/ccu-jack.cfg:ro ccu-jack:latest```
+
+    b) oder mit docker-compose: ```docker-compose up -d .```
+
+Im Beispiel 3a) wird angenommen, dass im aktuellen Verzeichnis eine Configdatei existiert, die direkt in den container gemappt wird (Option "-v")
+
+
 ## Konfiguration
 
 Die Konfiguration des CCU-Jacks erfolgt über die Datei `ccu-jack.cfg`, die im Installationsverzeichnis zu finden ist. Viele Konfigurationsoptionen können bereits über das Web-UI geändert werden. Ansonsten kann diese Datei mit einem Texteditor angepasst werden, während der CCU-Jack nicht gestartet ist. Das Format der Datei ist [JSON](https://de.wikipedia.org/wiki/JavaScript_Object_Notation). Bei einer Installation als Add-On auf der CCU muss in der Regel die Konfigurationsdatei nicht angepasst werden.
