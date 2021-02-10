@@ -11,5 +11,14 @@ WORKDIR /go/src/app
 # Get the latest relase from github and extract it locally
 RUN apk add --no-cache curl && \
     curl -SL https://github.com/mdzio/ccu-jack/releases/download/v1.0.1/ccu-jack-linux-1.0.1.tar.gz | tar -xvzC .
+# MQTT
+EXPOSE 1883 
+# MQTT TLS
+EXPOSE 8883
+# CCU-Jack VEAM/UI
+EXPOSE 2121
+# CCU-Jack VEAM/UI TLS
+EXPOSE 2122
+
 # start it up
 CMD ["./ccu-jack"]
