@@ -88,7 +88,7 @@ Für die Entwicklung bietet sich die Entwicklungsumgebug [Visual Studio Code](ht
 Um ccu-jack in einem Docker Container laufen zu lassen sind folgende Schritte nötig:
 
 1. Dockerfile und ggf. docker-compose.yml von github herunterladen
-2. Docker image bauen: 
+2. Docker image bauen:
 
   ```bash
    export BUILD_VERSION=$(curl -Ls https://api.github.com/repos/mdzio/ccu-jack/releases/latest | grep -oP '"tag_name": "v\K(.*)(?=")')
@@ -99,11 +99,10 @@ Um ccu-jack in einem Docker Container laufen zu lassen sind folgende Schritte n�
     --tag ccu-jack:latest --tag ccu-jack:${BUILD_VERSION} .
   ```
 
-3.  a) direkt über docker laufen lassen:
+3. a) direkt über docker laufen lassen:
    ```docker run --rm  -v "$PWD"/ccu-jack.cfg:/app/ccu-jack.cfg:ro ccu-jack:latest```
 
     b) oder mit docker-compose: ```docker-compose up -d .```
-
 
 Im Beispiel 3a) wird angenommen, dass im aktuellen Verzeichnis eine Configdatei existiert, die direkt in den container gemappt wird (Option "-v"). In der compose-Datei kann man ports, die in der eigenen Umgebung nicht genutzt werden (z.B. die TLS Ports), auskonfigurieren.
 
