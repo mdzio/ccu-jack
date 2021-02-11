@@ -1,5 +1,5 @@
 version: "3"
-# Version 0.2
+# Version 0.3
 # 
 services:
   ccu-jack:
@@ -10,14 +10,12 @@ services:
       - TZ=Europe/Berlin
     volumes:
       # replace ./wd/ccu-jack.cfg with your own path to config
-      - ./ccu-jack.cfg:/go/src/app/ccu-jack.cfg:ro
-    #networks:
-    #  - web
+      - ./wd/ccu-jack.cfg:/app/ccu-jack.cfg
     security_opt:
       - no-new-privileges:true
     ports:
       # MQTT
-      - 1883:1883 
+      - 1883:1883
       # MQTT TLS
       - 8883:8883
       # CCU-Jack VEAM/UI
@@ -26,7 +24,3 @@ services:
       - 2122:2122
 
     restart: unless-stopped
-
-#networks:
-#  web:
-#    external: true
