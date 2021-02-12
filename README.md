@@ -98,9 +98,9 @@ Um ccu-jack in einem Docker Container laufen zu lassen sind folgende Schritte n√
     --build-arg BUILD_DATE="$(date +"%Y-%m-%dT%H:%M:%SZ")" \
     --tag ccu-jack:latest --tag ccu-jack:${BUILD_VERSION} .
   ```
-
+  
 3. a) direkt √ºber docker laufen lassen:
-   ```docker run --rm  -v "$PWD"/ccu-jack.cfg:/app/ccu-jack.cfg:ro ccu-jack:latest```
+   ```docker run -d -v "$PWD"/ccu-jack.cfg:/app/ccu-jack.cfg ccu-jack:latest```
 
     b) oder mit docker-compose: ```docker-compose up -d .```
 
