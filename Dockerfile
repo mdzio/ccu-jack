@@ -5,8 +5,8 @@
 #    --build-arg BUILD_DATE="$(date +"%Y-%m-%dT%H:%M:%SZ")" \
 #    --tag ccu-jack:latest --tag ccu-jack:${BUILD_VERSION} .
 #
-# 2. mount your config into container and run the image, i.e.
-#   docker run --rm -v ./etc/ccu-jack/ccu-jack.cfg:/app/ccu-jack.cfg ccu-jack:latest
+# 2. you have to mount your config DIRECTORY into container and run the image, i.e.
+#   docker run -d -v $PWD/conf:/app/conf --name ccu-jack ccu-jack:latest
 
 FROM alpine
 
@@ -29,7 +29,7 @@ WORKDIR /app
 # Get the latest relase from github and extract it locally
 RUN apk add --no-cache curl && \
     curl -SL "https://github.com/mdzio/ccu-jack/releases/download/v${BUILD_VERSION}/ccu-jack-linux-${BUILD_VERSION}.tar.gz" | tar -xvzC . && \
-    mkdir -p /app /data && \
+    mkdir -p /app/conf /data && \
     adduser -h /app -D -H ccu-jack -u 1000 -s /sbin/nologin && \
     chown -R ccu-jack:root /data && chmod -R g+rwX /data && \
     chown -R ccu-jack:root /app && chmod -R g+rwX /app
@@ -40,7 +40,10 @@ USER ccu-jack
 EXPOSE 1883 8883 2121 2122
 
 # Add a healthcheck (default every 30 secs)
-HEALTHCHECK CMD curl -s -o /dev/null -il -w "%{http_code}\n" http://localhost:2121 | grep -Eq "(200|401)" || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD curl -Isf -o /dev/null -w "%{scheme}/%{http_version} %{http_code}\n" http://localhost:2121/ui/ || exit 1
 
-# Start it up
-CMD ["./ccu-jack"]
+# workaround to save certificates and make config readable
+WORKDIR /app/conf
+# Start it up with full path
+CMD ["/app/ccu-jack"]

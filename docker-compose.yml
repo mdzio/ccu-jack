@@ -1,5 +1,5 @@
 version: "3"
-# Version 0.3
+# Version 0.4
 # 
 services:
   ccu-jack:
@@ -9,8 +9,8 @@ services:
     environment:
       - TZ=Europe/Berlin
     volumes:
-      # replace ./wd/ccu-jack.cfg with your own path to config
-      - ./wd/ccu-jack.cfg:/app/ccu-jack.cfg
+      # adjust $PWD/conf/ccu-jack.cfg accordingly
+      - $PWD/conf:/app/conf
     security_opt:
       - no-new-privileges:true
     ports:
