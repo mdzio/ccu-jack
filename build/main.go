@@ -12,7 +12,7 @@ import (
 const (
 	logLevel   = logging.InfoLevel
 	appName    = "ccu-jack"
-	appVersion = "1.1.0-beta.2"
+	appVersion = "1.1.0"
 	appPkg     = "github.com/mdzio/ccu-jack"
 	ldFlags    = "-s -w -X main.appVersion=" + appVersion
 	buildDir   = ".."
