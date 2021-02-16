@@ -56,6 +56,11 @@ func (s *Store) Read() error {
 			s.modified = true
 		}
 	}
+	// configure BINRPC, if missing
+	if s.Config.BINRPC.Port == 0 {
+		s.Config.BINRPC.Port = 2123
+		s.modified = true
+	}
 	// save, if modified
 	if s.modified {
 		s.delayedWrite()

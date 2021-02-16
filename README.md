@@ -17,7 +17,7 @@ Zudem kann der CCU-Jack die Kombination der zwei Add-Ons [hm2mqtt](https://githu
 ## Hauptmerkmale
 
 Folgende Merkmale zeichnen CCU-Jack aus:
-* Lese- und Schreibzugriff auf alle Gerätedatenpunkte und Systemvariablen der CCU.
+* Lese- und Schreibzugriff auf alle Gerätedatenpunkte (inkl. CUxD) und Systemvariablen der CCU.
 * Alle Datenpunkte können über die REST-API baumartig erkundet werden.
 * Umfangreiche Zusatzinformationen zu jedem Datenpunkt, z.B. Anzeigenamen, Räume, Gewerke, aber auch viele technische Informationen aus den XMLRPC-Schnittstellen und der ReGaHss stehen über die REST-API zur Verfügung.
 * Hohe Performance und minimale Belastung der CCU-Prozesse (XMLRPC-Schnittstellen, ReGaHss, CCU Web-Server).
@@ -41,7 +41,6 @@ Folgende Leitlinien sind bei der Entwicklung des CCU-Jacks maßgebend:
 Mit der Veröffentlichung der V1.0 ist die für den CCU-Jack ursprünglich angedachte Funktionalität implementiert. Die REST-API (z.B. Pfade und Datenformat) und die MQTT-API (z.B. Topic-Aufbau) gelten als stabil. Alle zukünftigen Versionen erweitern höchstens das Grundgerüst (z.B. zusätzliche Pfade/Topics/Attribute). Alle Clients, die für die V1.0 entwickelt werden, sollten ohne Änderung mit zukünftigen Versionen des CCU-Jacks funktionieren.
 
 Langfristig sind bereits folgende Erweiterungen geplant:
-* Unterstützung für CUxD-Geräte
 * Erweiterungen für MQTT
   * Konfigurierbare Regeln für die Umwandlung von _Topics_ und _Payloads_, um die Integration von MQTT-Geräten (z.B. [Tasmota](https://www.tasmota.info/)) zu erleichtern. 
 
@@ -50,7 +49,7 @@ Zukünftige Ideen:
 
 ## Unterstützung
 
-Die größte Benutzergemeinde und auch der Entwickler des CCU-Jacks sind im [HomeMatic-Forum](https://homematic-forum.de/forum/viewtopic.php?f=41&t=53553) zu finden.
+Die größte Benutzergemeinde und auch der Hauptentwickler des CCU-Jacks sind im [HomeMatic-Forum](https://homematic-forum.de/forum/viewtopic.php?f=41&t=53553) zu finden.
 
 ## Download
 
@@ -112,6 +111,13 @@ Beispielkonfigurationsdatei:
     "Port": 1883,
     "PortTLS": 8883
   },
+  "Certificate":  {
+    "CertificateFile": "/etc/config/cert.pem",
+    "KeyFile": "/etc/config/key.pem"     
+  },
+  "BINRPC": {
+    "Port": 2123
+  },
   "Users": {}
 }
 ```
@@ -149,6 +155,10 @@ Variablen können für die Überwachung ausgewählt werden. Es werden in Echtzei
 
 ![Überwachung](doc/web-ui-watcher.png)
 
+Die wichtigsten Konfigurationsoptionen des CCU-Jacks können über die Web-Oberfläche geändert werden:
+
+![Konfiguration](doc/web-ui-config.png)
+
 ## Beschreibung der VEAP-Dienste/REST-API
 
 Mit dem [Kommandozeilenwerkzeug CURL](https://curl.haxx.se), das praktisch für alle Betriebssysteme und Plattformen verfügbar ist, können alle VEAP-Dienste (z.B. Datenpunkte lesen und setzen) des CCU-Jacks genutzt werden. Die Beschreibung ist auf einer [eigenen Seite](https://github.com/mdzio/ccu-jack/blob/master/doc/curl.md) zu finden.
@@ -156,6 +166,8 @@ Mit dem [Kommandozeilenwerkzeug CURL](https://curl.haxx.se), das praktisch für 
 ## Beschreibung der MQTT-Schnittstelle
 
 Der CCU-Jack enthält einen vollwertigen und leistungsfähigen MQTT-Server (V3.1.1). Dieser kann von beliebigen Fremdapplikationen genutzt werden. Zudem werden die Wertänderungen aller Gerätedatenpunkte der CCU und ausgewählter Systemvariablen automatisch an den MQTT-Server gesendet und stehen daraufhin allen MQTT-Clients zur Verfügung. Die Netzwerk-Ports können mit den Optionen `MQTT.Port` und `MQTT.PortTLS` eingestellt werden. Ein Zugriff über Web-Sockets ist über den Pfad `/ws-mqtt` des HTTP(S)-Servers möglich.
+
+Mit `Certificate.CertificateFile` und `Certificate.KeyFile` kann ein bereits exisierendes Zertifikat für TLS verwendet werden.
 
 Um das MQTT-Protokoll hat sich ein großes Ökosystem gebildet. Eine Übersicht ist in dieser [Link-Sammlung](https://github.com/hobbyquaker/awesome-mqtt) zu finden.
 
@@ -208,14 +220,19 @@ Beispiel: Die Web-Applikation auf dem Host `https://example.com` soll mit Authen
 
 CCU-Jack ermöglicht einen verschlüsselten Zugriff über HTTPS, sodass auch über unsichere Netzwerke (z.B. Internet) Daten sicher ausgetauscht werden könnan. Über den Port 2122 (änderbar mit der Kommandozeilenoption `-porttls`) kann eine HTTPS-Verbindung aufgebaut werden. Die dafür benötigten Zertifikate können vorgegeben werden oder werden beim ersten Start vom CCU-Jack automatisch generiert.
 
-Benötigte Zertifikatsdateien für den Server:
+Es kann auch ein vorhandene Zertifikat verwendet werden. Dafür müssen die Optionen `Certificate.CertificateFile` auf das vorhandenen Zertifikat und `
+HTTP.KeyFile` auf das dazugehörige Private Key file gesetzt werden.
+Falls es sich um eine kombinierte PEM Datei handelt, die das Zertifikat und den Key enthält, muss die Option `Certificate.KeyFile` nicht gesetzt werden. Auf der CCU kann z.b. das bereits vorhandene Zertifikat `/etc/config/server.pem` verwendet werden.
+
+
+Alternativ können auch Zertifikatsdateien für den Server im Arbeitsverzeichnis desdes CCU-Jacks  bereitgestellt werden:
 
 Dateiname   | Funktion
 ------------|---------
 svrcert.pem | Zertifikat des Servers
 svrcert.key | Privater Schlüssel des Servers (Dieser ist geheim zu halten.)
 
-Falls die oben genannten Zertifikatsdateien im Arbeitsverzeichnis des CCU-Jacks nicht vorhanden sind, so werden automatisch zwei Zertifikate erstellt. Die Gültigkeit ist auf 10 Jahre eingestellt:
+Falls die Certificate Option nicht gesetzt ist und die oben genannten Zertifikatsdateien im Arbeitsverzeichnis des CCU-Jacks nicht vorhanden sind, so werden automatisch zwei Zertifikate erstellt. Die Gültigkeit ist auf 10 Jahre eingestellt:
 
 Dateiname   | Funktion
 ------------|---------
@@ -226,6 +243,7 @@ svrcert.key | Privater Schlüssel des Servers (Dieser ist geheim zu halten.)
 
 Für den sicheren Zugriff muss lediglich das generierte Zertifikat der Zertifizierungsstelle (`cacert.pem`) den HTTPS-Clients *über einen sicheren Kanal* bekannt gemacht werden. Das Zertifikat kann z.B. im Betriebssystem oder im Web-Browser installiert werden. Die privaten Schlüssel dürfen nie verteilt werden.
 
+ 
 Über verschiedene Programmiersprachen kann auch verschlüsselt zugegriffen werden.
 
 ### Curl
@@ -283,6 +301,12 @@ get.on('error', function(e) {
 });
 get.end();
 ```
+
+## Autoren
+
+* [Mathias Dz.](https://github.com/mdzio)
+* [martgras](https://github.com/martgras) (Raspberry Pi 4)
+* [twendt](https://github.com/twendt) (BIN-RPC für CUxD)
 
 ## Lizenz und Haftungsausschluss
 

@@ -10,12 +10,14 @@ import (
 
 // Config is the entry object of the runtime config.
 type Config struct {
-	CCU     CCU
-	Host    Host
-	Logging Logging
-	HTTP    HTTP
-	MQTT    MQTT
-	Users   map[string]*User /* Identifier is key. */
+	CCU         CCU
+	Host        Host
+	Logging     Logging
+	HTTP        HTTP
+	MQTT        MQTT
+	Certificate Certificate
+	BINRPC  BINRPC
+	Users       map[string]*User /* Identifier is key. */
 }
 
 // CCU configuration
@@ -48,6 +50,16 @@ type HTTP struct {
 type MQTT struct {
 	Port    int
 	PortTLS int
+}
+
+type Certificate struct {
+	CertificateFile string
+	KeyFile         string
+}
+
+// BINRPC configuration for CUxD support
+type BINRPC struct {
+	Port int
 }
 
 // Authenticate authenticates a user.
