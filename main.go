@@ -327,8 +327,11 @@ func startupApp(serveErr chan<- error) {
 		Types:    cfg.CCU.Interfaces,
 		IDPrefix: cfg.CCU.InitID + "-",
 		Receiver: mqttReceiver,
-		// full URL of the DefaultServeMux for callbacks
-		ServerURL: "http://" + cfg.Host.Address + ":" + strconv.Itoa(cfg.HTTP.Port),
+		ServeErr: serveErr,
+		// for callbacks from CCU
+		HostAddr:   cfg.Host.Address,
+		XMLRPCPort: cfg.HTTP.Port,
+		BINRPCPort: cfg.BINRPC.Port,
 	}
 
 	// start ReGa DOM explorer

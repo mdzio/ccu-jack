@@ -16,6 +16,7 @@ type Config struct {
 	HTTP        HTTP
 	MQTT        MQTT
 	Certificate Certificate
+	BINRPC  BINRPC
 	Users       map[string]*User /* Identifier is key. */
 }
 
@@ -54,6 +55,11 @@ type MQTT struct {
 type Certificate struct {
 	CertificateFile string
 	KeyFile         string
+}
+
+// BINRPC configuration for CUxD support
+type BINRPC struct {
+	Port int
 }
 
 // Authenticate authenticates a user.
