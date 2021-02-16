@@ -168,6 +168,7 @@ function Config() {
     function viewCCU() {
         const itfs = config.CCU.Interfaces
         const wiredName = "BidCosWired"
+        const cuxdName = "CUxD"
         return m(".form-group",
             m("label.form-switch",
                 m("input[type=checkbox]", {
@@ -183,6 +184,21 @@ function Config() {
                     }
                 }),
                 m("i.form-icon"), "BidCos-Wired Geräte (HMW-...) anbinden (Neustart vom CCU-Jack ist erforderlich!)"
+            ),
+            m("label.form-switch",
+                m("input[type=checkbox]", {
+                    checked: itfs.includes(cuxdName),
+                    onchange: function (e) {
+                        if (e.target.checked) {
+                            itfs.push(cuxdName)
+                        } else {
+                            const idx = itfs.indexOf(cuxdName)
+                            itfs.splice(idx, 1)
+                        }
+                        modified = true
+                    }
+                }),
+                m("i.form-icon"), "CUxD Geräte anbinden (Neustart vom CCU-Jack ist erforderlich!)"
             ),
         )
     }

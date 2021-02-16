@@ -4,7 +4,7 @@ CCU-Jack bietet einen einfachen und sicheren **REST**- und **MQTT**-basierten Zu
 
 **Ziel vom CCU-Jack ist es, für andere Applikationen einen möglichst einfachen Zugriff auf die Datenpunkte der CCU zu ermöglichen.** Beispielsweise werden für den Zugriff auf eine CCU mit HM-, HM-Wired- und HM-IP-Geräten insgesamt 9 Netzwerkverbindung, teilweise als Rückkanal und mit unterschiedlichen Protokollen, benötigt. Der CCU-Jack standardisiert den Zugriff auf alle Geräte und Systemvariablen mit einem einheitlichen Protokoll.
 
-Funktional ist der CCU-Jack eine Alternative zum [XML-API Add-On](https://github.com/jens-maus/XML-API). Das XML-API Add-On wird seit längerer Zeit nicht mehr weiter entwickelt und enthält nicht behobene Fehler und Sicherheitslücken. 
+Funktional ist der CCU-Jack eine Alternative zum [XML-API Add-On](https://github.com/jens-maus/XML-API). Das XML-API Add-On wird seit längerer Zeit nicht mehr weiter entwickelt und enthält nicht behobene Fehler und Sicherheitslücken.
 
 Zudem kann der CCU-Jack die Kombination der zwei Add-Ons [hm2mqtt](https://github.com/owagner/hm2mqtt) und [Mosquitto](https://github.com/hobbyquaker/ccu-addon-mosquitto) ersetzen. Das Add-On hm2mqtt wird ebenfalls seit längerer Zeit nicht mehr weiter entwickelt.
 
@@ -17,7 +17,8 @@ Zudem kann der CCU-Jack die Kombination der zwei Add-Ons [hm2mqtt](https://githu
 ## Hauptmerkmale
 
 Folgende Merkmale zeichnen CCU-Jack aus:
-* Lese- und Schreibzugriff auf alle Gerätedatenpunkte und Systemvariablen der CCU.
+
+* Lese- und Schreibzugriff auf alle Gerätedatenpunkte (inkl. CUxD) und Systemvariablen der CCU.
 * Alle Datenpunkte können über die REST-API baumartig erkundet werden.
 * Umfangreiche Zusatzinformationen zu jedem Datenpunkt, z.B. Anzeigenamen, Räume, Gewerke, aber auch viele technische Informationen aus den XMLRPC-Schnittstellen und der ReGaHss stehen über die REST-API zur Verfügung.
 * Hohe Performance und minimale Belastung der CCU-Prozesse (XMLRPC-Schnittstellen, ReGaHss, CCU Web-Server).
@@ -30,6 +31,7 @@ Folgende Merkmale zeichnen CCU-Jack aus:
 ### Leitlinien für die Umsetzung
 
 Folgende Leitlinien sind bei der Entwicklung des CCU-Jacks maßgebend:
+
 * **Einfache Installation** (Es soll z.B. keine Kommandozeile (SSH) oder ein Editieren von Konfigurationsdateien für die Inbetriebnahme benötigt werden.)
 * **Einfache Anbindung von Fremdapplikationen** (Anderen Entwicklern soll es möglichst leicht fallen, ihre Applikationen an die CCU anzubinden. Die komplexe Ankopplung von etlichen CCU-Prozessen entfällt.)
 * **Einfache Anbindung von IoT-Geräten** (IoT-Geräte sollen ohne Programmierung, Blockly oder Flows angebunden werden können.)
@@ -41,20 +43,21 @@ Folgende Leitlinien sind bei der Entwicklung des CCU-Jacks maßgebend:
 Mit der Veröffentlichung der V1.0 ist die für den CCU-Jack ursprünglich angedachte Funktionalität implementiert. Die REST-API (z.B. Pfade und Datenformat) und die MQTT-API (z.B. Topic-Aufbau) gelten als stabil. Alle zukünftigen Versionen erweitern höchstens das Grundgerüst (z.B. zusätzliche Pfade/Topics/Attribute). Alle Clients, die für die V1.0 entwickelt werden, sollten ohne Änderung mit zukünftigen Versionen des CCU-Jacks funktionieren.
 
 Langfristig sind bereits folgende Erweiterungen geplant:
-* Unterstützung für CUxD-Geräte
+
 * Erweiterungen für MQTT
-  * Konfigurierbare Regeln für die Umwandlung von _Topics_ und _Payloads_, um die Integration von MQTT-Geräten (z.B. [Tasmota](https://www.tasmota.info/)) zu erleichtern. 
+  * Konfigurierbare Regeln für die Umwandlung von _Topics_ und _Payloads_, um die Integration von MQTT-Geräten (z.B. [Tasmota](https://www.tasmota.info/)) zu erleichtern.
 
 Zukünftige Ideen:
+
 * Austausch von Datenpunkten mit anderen CCUs oder MQTT-Servern. Dadurch könnten z.B. zwei CCUs direkt gekoppelt werden, oder bestimmte Datenpunkte an einen MQTT-Server im Internet gesendet oder von dort abgeholt werden.
 
 ## Unterstützung
 
-Die größte Benutzergemeinde und auch der Entwickler des CCU-Jacks sind im [HomeMatic-Forum](https://homematic-forum.de/forum/viewtopic.php?f=41&t=53553) zu finden.
+Die größte Benutzergemeinde und auch der Hauptentwickler des CCU-Jacks sind im [HomeMatic-Forum](https://homematic-forum.de/forum/viewtopic.php?f=41&t=53553) zu finden.
 
 ## Download
 
-Distributionen für die verschiedenen Zielsysteme sind auf der Seite [Releases](https://github.com/mdzio/ccu-jack/releases) zu finden. 
+Distributionen für die verschiedenen Zielsysteme sind auf der Seite [Releases](https://github.com/mdzio/ccu-jack/releases) zu finden.
 
 ### Installation als Add-On auf der CCU
 
@@ -69,20 +72,46 @@ In der Firewall der CCU müssen je nach Anwendungsfall die Ports 2121 (HTTP), 21
 ## Bauen aus den Quellen
 
 Der CCU-Jack ist in der [Programmiersprache Go](https://golang.org/) (Version 1.15) geschrieben. Alle Distributionen des CCU-Jacks können sehr einfach und schnell auf allen möglichen Plattformen (u.a. Windows, Linux, MacOS) gebaut werden. Dafür in einem beliebigen Verzeichnis das Git-Repository klonen, oder die Quellen hinein kopieren. Danach in diesem Verzeichnis eine Kommandozeile öffnen, und folgende Befehle eingeben:
-```
+
+```bash
 cd build
 go run .
 ```
+
 In dem Hauptverzeichnis werden dann alle Distributionen gebaut.
 
 Für die Entwicklung bietet sich die Entwicklungsumgebug [Visual Studio Code](https://code.visualstudio.com/) an. Einfach das Hauptverzeichnis öffnen. Die nötigen Extensions werden automatisch zur Installation angeboten.
+
+## Docker
+
+Um ccu-jack in einem Docker Container laufen zu lassen sind folgende Schritte nötig:
+
+1. Dockerfile und ggf. docker-compose.yml von github herunterladen
+2. Docker image bauen:
+
+  ```bash
+   export BUILD_VERSION=$(curl -Ls https://api.github.com/repos/mdzio/ccu-jack/releases/latest | grep -oP '"tag_name": "v\K(.*)(?=")')
+   
+   docker build --rm --no-cache \
+    --build-arg BUILD_VERSION="${BUILD_VERSION}" \
+    --build-arg BUILD_DATE="$(date +"%Y-%m-%dT%H:%M:%SZ")" \
+    --tag ccu-jack:latest --tag ccu-jack:${BUILD_VERSION} .
+  ```
+3. Verzeichnis "conf" erstellen und dort die eigene Konfiguration speichern. In diesem Verzeichnis werden dann auch die Zertifikate gespeichert, die automatisch erzeugt werden.  
+4. a) direkt über docker laufen lassen:
+   ```docker run -d -v "$PWD"/conf:/app/conf --name ccu-jack ccu-jack:latest```
+
+    b) oder mit docker-compose: ```docker-compose up -d .```
+
+In der compose-Datei kann man ports, die in der eigenen Umgebung nicht genutzt werden (z.B. die TLS Ports), auskonfigurieren.
 
 ## Konfiguration
 
 Die Konfiguration des CCU-Jacks erfolgt über die Datei `ccu-jack.cfg`, die im Installationsverzeichnis zu finden ist. Viele Konfigurationsoptionen können bereits über das Web-UI geändert werden. Ansonsten kann diese Datei mit einem Texteditor angepasst werden, während der CCU-Jack nicht gestartet ist. Das Format der Datei ist [JSON](https://de.wikipedia.org/wiki/JavaScript_Object_Notation). Bei einer Installation als Add-On auf der CCU muss in der Regel die Konfigurationsdatei nicht angepasst werden.
 
 Beispielkonfigurationsdatei:
-```
+
+```JSON
 {
   "CCU": {
     "Address": "192.168.0.10",
@@ -112,6 +141,9 @@ Beispielkonfigurationsdatei:
     "Port": 1883,
     "PortTLS": 8883
   },
+  "BINRPC": {
+    "Port": 2123
+  },
   "Users": {}
 }
 ```
@@ -123,6 +155,7 @@ Log-Meldungen werden auf der Fehlerausgabe (STDERR) oder in die mit der Option `
 ## Performance
 
 Folgende Angaben gelten für eine Installation als Add-On auf einer CCU3 (Raspberry Pi 3B, 4 Kerne mit 1,2 GHz):
+
 * VEAP (REST-API)
   * 1,7 Millisekunden Latenz für das Lesen eines Datenpunktes über die REST-API.
   * 8.800 CCU-Datenpunkte können von 100 Clients pro Sekunde gesichert mit HTTPS-Verschlüsselung über die REST-API gelesen werden.
@@ -148,6 +181,10 @@ Durch Klick auf das Stift-Symbol kann der Wert eines Datenpunktes geändert werd
 Variablen können für die Überwachung ausgewählt werden. Es werden in Echtzeit die aktuellen Werte angezeigt und Wertänderungen hervorgehoben:
 
 ![Überwachung](doc/web-ui-watcher.png)
+
+Die wichtigsten Konfigurationsoptionen des CCU-Jacks können über die Web-Oberfläche geändert werden:
+
+![Konfiguration](doc/web-ui-config.png)
 
 ## Beschreibung der VEAP-Dienste/REST-API
 
@@ -261,7 +298,6 @@ if err != nil {
 defer con.Close()
 ```
 
-
 ### Javascript
 
 ```javascript
@@ -283,6 +319,12 @@ get.on('error', function(e) {
 });
 get.end();
 ```
+
+## Autoren
+
+* [Mathias Dz.](https://github.com/mdzio)
+* [martgras](https://github.com/martgras) (Raspberry Pi 4)
+* [twendt](https://github.com/twendt) (BIN-RPC für CUxD)
 
 ## Lizenz und Haftungsausschluss
 

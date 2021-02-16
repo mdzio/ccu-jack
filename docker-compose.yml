@@ -1,0 +1,26 @@
+version: "3"
+# Version 0.4
+# 
+services:
+  ccu-jack:
+    image: ccu-jack:latest
+    container_name: ccu-jack
+    hostname: ccu-jack
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      # adjust $PWD/conf/ccu-jack.cfg accordingly
+      - $PWD/conf:/app/conf
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      # MQTT
+      - 1883:1883
+      # MQTT TLS
+      - 8883:8883
+      # CCU-Jack VEAM/UI
+      - 2121:2121
+      # CCU-Jack VEAM/UI TLS
+      - 2122:2122
+
+    restart: unless-stopped
