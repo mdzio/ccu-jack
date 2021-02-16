@@ -11,3 +11,5 @@ require (
 	github.com/mdzio/go-veap v0.1.1
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 )
+
+replace github.com/mdzio/go-hmccu => ../go-hmccu

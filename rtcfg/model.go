@@ -15,6 +15,7 @@ type Config struct {
 	Logging Logging
 	HTTP    HTTP
 	MQTT    MQTT
+	BINRPC  BINRPC
 	Users   map[string]*User /* Identifier is key. */
 }
 
@@ -48,6 +49,11 @@ type HTTP struct {
 type MQTT struct {
 	Port    int
 	PortTLS int
+}
+
+// BINRPC configuration for CUxD support
+type BINRPC struct {
+	Port int
 }
 
 // Authenticate authenticates a user.

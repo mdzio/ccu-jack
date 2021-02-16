@@ -17,7 +17,7 @@ Zudem kann der CCU-Jack die Kombination der zwei Add-Ons [hm2mqtt](https://githu
 ## Hauptmerkmale
 
 Folgende Merkmale zeichnen CCU-Jack aus:
-* Lese- und Schreibzugriff auf alle Gerätedatenpunkte und Systemvariablen der CCU.
+* Lese- und Schreibzugriff auf alle Gerätedatenpunkte (inkl. CUxD) und Systemvariablen der CCU.
 * Alle Datenpunkte können über die REST-API baumartig erkundet werden.
 * Umfangreiche Zusatzinformationen zu jedem Datenpunkt, z.B. Anzeigenamen, Räume, Gewerke, aber auch viele technische Informationen aus den XMLRPC-Schnittstellen und der ReGaHss stehen über die REST-API zur Verfügung.
 * Hohe Performance und minimale Belastung der CCU-Prozesse (XMLRPC-Schnittstellen, ReGaHss, CCU Web-Server).
@@ -41,7 +41,6 @@ Folgende Leitlinien sind bei der Entwicklung des CCU-Jacks maßgebend:
 Mit der Veröffentlichung der V1.0 ist die für den CCU-Jack ursprünglich angedachte Funktionalität implementiert. Die REST-API (z.B. Pfade und Datenformat) und die MQTT-API (z.B. Topic-Aufbau) gelten als stabil. Alle zukünftigen Versionen erweitern höchstens das Grundgerüst (z.B. zusätzliche Pfade/Topics/Attribute). Alle Clients, die für die V1.0 entwickelt werden, sollten ohne Änderung mit zukünftigen Versionen des CCU-Jacks funktionieren.
 
 Langfristig sind bereits folgende Erweiterungen geplant:
-* Unterstützung für CUxD-Geräte
 * Erweiterungen für MQTT
   * Konfigurierbare Regeln für die Umwandlung von _Topics_ und _Payloads_, um die Integration von MQTT-Geräten (z.B. [Tasmota](https://www.tasmota.info/)) zu erleichtern. 
 
@@ -50,7 +49,7 @@ Zukünftige Ideen:
 
 ## Unterstützung
 
-Die größte Benutzergemeinde und auch der Entwickler des CCU-Jacks sind im [HomeMatic-Forum](https://homematic-forum.de/forum/viewtopic.php?f=41&t=53553) zu finden.
+Die größte Benutzergemeinde und auch der Hauptentwickler des CCU-Jacks sind im [HomeMatic-Forum](https://homematic-forum.de/forum/viewtopic.php?f=41&t=53553) zu finden.
 
 ## Download
 
@@ -112,6 +111,9 @@ Beispielkonfigurationsdatei:
     "Port": 1883,
     "PortTLS": 8883
   },
+  "BINRPC": {
+    "Port": 2123
+  },
   "Users": {}
 }
 ```
@@ -148,6 +150,10 @@ Durch Klick auf das Stift-Symbol kann der Wert eines Datenpunktes geändert werd
 Variablen können für die Überwachung ausgewählt werden. Es werden in Echtzeit die aktuellen Werte angezeigt und Wertänderungen hervorgehoben:
 
 ![Überwachung](doc/web-ui-watcher.png)
+
+Die wichtigsten Konfigurationsoptionen des CCU-Jacks können über die Web-Oberfläche geändert werden:
+
+![Konfiguration](doc/web-ui-config.png)
 
 ## Beschreibung der VEAP-Dienste/REST-API
 
@@ -283,6 +289,12 @@ get.on('error', function(e) {
 });
 get.end();
 ```
+
+## Autoren
+
+* [Mathias Dz.](https://github.com/mdzio)
+* [martgras](https://github.com/martgras) (Raspberry Pi 4)
+* [twendt](https://github.com/twendt) (BIN-RPC für CUxD)
 
 ## Lizenz und Haftungsausschluss
 
