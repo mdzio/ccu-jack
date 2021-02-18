@@ -61,6 +61,17 @@ func (s *Store) Read() error {
 		s.Config.BINRPC.Port = 2123
 		s.modified = true
 	}
+	// configure certificates, if missing
+	emptyCert := Certificates{}
+	cert := &s.Config.Certificates
+	if *cert == emptyCert {
+		cert.AutoGenerate = true
+		cert.CACertFile = "cacert.pem"
+		cert.CAKeyFile = "cacert.key"
+		cert.ServerCertFile = "svrcert.pem"
+		cert.ServerKeyFile = "svrcert.key"
+		s.modified = true
+	}
 	// save, if modified
 	if s.modified {
 		s.delayedWrite()
