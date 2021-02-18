@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -31,12 +32,8 @@ const (
 	appCopyright   = "(C)2020-2021"
 	appVendor      = "info@ccu-historian.de"
 
-	webUIDir       = "webui"
-	configFile     = "ccu-jack.cfg"
-	caCertFile     = "cacert.pem"
-	caKeyFile      = "cacert.key"
-	serverCertFile = "svrcert.pem"
-	serverKeyFile  = "svrcert.key"
+	webUIDir   = "webui"
+	configFile = "ccu-jack.cfg"
 
 	// MQTT websocket path
 	mqttWsPath = "/ws-mqtt"
@@ -110,10 +107,11 @@ func message() {
 	log.Info("  HTTP port: ", cfg.HTTP.Port)
 	log.Info("  HTTPS port: ", cfg.HTTP.PortTLS)
 	log.Info("  CORS origins: ", strings.Join(cfg.HTTP.CORSOrigins, ","))
-	log.Info("  Certificate: ", cfg.Certificate.CertificateFile)
-	log.Info("  Key: ", cfg.Certificate.CertificateFile)
 	log.Info("  MQTT port: ", cfg.MQTT.Port)
 	log.Info("  Secure MQTT port: ", cfg.MQTT.PortTLS)
+	log.Info("  Generate certificates: ", cfg.Certificates.AutoGenerate)
+	log.Infof("  Certificate files: %s, %s, %s, %s", cfg.Certificates.CACertFile, cfg.Certificates.CAKeyFile,
+		cfg.Certificates.ServerCertFile, cfg.Certificates.ServerKeyFile)
 	log.Info("  CCU address: ", cfg.CCU.Address)
 	log.Info("  Interfaces: ", cfg.CCU.Interfaces.String())
 	log.Info("  Init ID: ", cfg.CCU.InitID)
@@ -123,34 +121,51 @@ func certificates() error {
 	// lock config for reading
 	store.RLock()
 	defer store.RUnlock()
-	cfg := store.Config
+	cert := store.Config.Certificates
 
-	// certificate already present?
-	_, errCert := os.Stat(serverCertFile)
-	_, errKey := os.Stat(serverKeyFile)
-	_, errExtCert := os.Stat(cfg.Certificate.CertificateFile)
-
-	if (cfg.Certificate.CertificateFile != "" && !os.IsNotExist(errExtCert)) || (!os.IsNotExist(errCert) && !os.IsNotExist(errKey)) {
+	// exist certificates?
+	_, errCert := os.Stat(cert.ServerCertFile)
+	if errCert != nil && !os.IsNotExist(errCert) {
+		return fmt.Errorf("Accessing file %s failed: %w", cert.ServerCertFile, errCert)
+	}
+	_, errKey := os.Stat(cert.ServerKeyFile)
+	if errKey != nil && !os.IsNotExist(errKey) {
+		return fmt.Errorf("Accessing file %s failed: %w", cert.ServerKeyFile, errKey)
+	}
+	if (errCert != nil) != (errKey != nil) {
+		if errCert != nil {
+			return fmt.Errorf("Missing certificate file: %s", cert.ServerCertFile)
+		}
+		return fmt.Errorf("Missing certificate file: %s", cert.ServerKeyFile)
+	}
+	if errCert == nil {
+		// both certificate files exist
 		return nil
+	}
+
+	// auto generation not enabled?
+	if !cert.AutoGenerate {
+		return errors.New("No certificate files found and auto generation is disabled")
 	}
 
 	// generate certificates
 	log.Info("Generating certificates")
 	now := time.Now()
 	gen := &httputil.CertGenerator{
-		Hosts:          []string{cfg.Host.Name},
+		Hosts:          []string{store.Config.Host.Name},
 		Organization:   appDisplayName,
 		NotBefore:      now,
 		NotAfter:       now.Add(10 * 365 * 24 * time.Hour),
-		CACertFile:     caCertFile,
-		CAKeyFile:      caKeyFile,
-		ServerCertFile: serverCertFile,
-		ServerKeyFile:  serverKeyFile,
+		CACertFile:     cert.CACertFile,
+		CAKeyFile:      cert.CAKeyFile,
+		ServerCertFile: cert.ServerCertFile,
+		ServerKeyFile:  cert.ServerKeyFile,
 	}
 	if err := gen.Generate(); err != nil {
 		return err
 	}
-	log.Debugf("Created certificate files: %s, %s, %s, %s", caCertFile, caKeyFile, serverCertFile, serverKeyFile)
+	log.Debugf("Created certificate files: %s, %s, %s, %s", cert.CACertFile, cert.CAKeyFile,
+		cert.ServerCertFile, cert.ServerKeyFile)
 	return nil
 }
 
@@ -185,31 +200,13 @@ func startupBase(serveErr chan<- error) {
 	http.Handle("/ui/", http.StripPrefix("/ui", http.FileServer(http.Dir(webUIDir))))
 
 	// setup and start http(s) server
-	// check if  the ccu certificate is present?
-	// ccu uses a PEM file that contains the ca chain and private key
-	certFile := serverCertFile
-	keyFile := serverKeyFile
-	if cfg.Certificate.CertificateFile != "" {
-		_, errCcuCert := os.Stat(cfg.Certificate.CertificateFile)
-		if !os.IsNotExist(errCcuCert) {
-			certFile = cfg.Certificate.CertificateFile
-			// if no KeyFile is configured assume the key is contained in the CertificateFile
-			if cfg.Certificate.KeyFile != "" {
-				keyFile = cfg.Certificate.KeyFile
-			} else {
-				keyFile = certFile
-			}
-		}
-	}
 	httpServer = &httputil.Server{
-		Addr:    ":" + strconv.Itoa(cfg.HTTP.Port),
-		AddrTLS: ":" + strconv.Itoa(cfg.HTTP.PortTLS),
-
-		CertFile: certFile,
-		KeyFile:  keyFile,
+		Addr:     ":" + strconv.Itoa(cfg.HTTP.Port),
+		AddrTLS:  ":" + strconv.Itoa(cfg.HTTP.PortTLS),
+		CertFile: cfg.Certificates.ServerCertFile,
+		KeyFile:  cfg.Certificates.ServerKeyFile,
 		ServeErr: serveErr,
 	}
-
 	httpServer.Startup()
 
 	// veap handler and model
@@ -274,25 +271,11 @@ func startupApp(serveErr chan<- error) {
 	auth.Register(mqttAuth, &mqtt.AuthHandler{Store: &store})
 
 	// setup and start MQTT server
-	certFile := serverCertFile
-	keyFile := serverKeyFile
-	if cfg.Certificate.CertificateFile != "" {
-		_, errExtCert := os.Stat(cfg.Certificate.CertificateFile)
-		if !os.IsNotExist(errExtCert) {
-			certFile = cfg.Certificate.CertificateFile
-			// if no KeyFile is configured assume the key is contained in the CertificateFile
-			if cfg.Certificate.KeyFile != "" {
-				keyFile = cfg.Certificate.KeyFile
-			} else {
-				keyFile = certFile
-			}
-		}
-	}
 	mqttServer = &mqtt.Broker{
 		Addr:          "tcp://:" + strconv.Itoa(cfg.MQTT.Port),
 		AddrTLS:       "tcp://:" + strconv.Itoa(cfg.MQTT.PortTLS),
-		CertFile:      certFile,
-		KeyFile:       keyFile,
+		CertFile:      cfg.Certificates.ServerCertFile,
+		KeyFile:       cfg.Certificates.ServerKeyFile,
 		Authenticator: mqttAuth,
 		ServeErr:      serveErr,
 		Service:       modelService,

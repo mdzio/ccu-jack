@@ -111,12 +111,15 @@ Beispielkonfigurationsdatei:
     "Port": 1883,
     "PortTLS": 8883
   },
-  "Certificate":  {
-    "CertificateFile": "/etc/config/cert.pem",
-    "KeyFile": "/etc/config/key.pem"     
-  },
   "BINRPC": {
     "Port": 2123
+  },
+  "Certificates": {
+    "AutoGenerate": true,
+    "CACertFile": "cacert.pem",
+    "CAKeyFile": "cacert.key",
+    "ServerCertFile": "svrcert.pem",
+    "ServerKeyFile": "svrcert.key"
   },
   "Users": {}
 }
@@ -167,8 +170,6 @@ Mit dem [Kommandozeilenwerkzeug CURL](https://curl.haxx.se), das praktisch für 
 
 Der CCU-Jack enthält einen vollwertigen und leistungsfähigen MQTT-Server (V3.1.1). Dieser kann von beliebigen Fremdapplikationen genutzt werden. Zudem werden die Wertänderungen aller Gerätedatenpunkte der CCU und ausgewählter Systemvariablen automatisch an den MQTT-Server gesendet und stehen daraufhin allen MQTT-Clients zur Verfügung. Die Netzwerk-Ports können mit den Optionen `MQTT.Port` und `MQTT.PortTLS` eingestellt werden. Ein Zugriff über Web-Sockets ist über den Pfad `/ws-mqtt` des HTTP(S)-Servers möglich.
 
-Mit `Certificate.CertificateFile` und `Certificate.KeyFile` kann ein bereits exisierendes Zertifikat für TLS verwendet werden.
-
 Um das MQTT-Protokoll hat sich ein großes Ökosystem gebildet. Eine Übersicht ist in dieser [Link-Sammlung](https://github.com/hobbyquaker/awesome-mqtt) zu finden.
 
 Die _Topic_-Struktur ist an [mqtt-smarthome](https://github.com/mqtt-smarthome/mqtt-smarthome) angelehnt und wie folgt aufgebaut:
@@ -216,35 +217,29 @@ Um fremden Web-Applikationen den Zugriff auf die VEAP-API des CCU-Jacks zu ermö
 
 Beispiel: Die Web-Applikation auf dem Host `https://example.com` soll mit Authentifizierung auf die VEAP-API zugreifen können. Dafür muss die Kommandozeilenoption `-cors https://example.com` gesetzt werden.
 
-### Sicherer Zugriff über HTTPS
+### Sicherer Zugriff über TLS
 
-CCU-Jack ermöglicht einen verschlüsselten Zugriff über HTTPS, sodass auch über unsichere Netzwerke (z.B. Internet) Daten sicher ausgetauscht werden könnan. Über den Port 2122 (änderbar mit der Kommandozeilenoption `-porttls`) kann eine HTTPS-Verbindung aufgebaut werden. Die dafür benötigten Zertifikate können vorgegeben werden oder werden beim ersten Start vom CCU-Jack automatisch generiert.
+CCU-Jack ermöglicht einen verschlüsselten Zugriff über HTTPS, sodass auch über unsichere Netzwerke (z.B. Internet) Daten sicher ausgetauscht werden könnan. Über den Port 2122 (änderbar mit der Konfigurationsoption `HTTP.PortTLS`) kann eine HTTPS-Verbindung aufgebaut werden. Analog gilt dies auch für MQTT-Verbindungen. Die dafür benötigten Zertifikate können vorgegeben werden oder werden beim ersten Start vom CCU-Jack automatisch generiert. Dies kann mit der Konfigurationsoption `Certificates.AutoGenerate` eingestellt werden.
 
-Es kann auch ein vorhandene Zertifikat verwendet werden. Dafür müssen die Optionen `Certificate.CertificateFile` auf das vorhandenen Zertifikat und `
-HTTP.KeyFile` auf das dazugehörige Private Key file gesetzt werden.
-Falls es sich um eine kombinierte PEM Datei handelt, die das Zertifikat und den Key enthält, muss die Option `Certificate.KeyFile` nicht gesetzt werden. Auf der CCU kann z.b. das bereits vorhandene Zertifikat `/etc/config/server.pem` verwendet werden.
+Benötigte Zertifikatsdateien für den Server (vorhanden oder auto-generiert):
 
+Dateiname   | Konfigurationsoption          | Funktion
+------------|-------------------------------|-------------------------
+svrcert.pem | `Certificates.ServerCertFile` | Zertifikat des Servers
+svrcert.key | `Certificates.ServerKeyFile`  | Privater Schlüssel des Servers (Dieser ist geheim zu halten.)
 
-Alternativ können auch Zertifikatsdateien für den Server im Arbeitsverzeichnis desdes CCU-Jacks  bereitgestellt werden:
+Falls die Zertifikatsdateien automatisch generiert werden sollen, so sind folgende Konfigurationsoptionen zu setzen. Die Gültigkeit ist auf 10 Jahre eingestellt:
 
-Dateiname   | Funktion
-------------|---------
-svrcert.pem | Zertifikat des Servers
-svrcert.key | Privater Schlüssel des Servers (Dieser ist geheim zu halten.)
-
-Falls die Certificate Option nicht gesetzt ist und die oben genannten Zertifikatsdateien im Arbeitsverzeichnis des CCU-Jacks nicht vorhanden sind, so werden automatisch zwei Zertifikate erstellt. Die Gültigkeit ist auf 10 Jahre eingestellt:
-
-Dateiname   | Funktion
-------------|---------
-cacert.pem  | Zertifikat der Zertifizierungsstelle (CA)
-cacert.key  | Privater Schlüssel der Zertifizierungsstelle (Dieser ist geheim zu halten.)
-svrcert.pem | Zertifikat des Servers
-svrcert.key | Privater Schlüssel des Servers (Dieser ist geheim zu halten.)
+Dateiname   | Konfigurationsoption          | Funktion
+------------|-------------------------------|-------------------------
+cacert.pem  | `Certificates.CACertFile`     | Zertifikat der Zertifizierungsstelle (CA)
+cacert.key  | `Certificates.CACertFile`     | Privater Schlüssel der Zertifizierungsstelle (Dieser ist geheim zu halten.)
+svrcert.pem | `Certificates.ServerCertFile` | Zertifikat des Servers
+svrcert.key | `Certificates.ServerKeyFile`  | Privater Schlüssel des Servers (Dieser geheim zu halten.)
 
 Für den sicheren Zugriff muss lediglich das generierte Zertifikat der Zertifizierungsstelle (`cacert.pem`) den HTTPS-Clients *über einen sicheren Kanal* bekannt gemacht werden. Das Zertifikat kann z.B. im Betriebssystem oder im Web-Browser installiert werden. Die privaten Schlüssel dürfen nie verteilt werden.
 
- 
-Über verschiedene Programmiersprachen kann auch verschlüsselt zugegriffen werden.
+Über verschiedene Programmiersprachen kann dann verschlüsselt zugegriffen werden.
 
 ### Curl
 
@@ -305,7 +300,7 @@ get.end();
 ## Autoren
 
 * [Mathias Dz.](https://github.com/mdzio)
-* [martgras](https://github.com/martgras) (Raspberry Pi 4)
+* [martgras](https://github.com/martgras) (Raspberry Pi 4, Zertifikatsbehandlung)
 * [twendt](https://github.com/twendt) (BIN-RPC für CUxD)
 
 ## Lizenz und Haftungsausschluss
