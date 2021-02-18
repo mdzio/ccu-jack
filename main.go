@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -32,8 +33,7 @@ const (
 	appCopyright   = "(C)2020-2021"
 	appVendor      = "info@ccu-historian.de"
 
-	webUIDir   = "webui"
-	configFile = "ccu-jack.cfg"
+	webUIDir = "webui"
 
 	// MQTT websocket path
 	mqttWsPath = "/ws-mqtt"
@@ -42,10 +42,13 @@ const (
 var (
 	appVersion = "-dev-" // overwritten during build process
 
+	// command line options
+	configFile = flag.String("config", "ccu-jack.cfg", "configuration `file`")
+
 	// base services
 	log          = logging.Get("main")
 	logFile      *os.File
-	store        = rtcfg.Store{FileName: configFile}
+	store        rtcfg.Store
 	httpServer   *httputil.Server
 	modelRoot    *model.Root
 	modelService *model.Service
@@ -64,7 +67,16 @@ func configure() error {
 	// initial log level
 	logging.SetLevel(logging.ErrorLevel)
 
+	// parse command line
+	flag.Usage = func() {
+		fmt.Fprintln(os.Stderr, "usage of "+appName+":")
+		flag.PrintDefaults()
+	}
+	// flag.Parse calls os.Exit(2) on error
+	flag.Parse()
+
 	// read config file
+	store.FileName = *configFile
 	if err := store.Read(); err != nil {
 		return err
 	}
