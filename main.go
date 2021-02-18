@@ -32,11 +32,6 @@ const (
 	appDescription = "REST/MQTT-Server for the HomeMatic CCU"
 	appCopyright   = "(C)2020-2021"
 	appVendor      = "info@ccu-historian.de"
-
-	webUIDir = "webui"
-
-	// MQTT websocket path
-	mqttWsPath = "/ws-mqtt"
 )
 
 var (
@@ -119,8 +114,10 @@ func message() {
 	log.Info("  HTTP port: ", cfg.HTTP.Port)
 	log.Info("  HTTPS port: ", cfg.HTTP.PortTLS)
 	log.Info("  CORS origins: ", strings.Join(cfg.HTTP.CORSOrigins, ","))
+	log.Info("  Web UI dir: ", cfg.HTTP.WebUIDir)
 	log.Info("  MQTT port: ", cfg.MQTT.Port)
 	log.Info("  Secure MQTT port: ", cfg.MQTT.PortTLS)
+	log.Info("  MQTT web socket path: ", cfg.MQTT.WebSocketPath)
 	log.Info("  Generate certificates: ", cfg.Certificates.AutoGenerate)
 	log.Infof("  Certificate files: %s, %s, %s, %s", cfg.Certificates.CACertFile, cfg.Certificates.CAKeyFile,
 		cfg.Certificates.ServerCertFile, cfg.Certificates.ServerKeyFile)
@@ -209,7 +206,7 @@ func startupBase(serveErr chan<- error) {
 	cfg := store.Config
 
 	// file handler for static files
-	http.Handle("/ui/", http.StripPrefix("/ui", http.FileServer(http.Dir(webUIDir))))
+	http.Handle("/ui/", http.StripPrefix("/ui", http.FileServer(http.Dir(cfg.HTTP.WebUIDir))))
 
 	// setup and start http(s) server
 	httpServer = &httputil.Server{
@@ -295,11 +292,11 @@ func startupApp(serveErr chan<- error) {
 	mqttServer.Start()
 
 	// register websocket proxy for MQTT
-	log.Infof("MQTT websocket path: " + mqttWsPath)
+	log.Infof("MQTT websocket path: " + cfg.MQTT.WebSocketPath)
 	mqttWs := &service.WebsocketHandler{
 		Addr: ":" + strconv.Itoa(cfg.MQTT.Port),
 	}
-	http.Handle(mqttWsPath, mqttWs)
+	http.Handle(cfg.MQTT.WebSocketPath, mqttWs)
 
 	// event receiver for MQTT
 	mqttReceiver := &mqtt.EventReceiver{

@@ -44,12 +44,14 @@ type HTTP struct {
 	Port        int
 	PortTLS     int
 	CORSOrigins []string
+	WebUIDir    string
 }
 
 // MQTT configuration
 type MQTT struct {
-	Port    int
-	PortTLS int
+	Port          int
+	PortTLS       int
+	WebSocketPath string
 }
 
 // BINRPC configuration for CUxD support
