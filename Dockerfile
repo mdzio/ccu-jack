@@ -40,8 +40,8 @@ USER ccu-jack
 EXPOSE 1883 8883 2121 2122
 
 # Add a healthcheck (default every 30 secs)
-HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-    CMD curl -Isf -o /dev/null -w "%{scheme}/%{http_version} %{http_code}\n" http://localhost:2121/ui/ || exit 1
+#HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+#    CMD curl -Isf -o /dev/null -w "%{scheme}/%{http_version} %{http_code}\n" http://localhost:2121/ui/ || exit 1
 
 # workaround to save certificates and make config readable
 WORKDIR /app/conf
