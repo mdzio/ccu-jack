@@ -6,3 +6,5 @@ ccu-jack-*.zip
 __debug_bin
 ccu-jack.cfg
 ccu-jack.code-workspace
+Dockerfile.beta
+Dockerfile.nightly

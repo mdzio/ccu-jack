@@ -91,13 +91,18 @@ Um ccu-jack in einem Docker Container laufen zu lassen sind folgende Schritte n√
     --build-arg BUILD_DATE="$(date +"%Y-%m-%dT%H:%M:%SZ")" \
     --tag ccu-jack:latest --tag ccu-jack:${BUILD_VERSION} .
   ```
-3. Verzeichnis "conf" erstellen und dort die eigene Konfiguration speichern. In diesem Verzeichnis werden dann auch die Zertifikate gespeichert, die automatisch erzeugt werden.  
+3. Verzeichnisse "conf" und "cert" erstellen und dort die eigene Konfiguration bzw Zertifikate zu speichern. 
 4. a) direkt √ºber docker laufen lassen:
-   ```docker run -d -v "$PWD"/conf:/app/conf --name ccu-jack ccu-jack:latest```
+   ```
+   docker run -d -v "$PWD"/conf:/app/conf --name ccu-jack ccu-jack:latest
+   ```
 
-    b) oder mit docker-compose: ```docker-compose up -d .```
+    b) oder mit docker-compose: 
+    ```
+    docker-compose up -d .
+    ```
 
-In der compose-Datei kann man ports, die in der eigenen Umgebung nicht genutzt werden (z.B. die TLS Ports), auskonfigurieren.
+In der compose-Datei kann man ports, die in der eigenen Umgebung nicht genutzt werden (z.B. die TLS Ports), auskonfigurieren. 
 
 
 ## Konfiguration
