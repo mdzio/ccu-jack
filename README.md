@@ -67,6 +67,10 @@ In der Firewall der CCU müssen je nach Anwendungsfall die Ports 2121 (HTTP), 21
 
 ![CCU-Firewall](doc/ccu-firewall.png)
 
+### Docker
+
+Der CCU-Jack kann auch in einer Docker-Umgebung ausgeführt werden. Das Erstellen des Images und das Starten sind in [dieser Anleitung](dist/docker/README.md) beschrieben. Ein fertiges Image ist unter [thetagamma/ccu-jack](https://hub.docker.com/r/thetagamma/ccu-jack) zu finden.
+
 ## Bauen aus den Quellen
 
 Der CCU-Jack ist in der [Programmiersprache Go](https://golang.org/) (Version 1.15) geschrieben. Alle Distributionen des CCU-Jacks können sehr einfach und schnell auf allen möglichen Plattformen (u.a. Windows, Linux, MacOS) gebaut werden. Dafür in einem beliebigen Verzeichnis das Git-Repository klonen, oder die Quellen hinein kopieren. Danach in diesem Verzeichnis eine Kommandozeile öffnen, und folgende Befehle eingeben:
