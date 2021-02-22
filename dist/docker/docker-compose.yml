@@ -9,8 +9,10 @@ services:
     environment:
       - TZ=Europe/Berlin
     volumes:
-      # adjust $PWD/conf/ccu-jack.cfg accordingly
-      - $PWD/conf:/app/conf
+        # adjust $PWD/conf/ccu-jack.cfg accordingly
+      - $PWD/conf/ccu-jack.cfg:/app/conf/ccu-jack.cfg
+      # adjust Certificate path accordingly
+      - $PWD/cert:/app/cert
     security_opt:
       - no-new-privileges:true
     ports:
