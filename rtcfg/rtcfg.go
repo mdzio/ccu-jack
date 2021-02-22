@@ -56,9 +56,28 @@ func (s *Store) Read() error {
 			s.modified = true
 		}
 	}
-	// configure BINRPC, if missing
+	// configure certificates, if missing
+	emptyCert := Certificates{}
+	cert := &s.Config.Certificates
+	if *cert == emptyCert {
+		cert.AutoGenerate = true
+		cert.CACertFile = "cacert.pem"
+		cert.CAKeyFile = "cacert.key"
+		cert.ServerCertFile = "svrcert.pem"
+		cert.ServerKeyFile = "svrcert.key"
+		s.modified = true
+	}
+	// configure other missing options
 	if s.Config.BINRPC.Port == 0 {
 		s.Config.BINRPC.Port = 2123
+		s.modified = true
+	}
+	if s.Config.HTTP.WebUIDir == "" {
+		s.Config.HTTP.WebUIDir = "webui"
+		s.modified = true
+	}
+	if s.Config.MQTT.WebSocketPath == "" {
+		s.Config.MQTT.WebSocketPath = "/ws-mqtt"
 		s.modified = true
 	}
 	// save, if modified
