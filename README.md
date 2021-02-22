@@ -65,6 +65,10 @@ In der Firewall der CCU müssen je nach Anwendungsfall die Ports 2121 (HTTP), 21
 
 ![CCU-Firewall](doc/ccu-firewall.png)
 
+### Docker
+
+Der CCU-Jack kann auch in einer Docker-Umgebung ausgeführt werden. Das Erstellen des Images und das Starten sind in [dieser Anleitung](dist/docker/README.md) beschrieben. Ein fertiges Image ist unter [thetagamma/ccu-jack](https://hub.docker.com/r/thetagamma/ccu-jack) zu finden.
+
 ## Bauen aus den Quellen
 
 Der CCU-Jack ist in der [Programmiersprache Go](https://golang.org/) (Version 1.15) geschrieben. Alle Distributionen des CCU-Jacks können sehr einfach und schnell auf allen möglichen Plattformen (u.a. Windows, Linux, MacOS) gebaut werden. Dafür in einem beliebigen Verzeichnis das Git-Repository klonen, oder die Quellen hinein kopieren. Danach in diesem Verzeichnis eine Kommandozeile öffnen, und folgende Befehle eingeben:
@@ -75,35 +79,6 @@ go run .
 In dem Hauptverzeichnis werden dann alle Distributionen gebaut.
 
 Für die Entwicklung bietet sich die Entwicklungsumgebug [Visual Studio Code](https://code.visualstudio.com/) an. Einfach das Hauptverzeichnis öffnen. Die nötigen Extensions werden automatisch zur Installation angeboten.
-
-## Docker
-
-Um ccu-jack in einem Docker Container laufen zu lassen sind folgende Schritte nötig:
-
-1. Dockerfile und ggf. docker-compose.yml von github herunterladen
-2. Docker image bauen:
-
-  ```bash
-   export BUILD_VERSION=$(curl -Ls https://api.github.com/repos/mdzio/ccu-jack/releases/latest | grep -oP '"tag_name": "v\K(.*)(?=")')
-   
-   docker build --rm --no-cache \
-    --build-arg BUILD_VERSION="${BUILD_VERSION}" \
-    --build-arg BUILD_DATE="$(date +"%Y-%m-%dT%H:%M:%SZ")" \
-    --tag ccu-jack:latest --tag ccu-jack:${BUILD_VERSION} .
-  ```
-3. Verzeichnisse "conf" und "cert" erstellen und dort die eigene Konfiguration bzw Zertifikate zu speichern. 
-4. a) direkt über docker laufen lassen:
-   ```
-   docker run -d -v "$PWD"/conf:/app/conf --name ccu-jack ccu-jack:latest
-   ```
-
-    b) oder mit docker-compose: 
-    ```
-    docker-compose up -d .
-    ```
-
-In der compose-Datei kann man ports, die in der eigenen Umgebung nicht genutzt werden (z.B. die TLS Ports), auskonfigurieren. 
-
 
 ## Konfiguration
 
