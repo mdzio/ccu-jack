@@ -4,7 +4,5 @@ build/tmp
 ccu-jack-*.tar.gz
 ccu-jack-*.zip
 __debug_bin
-ccu-jack.cfg
+wd/ccu-jack.cfg
 ccu-jack.code-workspace
-Dockerfile.beta
-Dockerfile.nightly
