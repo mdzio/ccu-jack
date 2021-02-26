@@ -17,7 +17,7 @@ type EventReceiver struct {
 	Broker *Broker
 
 	// Next handler for XML-RPC events.
-	Next itf.NotificationHandler
+	Next itf.LogicLayer
 }
 
 // Event implements itf.Receiver.

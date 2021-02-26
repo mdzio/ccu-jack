@@ -315,11 +315,11 @@ func startupApp(serveErr chan<- error) {
 
 	// configure interconnector
 	intercon = &itf.Interconnector{
-		CCUAddr:             cfg.CCU.Address,
-		Types:               cfg.CCU.Interfaces,
-		IDPrefix:            cfg.CCU.InitID + "-",
-		NotificationHandler: mqttReceiver,
-		ServeErr:            serveErr,
+		CCUAddr:    cfg.CCU.Address,
+		Types:      cfg.CCU.Interfaces,
+		IDPrefix:   cfg.CCU.InitID + "-",
+		LogicLayer: mqttReceiver,
+		ServeErr:   serveErr,
 		// for callbacks from CCU
 		HostAddr:   cfg.Host.Address,
 		XMLRPCPort: cfg.HTTP.Port,
