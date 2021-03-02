@@ -135,19 +135,26 @@ function veapStatusToString(status) {
 
 // errorToString converts an error to a pretty string.
 function errorToString(err) {
+    // HTTP response?
     if (err.code !== undefined) {
+        let detail = ""
+        if (err.response && err.response.message) {
+            detail = " (" + err.response.message + ")"
+        }
         if (err.code === 0) {
-            return "Anfrage an den VEAP-Server ist fehlgeschlagen"
+            return "Anfrage an den VEAP-Server ist fehlgeschlagen." + detail
         } else {
-            return "VEAP-Status: " + veapStatusToString(err.code)
+            return "VEAP-Status: " + veapStatusToString(err.code) + detail
         }
     }
+    // javascript error?
     if (err.message != null && err.message !== "null") {
         return err.message
     }
     if (err.name && err.name != "Error") {
         return err.name
     }
+    // string?
     if (typeof err == "string") {
         return err
     }

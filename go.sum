@@ -14,8 +14,8 @@ github.com/mdzio/go-logging v1.0.0 h1:5ykv9QZfEEn3G8Xt2Kcq7FIXDUpXyvp9PUiqWtLDaP
 github.com/mdzio/go-logging v1.0.0/go.mod h1:PAR0NsQwdZiUSy/yykXTWm+kZsbYCLTkBnKgJ6O50rw=
 github.com/mdzio/go-mqtt v0.1.1 h1:K3yECgqz/RxCkrTwZaVZKrxq6icT0e2vGBPKg/bRIZ8=
 github.com/mdzio/go-mqtt v0.1.1/go.mod h1:7hzIOJPMCE6MvIytHcZXM3AMiPm8V1F1XE3amnXsD/Q=
-github.com/mdzio/go-veap v0.1.1 h1:MSVioOchiiJbC4JO/k1u0kSrkjolPJY0UXYpnJRk9b4=
-github.com/mdzio/go-veap v0.1.1/go.mod h1:Y93GEG3ErezStYKtGGNJlT+SfRjllz7vx3eztNSwZfs=
+github.com/mdzio/go-veap v0.1.2 h1:oK8VgwPQUpzi7FRSBlDsuHo2MVhecG3pqGIgmdVufhw=
+github.com/mdzio/go-veap v0.1.2/go.mod h1:Y93GEG3ErezStYKtGGNJlT+SfRjllz7vx3eztNSwZfs=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
