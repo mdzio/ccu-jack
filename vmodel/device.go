@@ -523,6 +523,28 @@ func (p *parameter) ReadAttributes() veap.AttrValues {
 		"id":              p.descr.ID,
 		"mqttStatusTopic": "device/status/" + mqttTopic,
 	}
+
+	// special attributes
+	switch p.descr.Type {
+	case "FLOAT":
+		fallthrough
+	case "INTEGER":
+		special := make([]interface{}, len(p.descr.Special))
+		for i := range special {
+			special[i] = map[string]interface{}{
+				"id":    p.descr.Special[i].ID,
+				"value": p.descr.Special[i].Value,
+			}
+		}
+		attrs["special"] = special
+	case "ENUM":
+		valueList := make([]interface{}, len(p.descr.ValueList))
+		for i := range valueList {
+			valueList[i] = p.descr.ValueList[i]
+		}
+		attrs["valueList"] = valueList
+	}
+
 	// parameter writeable?
 	if p.descr.Operations&0x02 != 0 {
 		attrs["mqttSetTopic"] = "device/set/" + mqttTopic
