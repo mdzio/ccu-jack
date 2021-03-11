@@ -2,7 +2,7 @@
 
 CCU-Jack bietet einen einfachen und sicheren **REST**- und **MQTT**-basierten Zugriff auf die Datenpunkte der Zentrale (CCU) des [Hausautomations-Systems](http://de.wikipedia.org/wiki/Hausautomation) HomeMatic der Firma [eQ-3](http://www.eq-3.de/). Er implementiert dafür das [Very Easy Automation Protocol](https://github.com/mdzio/veap), welches von vielen Programmiersprachen leicht verwendet werden kann, und das [MQTT-Protokoll](https://de.wikipedia.org/wiki/MQTT), welches im Internet-of-Things weit verbreitet ist.
 
-**Ziel vom CCU-Jack ist es, für andere Applikationen einen möglichst einfachen Zugriff auf die Datenpunkte der CCU zu ermöglichen.** Beispielsweise werden für den Zugriff auf eine CCU mit HM-, HM-Wired- und HM-IP-Geräten insgesamt 9 Netzwerkverbindung, teilweise als Rückkanal und mit unterschiedlichen Protokollen, benötigt. Der CCU-Jack standardisiert den Zugriff auf alle Geräte und Systemvariablen mit einem einheitlichen Protokoll.
+**Ziel vom CCU-Jack ist es, für andere Applikationen einen möglichst einfachen Zugriff auf die Datenpunkte der CCU zu ermöglichen.** Beispielsweise werden für den Zugriff auf eine CCU mit HM-, HM-Wired- und HM-IP-Geräten insgesamt 9 Netzwerkverbindung, teilweise als Rückkanal und mit unterschiedlichen Protokollen, benötigt. Zudem sind die Netzwerkschnittstellen der CCU unverschlüsselt, wodurch sie nicht in der Firewall der CCU freigeschaltet werden sollten. Der CCU-Jack standardisiert den Zugriff auf alle Geräte und Systemvariablen mit einem einheitlichen Protokoll und über eine verschlüsselte Verbindung.
 
 Funktional ist der CCU-Jack eine Alternative zum [XML-API Add-On](https://github.com/jens-maus/XML-API). Das XML-API Add-On wird seit längerer Zeit nicht mehr weiter entwickelt und enthält nicht behobene Fehler und Sicherheitslücken. 
 
@@ -21,11 +21,11 @@ Folgende Merkmale zeichnen CCU-Jack aus:
 * Alle Datenpunkte können über die REST-API baumartig erkundet werden.
 * Umfangreiche Zusatzinformationen zu jedem Datenpunkt, z.B. Anzeigenamen, Räume, Gewerke, aber auch viele technische Informationen aus den XMLRPC-Schnittstellen und der ReGaHss stehen über die REST-API zur Verfügung.
 * Hohe Performance und minimale Belastung der CCU-Prozesse (XMLRPC-Schnittstellen, ReGaHss, CCU Web-Server).
-* Unterstützung von HTTP/2 und Verbindungssicherheit auf dem Stand der Technik. Zertifikate werden automatisch generiert.
+* Unterstützung von HTTP/2 und Verbindungssicherheit auf dem Stand der Technik. Zertifikate werden bei Bedarf automatisch generiert.
 * Vollständige Unterstützung von Cross-origin resource sharing (CORS) für die Anbindung von Web-Applikationen.
 * Fertige Distributionen für viele Zielsysteme (CCU2, CCU3/RM, Windows, Linux, macOS).
 * Die Verwendung des VEAP-Protokolls ermöglicht einfachste Anbindung von Applikationen und Frameworks (z.B. Angular, React, Vue). Zudem ist das Protokoll nicht CCU-spezifisch. Entwickelte Client-Applikationen könnnen auch mit anderen VEAP-Servern verwendet werden.
-* Web-basierte Benutzerschnittstelle mit der alle Datenpunkte erkundet und die Werte überwacht werden können.
+* Web-basierte Benutzerschnittstelle mit der alle Datenpunkte erkundet und die Werte überwacht und verändert werden können.
 
 ### Leitlinien für die Umsetzung
 
@@ -59,11 +59,17 @@ Distributionen für die verschiedenen Zielsysteme sind auf der Seite [Releases](
 
 _Hinweis: Generell sollte vor der Installation von Add-Ons auf der CCU ein System-Backup erstellt werden._
 
+Der CCU-Jack kann als Add-On auf der CCU installiert werden. Dies erfolgt über die Web-UI der CCU unter _Einstellungen_ → _Systemsteuerung_ → _Zusatzsoftware_. In diesem Dialog kann auch ein Neustart des CCU-Jacks durchgeführt werden. (Ein Neustart dauert 15-20 Sekunden.)
+
 Bei einer Installation als Add-On auf der CCU können die Startparameter in der Datei `/usr/local/etc/config/rc.d/ccu-jack` angepasst werden. In der Regel ist dies nicht notwendig. Log-Meldungen werden in die Datei `/var/log/ccu-jack.log` geschrieben.
 
 In der Firewall der CCU müssen je nach Anwendungsfall die Ports 2121 (HTTP), 2122 (HTTPS), 1883 (MQTT) und 8883 (Secure MQTT) freigegeben werden:
 
 ![CCU-Firewall](doc/ccu-firewall.png)
+
+### Docker
+
+Der CCU-Jack kann auch in einer Docker-Umgebung ausgeführt werden. Das Erstellen des Images und das Starten sind in [dieser Anleitung](https://github.com/mdzio/ccu-jack/tree/master/dist/docker) beschrieben. Ein fertiges Image ist unter [thetagamma/ccu-jack](https://hub.docker.com/r/thetagamma/ccu-jack) zu finden.
 
 ## Bauen aus den Quellen
 
@@ -76,34 +82,9 @@ In dem Hauptverzeichnis werden dann alle Distributionen gebaut.
 
 Für die Entwicklung bietet sich die Entwicklungsumgebug [Visual Studio Code](https://code.visualstudio.com/) an. Einfach das Hauptverzeichnis öffnen. Die nötigen Extensions werden automatisch zur Installation angeboten.
 
-## Docker
+## Mitwirkung
 
-Um ccu-jack in einem Docker Container laufen zu lassen sind folgende Schritte nötig:
-
-1. Dockerfile und ggf. docker-compose.yml von github herunterladen
-2. Docker image bauen:
-
-  ```bash
-   export BUILD_VERSION=$(curl -Ls https://api.github.com/repos/mdzio/ccu-jack/releases/latest | grep -oP '"tag_name": "v\K(.*)(?=")')
-   
-   docker build --rm --no-cache \
-    --build-arg BUILD_VERSION="${BUILD_VERSION}" \
-    --build-arg BUILD_DATE="$(date +"%Y-%m-%dT%H:%M:%SZ")" \
-    --tag ccu-jack:latest --tag ccu-jack:${BUILD_VERSION} .
-  ```
-3. Verzeichnisse "conf" und "cert" erstellen und dort die eigene Konfiguration bzw Zertifikate zu speichern. 
-4. a) direkt über docker laufen lassen:
-   ```
-   docker run -d -v "$PWD"/conf:/app/conf --name ccu-jack ccu-jack:latest
-   ```
-
-    b) oder mit docker-compose: 
-    ```
-    docker-compose up -d .
-    ```
-
-In der compose-Datei kann man ports, die in der eigenen Umgebung nicht genutzt werden (z.B. die TLS Ports), auskonfigurieren. 
-
+Mitwirkende sind natürlich gerne gesehen. Sei es für die Dokumentation, das Testen, den Support im [HomeMatic-Forum](https://homematic-forum.de/forum/viewtopic.php?f=41&t=53553), die Fehlerbehebung oder die Implementierung neuer Funktionalität. Für Code-Beiträge ist die Lizenz (GPL v3) zu beachten. Code-Beiträge sollten immer auf einem neuen Branch separat vom `master`-Branch entwickelt werden.
 
 ## Konfiguration
 
@@ -157,6 +138,10 @@ Beispielkonfigurationsdatei:
 Folgende zwei Optionen müssen mindestens vor dem ersten Start angepasst werden. Die IP-Adresse der CCU muss mit der Option `CCU.Address` gesetzt werden. Die IP-Adresse des Rechners, auf dem der CCU-Jack gestartet wird, muss mit der Option `Host.Address` gesetzt werden. Beide Optionen können auf `127.0.0.1` gesetzt werden, wenn der CCU-Jack direkt auf der CCU gestartet wird.
 
 Log-Meldungen werden auf der Fehlerausgabe (STDERR) oder in die mit der Option `Logging.FilePath` angegebenen Datei ausgegeben, wenn sie mindestens die mit der Option `Logging.Level` gesetzte Dringlichkeit (OFF, ERROR, WARNING, INFO, DEBUG oder TRACE) besitzen.
+
+## Anbindung CUxD
+
+Der CCU-Jack kann auch die Datenpunkte des CUxD Add-Ons anbinden. Dies kann in der Web-UI des CCU-Jacks auf der Konfigurationsseite aktiviert werden. Eine Änderung der Option erfordert immer einen Neustart des CCU-Jacks. Neu angelegte CUxD-Geräte werden ebenfalls erst nach einem Neustart des CCU-Jacks erkannt.
 
 ## Performance
 
@@ -331,6 +316,7 @@ get.end();
 * [Mathias Dz.](https://github.com/mdzio)
 * [martgras](https://github.com/martgras) (Raspberry Pi 4, Zertifikatsbehandlung)
 * [twendt](https://github.com/twendt) (BIN-RPC für CUxD)
+* [Theta Gamma](https://github.com/ThetaGamma) (Docker-Image)
 
 ## Lizenz und Haftungsausschluss
 

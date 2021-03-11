@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/mdzio/go-hmccu/itf"
-	"github.com/mdzio/go-veap"
 	"github.com/mdzio/go-mqtt/message"
+	"github.com/mdzio/go-veap"
 )
 
 // EventReceiver accepts XMLRPC events, publishes them to the broker and then
@@ -17,7 +17,7 @@ type EventReceiver struct {
 	Broker *Broker
 
 	// Next handler for XML-RPC events.
-	Next itf.Receiver
+	Next itf.LogicLayer
 }
 
 // Event implements itf.Receiver.
