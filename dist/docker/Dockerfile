@@ -35,8 +35,8 @@ RUN wget -q -O - "https://github.com/mdzio/ccu-jack/releases/download/v${BUILD_V
 
 USER ccu-jack
 
-# MQTT, MQTT TLS, CCU-Jack VEAM/UI, CCU-Jack VEAM/UI TLS
-EXPOSE 1883 8883 2121 2122
+# MQTT, MQTT TLS, CCU-Jack VEAM/UI, CCU-Jack VEAM/UI TLS, CUxD
+EXPOSE 1883 8883 2121 2122 2123
 
 # Add a healthcheck (default every 30 secs)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
