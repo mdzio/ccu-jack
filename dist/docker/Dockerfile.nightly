@@ -35,7 +35,7 @@ LABEL org.opencontainers.image.created=$BUILD_DATE \
 WORKDIR /app
 
 # Get the compiled binary and extract it locally
-COPY --from=builder /app/ccu-jack-master/ccu-jack-linux-${BUILD_VERSION}.tar.gz .
+COPY --from=builder /app/ccu-jack-master/ccu-jack-linux-*.tar.gz .
 
 RUN tar -xvzf ccu-jack-linux-${BUILD_VERSION}.tar.gz && \
     mkdir -p /app/conf /app/cert /data && \
