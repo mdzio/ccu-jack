@@ -2,7 +2,9 @@ version: "3"
 # 
 services:
   ccu-jack:
-    image: ccu-jack:latest
+    image: thetagamma/ccu-jack:latest
+    # to use a local image use instead
+    # image: ccu-jack:latest
     container_name: ccu-jack
     hostname: ccu-jack
     environment:
