@@ -1,5 +1,4 @@
 version: "3"
-# Version 0.4
 # 
 services:
   ccu-jack:
@@ -24,5 +23,7 @@ services:
       - 2121:2121
       # CCU-Jack VEAM/UI TLS
       - 2122:2122
+      # CUxD
+      - 2123:2123
 
     restart: unless-stopped
