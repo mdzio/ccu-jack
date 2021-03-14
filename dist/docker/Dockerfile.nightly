@@ -37,7 +37,7 @@ WORKDIR /app
 # Get the compiled binary and extract it locally
 COPY --from=builder /app/ccu-jack-master/ccu-jack-linux-*.tar.gz .
 
-RUN tar -xvzf ccu-jack-linux-${BUILD_VERSION}.tar.gz && \
+RUN tar -xvzf ccu-jack-linux*.tar.gz && \
     mkdir -p /app/conf /app/cert /data && \
     adduser -h /app -D -H ccu-jack -u 1000 -s /sbin/nologin && \
     chown -R ccu-jack:ccu-jack /data && chmod -R g+rwX /data && \
