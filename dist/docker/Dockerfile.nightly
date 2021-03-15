@@ -1,7 +1,7 @@
 # Please don't use this filke directly but
 # build the image with Shellscript "./build-nightly.sh"
 
-# Start from golang alpine base image
+# Start compile from golang alpine base image
 FROM golang:alpine3.13 as builder
 RUN apk --no-cache add unzip
 
@@ -35,13 +35,14 @@ LABEL org.opencontainers.image.created=$BUILD_DATE \
 WORKDIR /app
 
 # Get the compiled binary and extract it locally
-COPY --from=builder /app/ccu-jack-master/ccu-jack-linux-*.tar.gz .
+COPY --from=builder /app/ccu-jack-master/ccu-jack-linux-${BUILD_VERSION}.tar.gz .
 
-RUN tar -xvzf ccu-jack-linux*.tar.gz && \
+RUN tar -xvzf ccu-jack-linux-${BUILD_VERSION}.tar.gz && \
     mkdir -p /app/conf /app/cert /data && \
     adduser -h /app -D -H ccu-jack -u 1000 -s /sbin/nologin && \
     chown -R ccu-jack:ccu-jack /data && chmod -R g+rwX /data && \
-    chown -R ccu-jack:ccu-jack /app && chmod -R g+rwX /app
+    chown -R ccu-jack:ccu-jack /app && chmod -R g+rwX /app &&\
+    rm ccu-jack-linux*.tar.gz
 
 USER ccu-jack
 
