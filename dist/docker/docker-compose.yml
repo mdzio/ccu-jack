@@ -1,9 +1,10 @@
 version: "3"
-# Version 0.4
 # 
 services:
   ccu-jack:
-    image: ccu-jack:latest
+    image: thetagamma/ccu-jack:latest
+    # to use a local image use instead
+    # image: ccu-jack:latest
     container_name: ccu-jack
     hostname: ccu-jack
     environment:
@@ -24,5 +25,7 @@ services:
       - 2121:2121
       # CCU-Jack VEAM/UI TLS
       - 2122:2122
+      # CUxD
+      - 2123:2123
 
     restart: unless-stopped

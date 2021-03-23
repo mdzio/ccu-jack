@@ -1,0 +1,15 @@
+#!/bin/bash
+# used to build a "nightly" image from the latest source code at mdzio/ccu-jack which might not be a release yet
+#
+# TODO: multi-arch  
+#
+## set environment variables
+export BUILD_VERSION=$(curl -Ls https://api.github.com/repos/mdzio/ccu-jack/releases/latest | grep -oP '"tag_name": "v\K(.*)(?=")')
+export BUILD_DATE="$(date +"%Y-%m-%dT%H:%M:%SZ")"
+export BUILD_VERSION_NIGHTLY="${BUILD_VERSION}-$(date +"%Y-%m-%d")"
+#docker build --rm --no-cache \
+docker build --build-arg BUILD_VERSION="${BUILD_VERSION}" \
+    --build-arg BUILD_DATE="${BUILD_DATE}" \
+    --build-arg BUILD_VERSION_NIGHTLY="${BUILD_VERSION_NIGHTLY}" \
+    --tag ccu-jack:${BUILD_VERSION}_nightly \
+    -f dist/docker/Dockerfile.nightly .
