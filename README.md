@@ -67,7 +67,7 @@ In der Firewall der CCU müssen je nach Anwendungsfall die Ports 2121 (HTTP), 21
 
 ![CCU-Firewall](doc/ccu-firewall.png)
 
-### Docker
+### Installation in einer Docker-Umgebung
 
 Der CCU-Jack kann auch in einer Docker-Umgebung ausgeführt werden. Das Erstellen des Images und das Starten sind in [dieser Anleitung](https://github.com/mdzio/ccu-jack/tree/master/dist/docker) beschrieben. Ein fertiges Image ist unter [thetagamma/ccu-jack](https://hub.docker.com/r/thetagamma/ccu-jack) zu finden.
 
@@ -180,6 +180,8 @@ Die wichtigsten Konfigurationsoptionen des CCU-Jacks können über die Web-Oberf
 
 Mit dem [Kommandozeilenwerkzeug CURL](https://curl.haxx.se), das praktisch für alle Betriebssysteme und Plattformen verfügbar ist, können alle VEAP-Dienste (z.B. Datenpunkte lesen und setzen) des CCU-Jacks genutzt werden. Die Beschreibung ist auf einer [eigenen Seite](https://github.com/mdzio/ccu-jack/blob/master/doc/curl.md) zu finden.
 
+Die Abbildung der CCU-Datentypen auf JSON ist [weiter unten](#abbildung-der-ccu-datentypen) zu finden.
+
 ## Beschreibung der MQTT-Schnittstelle
 
 Der CCU-Jack enthält einen vollwertigen und leistungsfähigen MQTT-Server (V3.1.1). Dieser kann von beliebigen Fremdapplikationen genutzt werden. Zudem werden die Wertänderungen aller Gerätedatenpunkte der CCU und ausgewählter Systemvariablen automatisch an den MQTT-Server gesendet und stehen daraufhin allen MQTT-Clients zur Verfügung. Die Netzwerk-Ports können mit den Optionen `MQTT.Port` und `MQTT.PortTLS` eingestellt werden. Ein Zugriff über Web-Sockets ist über den Pfad `/ws-mqtt` des HTTP(S)-Servers möglich.
@@ -212,6 +214,22 @@ Das Nachrichtenformat ist JSON und entspricht dem Format des [VEAP-Protokolls](h
 Für das Setzen von Datenpunkten wird nur die Eigenschaft `v` benötigt. Beispiele: `{"v":123.456}` für Variablentyp Zahl, `{"v":2}` für Typ Werteliste, `{"v":true}` für Typ Logikwert/Alarm oder `{"v":"ABC"}` für Typ Zeichenkette. Falls ein JSON-Objekt mit anderen Eigenschaften oder direkt ein JSON-Wert verwendet wird, so wird dies für den Wert des Datenpunktes verwendet, z.B. `123.456`, `true` oder `"abc"`. Falls die Nachricht kein gültiges JSON enthält, so wird die gesamte Nachricht als Zeichnkette verwendet, z.B. `abc`.
 
 Die Retain-Eigenschaft wird bei allen Datenpunkten gesetzt, außer der Parametername ist *INSTALL_TEST* oder beginnt mit *PRESS_*.
+
+Die Abbildung der CCU-Datentypen auf JSON ist im nächsten Abschnitt zu finden.
+
+## Abbildung der CCU-Datentypen
+
+Der Datentyp eines CCU-Datenpunktes kann der Eigenschaft `type` entnommen werden. Anhand der folgenden Tabelle kann der zu nutzende JSON-Datentyp ermittelt werden:
+
+`type`-Eigenschaft | JSON-Datentyp
+-------------------|--------------
+BOOL               | boolean (z.B. false, true)
+ACTION             | boolean (nur true ist sinnvoll)
+INTEGER oder ENUM  | number (nur ganzzahlige Werte sind sinnvoll, z.B. 2)
+FLOAT              | number (Fließkommazahl, z.B. 0.123)
+STRING             | string (z.B. "abc")
+
+Bei den Datentypen INTEGER, ENUM oder FLOAT sollte der zu setzende Wert größer oder gleich der `minimum`-Eigenschaft sein und kleiner oder gleich der `maximum`-Eigenschaft.
 
 ## Anwendungsbeispiele
 
