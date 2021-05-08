@@ -15,7 +15,7 @@ import (
 
 const (
 	// A buffer is needed for buffering events while exploring.
-	notifBufferSize = 250
+	notifBufferSize = 1000
 
 	// delay between XMLRPC requests while exploring
 	xmlRPCDelay = 50 * time.Millisecond
