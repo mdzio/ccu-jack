@@ -176,6 +176,10 @@ Die wichtigsten Konfigurationsoptionen des CCU-Jacks können über die Web-Oberf
 
 ![Konfiguration](doc/web-ui-config.png)
 
+Die Diagnoseseite hilft bei der Fehlersuche weiter:
+
+![Diagnose](doc/web-ui-diagnostics.png)
+
 ## Beschreibung der VEAP-Dienste/REST-API
 
 Mit dem [Kommandozeilenwerkzeug CURL](https://curl.haxx.se), das praktisch für alle Betriebssysteme und Plattformen verfügbar ist, können alle VEAP-Dienste (z.B. Datenpunkte lesen und setzen) des CCU-Jacks genutzt werden. Die Beschreibung ist auf einer [eigenen Seite](https://github.com/mdzio/ccu-jack/blob/master/doc/curl.md) zu finden.
