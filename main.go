@@ -32,6 +32,9 @@ const (
 	appDescription = "REST/MQTT-Interface for the HomeMatic CCU"
 	appCopyright   = "(C)2020-2021"
 	appVendor      = "info@ccu-historian.de"
+
+	// wait time for ReGaHss before signaling an error
+	reGaHssStartupTimeout = 2 * time.Minute
 )
 
 var (
@@ -289,11 +292,19 @@ func runBase() error {
 
 func waitForReGaHss() (shutdown bool, err error) {
 	log.Info("Waiting for ReGaHss")
+	t := time.Now()
+	l := true
 	for {
 		// test ReGaHss
 		resp, err := scriptClient.Execute("WriteLine(\"Hello CCU-Jack!\");")
 		if err == nil && len(resp) == 1 && resp[0] == "Hello CCU-Jack!" {
 			return false, nil
+		}
+
+		// log error?
+		if l && time.Since(t) >= reGaHssStartupTimeout {
+			log.Error("ReGaHss not reachable")
+			l = false
 		}
 
 		// wait for timer, shutdown or error
