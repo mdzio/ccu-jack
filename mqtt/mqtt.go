@@ -17,29 +17,10 @@ import (
 	"github.com/mdzio/go-veap"
 )
 
-const (
-	deviceStatusTopic = "device/status"
-	deviceSetTopic    = "device/set"
-	// path prefix for device data points in the VEAP address space
-	deviceVeapPath = "/device"
+var log = logging.Get("mqtt-server")
 
-	// topic prefix for system variables
-	sysVarTopic = "sysvar"
-	// path prefix for system variable data points in the VEAP address space
-	sysVarVeapPath = "/sysvar"
-	// delay time for reading back
-	sysVarReadBackDur = 300 * time.Millisecond
-
-	// topic prefix for programs
-	prgTopic = "program"
-	// path prefix for programs in the VEAP address space
-	prgVeapPath = "/program"
-)
-
-var log = logging.Get("mqtt-broker")
-
-// Broker for MQTT. Broker implements itf.Receiver to receive XML-RPC events.
-type Broker struct {
+// Server for MQTT.
+type Server struct {
 	// Binding address for serving MQTT.
 	Addr string
 	// Binding address for serving Secure MQTT.
@@ -53,20 +34,13 @@ type Broker struct {
 	// When an error happens while serving (e.g. binding of port fails), this
 	// error is sent to the channel ServeErr.
 	ServeErr chan<- error
-	// Service is used to write device data points and read/write system variables.
-	Service veap.Service
 
 	server     *service.Server
 	doneServer sync.WaitGroup
-
-	onSetDevice service.OnPublishFunc
-
-	sysVarAdapter *vadapter
-	prgAdapter    *vadapter
 }
 
-// Start starts the MQTT broker.
-func (b *Broker) Start() {
+// Start starts the MQTT server.
+func (b *Server) Start() {
 	b.server = &service.Server{
 		Authenticator: b.Authenticator,
 	}
@@ -119,62 +93,12 @@ func (b *Broker) Start() {
 		}()
 	}
 
-	// subscribe set device topics
-	b.onSetDevice = func(msg *message.PublishMessage) error {
-		log.Tracef("Set device message received: %s: %s", msg.Topic(), msg.Payload())
-
-		// parse PV
-		pv, err := wireToPV(msg.Payload())
-		if err != nil {
-			return err
-		}
-
-		// map topic to VEAP address
-		topic := string(msg.Topic())
-		if !strings.HasPrefix(topic, deviceSetTopic+"/") {
-			return fmt.Errorf("Unexpected topic: %s", topic)
-		}
-
-		// path with leading /
-		path := topic[len(deviceSetTopic):]
-
-		// use VEAP service to write PV
-		if err = b.Service.WritePV(deviceVeapPath+path, pv); err != nil {
-			return err
-		}
-		return nil
-	}
-	b.server.Subscribe(deviceSetTopic+"/+/+/+", message.QosExactlyOnce, &b.onSetDevice)
-
-	// adapt VEAP system variables
-	b.sysVarAdapter = &vadapter{
-		mqttTopic:   sysVarTopic,
-		veapPath:    sysVarVeapPath,
-		readBackDur: sysVarReadBackDur,
-		mqttBroker:  b,
-		veapService: b.Service,
-	}
-	b.sysVarAdapter.start()
-
-	// adapt VEAP programs
-	b.prgAdapter = &vadapter{
-		mqttTopic:   prgTopic,
-		veapPath:    prgVeapPath,
-		mqttBroker:  b,
-		veapService: b.Service,
-	}
-	b.prgAdapter.start()
 }
 
-// Stop stops the MQTT broker.
-func (b *Broker) Stop() {
-	// stop adapter
-	b.prgAdapter.stop()
-	b.sysVarAdapter.stop()
-
+// Stop stops the MQTT server.
+func (b *Server) Stop() {
 	// stop broker
 	log.Debugf("Stopping MQTT broker")
-	b.server.Unsubscribe(deviceSetTopic+"/+/+/+", &b.onSetDevice)
 	_ = b.server.Close()
 
 	// wait for stop
@@ -182,7 +106,7 @@ func (b *Broker) Stop() {
 }
 
 // PublishPV publishes a PV.
-func (b *Broker) PublishPV(topic string, pv veap.PV, qos byte, retain bool) error {
+func (b *Server) PublishPV(topic string, pv veap.PV, qos byte, retain bool) error {
 	pl, err := pvToWire(pv)
 	if err != nil {
 		return err
@@ -194,7 +118,7 @@ func (b *Broker) PublishPV(topic string, pv veap.PV, qos byte, retain bool) erro
 }
 
 // Publish publishes a generic payload.
-func (b *Broker) Publish(topic string, payload []byte, qos byte, retain bool) error {
+func (b *Server) Publish(topic string, payload []byte, qos byte, retain bool) error {
 	log.Tracef("Publishing %s: %s", topic, string(payload))
 	pm := message.NewPublishMessage()
 	if err := pm.SetTopic([]byte(topic)); err != nil {
@@ -212,12 +136,12 @@ func (b *Broker) Publish(topic string, payload []byte, qos byte, retain bool) er
 }
 
 // Subscribe subscribes a topic.
-func (b *Broker) Subscribe(topic string, qos byte, onPublish *service.OnPublishFunc) error {
+func (b *Server) Subscribe(topic string, qos byte, onPublish *service.OnPublishFunc) error {
 	return b.server.Subscribe(topic, qos, onPublish)
 }
 
 // Unsubscribe unsubscribes a topic.
-func (b *Broker) Unsubscribe(topic string, onPublish *service.OnPublishFunc) error {
+func (b *Server) Unsubscribe(topic string, onPublish *service.OnPublishFunc) error {
 	return b.server.Unsubscribe(topic, onPublish)
 }
 

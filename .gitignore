@@ -5,4 +5,6 @@ ccu-jack-*.tar.gz
 ccu-jack-*.zip
 __debug_bin
 wd/ccu-jack.cfg
+wd/ccu-jack.exe
+wd/ccu-jack.log
 ccu-jack.code-workspace

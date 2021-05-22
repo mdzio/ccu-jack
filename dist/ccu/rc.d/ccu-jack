@@ -16,13 +16,13 @@ stop() {
     logger -t ${ADDON_ID} -p user.debug "Stopping"
     # stop process
     start-stop-daemon -K -q -p /var/run/${ADDON_ID}.pid
+    # wait for stop
+    sleep 5
     logger -t ${ADDON_ID} -p user.info "Stopped"
 }
 
 start() {
     logger -t ${ADDON_ID} -p user.debug "Starting"
-    # wait for ReGaHss startup/delay restart
-    sleep 15
     # start process
     cd ${ADDON_DIR}
     start-stop-daemon -S -q -b -m -p /var/run/${ADDON_ID}.pid -x ${ADDON_DIR}/${ADDON_ID}
@@ -65,8 +65,11 @@ uninstall() {
 }
 
 case "$1" in
-  ""|start)
-	  start
+  ""|init)
+    start
+  ;;
+  start)
+	  echo "use init to start"
 	;;
   stop)
 	  stop
@@ -82,7 +85,7 @@ case "$1" in
     info
   ;;
   *)
-    echo "usage: ${ADDON_ID} {start|stop|restart|info|uninstall}" >&2
+    echo "usage: ${ADDON_ID} [init|start|stop|restart|uninstall|info]" >&2
     exit 1
   ;;
 esac

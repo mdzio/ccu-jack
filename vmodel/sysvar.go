@@ -80,7 +80,7 @@ func (d *SysVarCol) explore() {
 	// retrieve system variables
 	svs, err := d.ScriptClient.SystemVariables()
 	if err != nil {
-		sysVarLog.Error(err)
+		sysVarLog.Errorf("Retrieving of system variables from CCU failed: %v", err)
 		return
 	}
 	// build lookup map

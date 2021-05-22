@@ -12,7 +12,7 @@ import (
 const (
 	logLevel   = logging.InfoLevel
 	appName    = "ccu-jack"
-	appVersion = "1.1.1"
+	appVersion = "2.0.0"
 	appPkg     = "github.com/mdzio/ccu-jack"
 	ldFlags    = "-s -w -X main.appVersion=" + appVersion
 	buildDir   = ".."
@@ -21,7 +21,6 @@ const (
 var (
 	// target systems to be built
 	targetSystems = []string{
-		"ccu2",
 		"rm-rp0+1",
 		"ccu3-rm-rp2+3",
 		"rm-rp4",
@@ -36,7 +35,6 @@ var (
 		addon  bool
 		goSpec releng.GoSpec
 	}{
-		"ccu2":          {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "5", LDFlags: ldFlags}},
 		"rm-rp0+1":      {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "6", LDFlags: ldFlags}},
 		"ccu3-rm-rp2+3": {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "7", LDFlags: ldFlags}},
 		"rm-rp4":        {true, releng.GoSpec{OS: "linux", Arch: "arm64", LDFlags: ldFlags}},

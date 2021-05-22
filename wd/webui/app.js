@@ -42,6 +42,9 @@ function Layout() {
                         m("button.btn.btn-block.my-2", {
                             onclick: function () { m.route.set("/config") }
                         }, "Konfiguration"),
+                        m("button.btn.btn-block.my-2", {
+                            onclick: function () { m.route.set("/diagnostics") }
+                        }, "Diagnose"),
                         m(Version)
                     ),
                     m(".column.col-10.col-md-12",
@@ -75,4 +78,9 @@ m.route(document.body, "/navigator", {
             return m(Layout, m(Config))
         }
     },
+    "/diagnostics": {
+        render: function () {
+            return m(Layout, m(Diagnostics))
+        }
+    }
 })

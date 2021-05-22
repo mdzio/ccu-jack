@@ -29,7 +29,7 @@ import (
 const (
 	appDisplayName = "CCU-Jack"
 	appName        = "ccu-jack"
-	appDescription = "REST/MQTT-Server for the HomeMatic CCU"
+	appDescription = "REST/MQTT-Interface for the HomeMatic CCU"
 	appCopyright   = "(C)2020-2021"
 	appVendor      = "info@ccu-historian.de"
 )
@@ -40,18 +40,25 @@ var (
 	// command line options
 	configFile = flag.String("config", "ccu-jack.cfg", "configuration `file`")
 
+	// global shutdown signals
+	serveErr = make(chan error)
+	// to ensure that no signal is missed, the buffer size must be 1
+	termSig = make(chan os.Signal, 1)
+
 	// base services
 	log          = logging.Get("main")
 	logFile      *os.File
+	logBuffer    *LogBuffer
 	store        rtcfg.Store
 	httpServer   *httputil.Server
 	modelRoot    *model.Root
 	modelService *model.Service
+	mqttServer   *mqtt.Server
 
 	// application services
+	scriptClient *script.Client
 	sysVarCol    *vmodel.SysVarCol
 	prgCol       *vmodel.ProgramCol
-	mqttServer   *mqtt.Broker
 	sysVarReader *mqtt.SysVarReader
 	reGaDOM      *script.ReGaDOM
 	deviceCol    *vmodel.DeviceCol
@@ -83,14 +90,16 @@ func configure() error {
 
 	// configure logging
 	logging.SetLevel(logCfg.Level)
+	logBuffer = NewLogBuffer()
+	logBuffer.Next = os.Stderr
+	logging.SetWriter(logBuffer)
 	if logCfg.FilePath != "" {
-		var err error
-		logFile, err = os.OpenFile(logCfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		logFile, err := os.OpenFile(logCfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			return fmt.Errorf("Opening log file failed: %w", err)
 		}
 		// switch to file log
-		logging.SetWriter(logFile)
+		logBuffer.Next = logFile
 	}
 	return nil
 }
@@ -195,14 +204,15 @@ func newRoot(handlerStats *veap.HandlerStats) *model.Root {
 		Collection:        r,
 	})
 	vmodel.NewConfig(vendor, &store)
+	NewDiagnostics(vendor)
 	model.NewHandlerStats(vendor, handlerStats)
 	return r
 }
 
-func startupBase(serveErr chan<- error) {
+func runBase() error {
 	// lock config for reading
 	store.RLock()
-	defer store.RUnlock()
+	// find RUnlock at end of function, no intermediate returns in this function
 	cfg := store.Config
 
 	// file handler for static files
@@ -217,6 +227,7 @@ func startupBase(serveErr chan<- error) {
 		ServeErr: serveErr,
 	}
 	httpServer.Startup()
+	defer httpServer.Shutdown()
 
 	// veap handler and model
 	veapHandler := &veap.Handler{}
@@ -245,51 +256,22 @@ func startupBase(serveErr chan<- error) {
 
 	// register VEAP handler
 	http.Handle(veapHandler.URLPrefix+"/", handler)
-}
-
-func shutdownBase() {
-	httpServer.Shutdown()
-}
-
-func startupApp(serveErr chan<- error) {
-	// lock config for reading
-	store.RLock()
-	defer store.RUnlock()
-	cfg := store.Config
-
-	// create device collection
-	deviceCol = vmodel.NewDeviceCol(modelRoot)
-
-	// configure HM script client
-	scriptClient := &script.Client{
-		Addr: cfg.CCU.Address,
-	}
-
-	// create system variable collection
-	sysVarCol = vmodel.NewSysVarCol(modelRoot)
-	sysVarCol.ScriptClient = scriptClient
-	sysVarCol.Start()
-
-	// create programs collection
-	prgCol = vmodel.NewProgramCol(modelRoot)
-	prgCol.ScriptClient = scriptClient
-	prgCol.Start()
 
 	// MQTT authentication handler
 	mqttAuth := "configAuthHandler"
 	auth.Register(mqttAuth, &mqtt.AuthHandler{Store: &store})
 
 	// setup and start MQTT server
-	mqttServer = &mqtt.Broker{
+	mqttServer = &mqtt.Server{
 		Addr:          "tcp://:" + strconv.Itoa(cfg.MQTT.Port),
 		AddrTLS:       "tcp://:" + strconv.Itoa(cfg.MQTT.PortTLS),
 		CertFile:      cfg.Certificates.ServerCertFile,
 		KeyFile:       cfg.Certificates.ServerKeyFile,
 		Authenticator: mqttAuth,
 		ServeErr:      serveErr,
-		Service:       modelService,
 	}
 	mqttServer.Start()
+	defer mqttServer.Stop()
 
 	// register websocket proxy for MQTT
 	log.Infof("MQTT websocket path: " + cfg.MQTT.WebSocketPath)
@@ -298,9 +280,84 @@ func startupApp(serveErr chan<- error) {
 	}
 	http.Handle(cfg.MQTT.WebSocketPath, mqttWs)
 
+	// release config before going to next run level
+	store.RUnlock()
+
+	// run the application
+	return runApp()
+}
+
+func waitForReGaHss() (shutdown bool, err error) {
+	log.Info("Waiting for ReGaHss")
+	for {
+		// test ReGaHss
+		resp, err := scriptClient.Execute("WriteLine(\"Hello CCU-Jack!\");")
+		if err == nil && len(resp) == 1 && resp[0] == "Hello CCU-Jack!" {
+			return false, nil
+		}
+
+		// wait for timer, shutdown or error
+		select {
+		case err := <-serveErr:
+			return true, err
+		case <-termSig:
+			log.Trace("Shutdown signal received")
+			return true, nil
+		case <-time.After(10 * time.Second):
+			// next try
+		}
+	}
+}
+
+func runApp() error {
+	// lock config for reading
+	store.RLock()
+	// find RUnlock right below
+	cfg := store.Config
+
+	// configure HM script client
+	scriptClient = &script.Client{
+		Addr: cfg.CCU.Address,
+	}
+
+	// intermediate unlock while waiting
+	store.RUnlock()
+
+	// wait for ReGaHss
+	if shutdown, err := waitForReGaHss(); shutdown || err != nil {
+		return err
+	}
+
+	// lock config for reading
+	store.RLock()
+	// find RUnlock at end of function
+
+	// create device collection
+	deviceCol = vmodel.NewDeviceCol(modelRoot)
+
+	// create system variable collection
+	sysVarCol = vmodel.NewSysVarCol(modelRoot)
+	sysVarCol.ScriptClient = scriptClient
+	sysVarCol.Start()
+	defer sysVarCol.Stop()
+
+	// create programs collection
+	prgCol = vmodel.NewProgramCol(modelRoot)
+	prgCol.ScriptClient = scriptClient
+	prgCol.Start()
+	defer prgCol.Stop()
+
+	// setup and start MQTT/VEAP bridge
+	mqttVeapBridge := &mqtt.Bridge{
+		Server:  mqttServer,
+		Service: modelService,
+	}
+	mqttVeapBridge.Start()
+	defer mqttVeapBridge.Stop()
+
 	// event receiver for MQTT
 	mqttReceiver := &mqtt.EventReceiver{
-		Broker: mqttServer,
+		Server: mqttServer,
 		// forward events
 		Next: deviceCol,
 	}
@@ -309,9 +366,10 @@ func startupApp(serveErr chan<- error) {
 	sysVarReader = &mqtt.SysVarReader{
 		Service:      modelService,
 		ScriptClient: scriptClient,
-		Broker:       mqttServer,
+		Server:       mqttServer,
 	}
 	sysVarReader.Start()
+	defer sysVarReader.Stop()
 
 	// configure interconnector
 	intercon = &itf.Interconnector{
@@ -329,6 +387,7 @@ func startupApp(serveErr chan<- error) {
 	// start ReGa DOM explorer
 	reGaDOM = script.NewReGaDOM(scriptClient)
 	reGaDOM.Start()
+	defer reGaDOM.Stop()
 
 	// create room and function collections
 	vmodel.NewRoomCol(modelRoot, reGaDOM, modelService)
@@ -339,20 +398,33 @@ func startupApp(serveErr chan<- error) {
 	deviceCol.ReGaDOM = reGaDOM
 	deviceCol.ModelService = modelService
 	deviceCol.Start()
+	defer deviceCol.Stop()
 
 	// startup interconnector
 	// (an additional handler for XMLRPC is registered at the DefaultServeMux.)
 	intercon.Start()
+	defer intercon.Stop()
+
+	// release config before going to next run level
+	store.RUnlock()
+
+	// following function blocks until shutdown request
+	return waitForShutdown()
 }
 
-func shutdownApp() {
-	intercon.Stop()
-	deviceCol.Stop()
-	reGaDOM.Stop()
-	sysVarReader.Stop()
-	mqttServer.Stop()
-	prgCol.Stop()
-	sysVarCol.Stop()
+func waitForShutdown() error {
+	// wait for start up to complete (do not call Close() on the servers before
+	// the start up is finished)
+	time.Sleep(1 * time.Second)
+
+	// wait for shutdown or error
+	select {
+	case err := <-serveErr:
+		return err
+	case <-termSig:
+		log.Trace("Shutdown signal received")
+		return nil
+	}
 }
 
 func run() error {
@@ -379,34 +451,11 @@ func run() error {
 		return err
 	}
 
-	// react on INT or TERM signal (to ensure that no signal is missed, the
-	// buffer size must be 1)
-	termSig := make(chan os.Signal, 1)
+	// react on INT or TERM signal
 	signal.Notify(termSig, os.Interrupt, syscall.SIGTERM)
 
-	// react on fatal serve errors
-	serveErr := make(chan error)
-
-	// startup base services
-	startupBase(serveErr)
-	defer shutdownBase()
-
-	// startup application services
-	startupApp(serveErr)
-	defer shutdownApp()
-
-	// wait for start up to complete (do not call Close() on the servers before
-	// the start up is finished)
-	time.Sleep(1 * time.Second)
-
-	// wait for shutdown or error
-	select {
-	case err := <-serveErr:
-		return err
-	case <-termSig:
-		log.Trace("Shutdown signal received")
-		return nil
-	}
+	// run base services
+	return runBase()
 }
 
 func main() {

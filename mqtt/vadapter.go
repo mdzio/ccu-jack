@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mdzio/go-veap"
 	"github.com/mdzio/go-mqtt/message"
 	"github.com/mdzio/go-mqtt/service"
+	"github.com/mdzio/go-veap"
 )
 
 type vadapter struct {
@@ -19,7 +19,7 @@ type vadapter struct {
 	// read back duration (0: disabled)
 	readBackDur time.Duration
 	// MQTT server
-	mqttBroker *Broker
+	mqttServer *Server
 	// VEAP service
 	veapService veap.Service
 
@@ -95,7 +95,7 @@ func (a *vadapter) start() {
 				}
 				// publish PV
 				statusTopic := a.mqttTopic + "/status"
-				err = a.mqttBroker.PublishPV(statusTopic+path, pv, message.QosAtLeastOnce, true)
+				err = a.mqttServer.PublishPV(statusTopic+path, pv, message.QosAtLeastOnce, true)
 				if err != nil {
 					log.Warning("Publish of %s failed: %v", statusTopic+path, err)
 					return
@@ -133,18 +133,18 @@ func (a *vadapter) start() {
 
 		// publish PV
 		statusTopic := a.mqttTopic + "/status"
-		return a.mqttBroker.PublishPV(statusTopic+path, pv, message.QosAtLeastOnce, true)
+		return a.mqttServer.PublishPV(statusTopic+path, pv, message.QosAtLeastOnce, true)
 	}
 
 	// subscribe topics
-	a.mqttBroker.Subscribe(a.mqttTopic+"/set/+", message.QosExactlyOnce, &a.onSet)
-	a.mqttBroker.Subscribe(a.mqttTopic+"/get/+", message.QosExactlyOnce, &a.onGet)
+	a.mqttServer.Subscribe(a.mqttTopic+"/set/+", message.QosExactlyOnce, &a.onSet)
+	a.mqttServer.Subscribe(a.mqttTopic+"/get/+", message.QosExactlyOnce, &a.onGet)
 }
 
 func (a *vadapter) stop() {
 	// unsubscribe topics
-	a.mqttBroker.Unsubscribe(a.mqttTopic+"/set/+", &a.onSet)
-	a.mqttBroker.Unsubscribe(a.mqttTopic+"/get/+", &a.onGet)
+	a.mqttServer.Unsubscribe(a.mqttTopic+"/set/+", &a.onSet)
+	a.mqttServer.Unsubscribe(a.mqttTopic+"/get/+", &a.onGet)
 
 	// disable callbacks
 	a.cond.L.Lock()

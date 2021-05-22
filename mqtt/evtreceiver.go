@@ -10,11 +10,11 @@ import (
 	"github.com/mdzio/go-veap"
 )
 
-// EventReceiver accepts XMLRPC events, publishes them to the broker and then
-// forwards them to the next receiver.
+// EventReceiver accepts XMLRPC events, publishes them to the MQTT server and
+// then forwards them to the next receiver.
 type EventReceiver struct {
-	// Broker for publishing events.
-	Broker *Broker
+	// Server for publishing events.
+	Server *Server
 
 	// Next handler for XML-RPC events.
 	Next itf.LogicLayer
@@ -92,7 +92,7 @@ func (r *EventReceiver) publishEvent(interfaceID, address, valueKey string, valu
 	}
 
 	// publish
-	if err := r.Broker.PublishPV(topic, pv, qos, retain); err != nil {
+	if err := r.Server.PublishPV(topic, pv, qos, retain); err != nil {
 		return err
 	}
 	return nil

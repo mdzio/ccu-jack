@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/mdzio/go-hmccu/script"
+	"github.com/mdzio/go-logging"
 	"github.com/mdzio/go-veap"
 	"github.com/mdzio/go-veap/model"
-	"github.com/mdzio/go-logging"
 )
 
 const (
@@ -81,7 +81,7 @@ func (pc *ProgramCol) explore() {
 	// retrieve programs
 	ps, err := pc.ScriptClient.Programs()
 	if err != nil {
-		prgLog.Error(err)
+		prgLog.Errorf("Retrieving of progams from CCU failed: %v", err)
 		return
 	}
 	// build lookup map

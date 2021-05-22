@@ -23,8 +23,8 @@ type SysVarReader struct {
 	Service veap.Service
 	// ScriptClient is used to bulk read system variables.
 	ScriptClient *script.Client
-	// Broker is used for publishing value changes.
-	Broker *Broker
+	// Server is used for publishing value changes.
+	Server *Server
 
 	stop chan struct{}
 	done chan struct{}
@@ -125,7 +125,7 @@ func (r *SysVarReader) Start() {
 
 					// publish PV
 					topic := sysVarTopic + "/status/" + iseID
-					if err := r.Broker.PublishPV(topic, pv, message.QosExactlyOnce, true); err != nil {
+					if err := r.Server.PublishPV(topic, pv, message.QosExactlyOnce, true); err != nil {
 						log.Errorf("System variable reader: %v", err)
 					} else {
 						pvCache[iseID] = pv
