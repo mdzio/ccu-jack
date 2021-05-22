@@ -165,6 +165,27 @@ function Config() {
         modified = true
     }
 
+    function viewLogging() {
+        const lvl = config.Logging.Level
+        return m(".form-group",
+            m("label.form-label[for=logseverity]", "Mindeste Dringlichkeit der auszugebenden Log-Meldungen. " +
+                "DEBUG und TRACE sollten nur temporär aktiviert werden:"),
+            m("select.form-select#logseverity[style=width:auto]", {
+                onchange: function (e) {
+                    config.Logging.Level = e.target.value
+                    modified = true
+                }
+            },
+                m("option[value=OFF]", { selected: lvl === "OFF" }, "OFF (keine Meldungen)"),
+                m("option[value=ERROR]", { selected: lvl === "ERROR" }, "ERROR (Fehler)"),
+                m("option[value=WARNING]", { selected: lvl === "WARNING" }, "WARNING (Warnungen)"),
+                m("option[value=INFO]", { selected: lvl === "INFO" }, "INFO (Allg. Informationen)"),
+                m("option[value=DEBUG]", { selected: lvl === "DEBUG" }, "DEBUG (Entwicklermeldungen)"),
+                m("option[value=TRACE]", { selected: lvl === "TRACE" }, "TRACE (erw. Entwicklermeldungen)")
+            )
+        )
+    }
+
     function viewCCU() {
         const itfs = config.CCU.Interfaces
         const wiredName = "BidCosWired"
@@ -257,6 +278,11 @@ function Config() {
                 modified &&
                 m(".toast.toast-warning",
                     m("p", "Konfigurationsänderungen sind noch nicht gespeichert!")
+                ),
+                m(".accordion",
+                    m("input[type=checkbox][id=acc-logging][hidden=hidden]"),
+                    m("label.accordion-header[for=acc-logging]", m("i.icon.icon-arrow-right.mr-1"), "Logging"),
+                    m(".accordion-body", viewLogging())
                 ),
                 m(".accordion",
                     m("input[type=checkbox][id=acc-ccu][hidden=hidden]"),

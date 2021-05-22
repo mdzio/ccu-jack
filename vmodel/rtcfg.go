@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/mdzio/go-hmccu/itf"
+	"github.com/mdzio/go-logging"
 
 	"github.com/mdzio/ccu-jack/rtcfg"
 	"github.com/mdzio/go-lib/any"
@@ -68,6 +69,7 @@ func updateConfig(cfg *rtcfg.Config, v interface{}) error {
 	if q.Err() != nil {
 		return q.Err()
 	}
+
 	// CCU property present?
 	if c.Has("CCU") {
 		// CCU interface list
@@ -89,6 +91,7 @@ func updateConfig(cfg *rtcfg.Config, v interface{}) error {
 		}
 		cfg.CCU.Interfaces = ts
 	}
+
 	// Users property present?
 	if c.Has("Users") {
 		users := make(map[string]*rtcfg.User)
@@ -131,6 +134,25 @@ func updateConfig(cfg *rtcfg.Config, v interface{}) error {
 			return q.Err()
 		}
 		cfg.Users = users
+	}
+
+	// Logging property present?
+	if c.Has("Logging") {
+		lvltxt := c.Key("Logging").Map().TryKey("Level").String()
+		if q.Err() != nil {
+			return q.Err()
+		}
+		// logging level present?
+		if lvltxt != "" {
+			var lvl logging.LogLevel
+			err := lvl.Set(lvltxt)
+			if err != nil {
+				return fmt.Errorf("Invalid logging level: %s", lvltxt)
+			}
+			cfg.Logging.Level = lvl
+			// activate log level
+			logging.SetLevel(lvl)
+		}
 	}
 	return nil
 }
