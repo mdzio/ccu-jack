@@ -169,7 +169,7 @@ function Config() {
         const lvl = config.Logging.Level
         return m(".form-group",
             m("label.form-label[for=logseverity]", "Mindeste Dringlichkeit der auszugebenden Log-Meldungen. " +
-                "DEBUG und TRACE sollten nur temporär aktiviert werden:"),
+                "Die Einstellungen DEBUG oder TRACE sollten nur temporär aktiviert werden:"),
             m("select.form-select#logseverity[style=width:auto]", {
                 onchange: function (e) {
                     config.Logging.Level = e.target.value
