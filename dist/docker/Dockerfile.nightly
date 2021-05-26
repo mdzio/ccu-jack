@@ -22,7 +22,7 @@ ARG BUILD_VERSION_NIGHTLY
 
 LABEL maintainer="Theta Gamma <thetagamma11@gmail.com>"
 LABEL org.opencontainers.image.created=$BUILD_DATE \
-      org.opencontainers.image.version=$BUILD_VERSION_NIGHTLY \
+      org.opencontainers.image.version=$BUILD_VERSION \
       org.opencontainers.image.title="CCU-Jack" \
       org.opencontainers.image.description="REST/MQTT-Server for the HomeMatic CCU" \
       org.opencontainers.image.vendor="CCU-Jack OpenSource Project" \
