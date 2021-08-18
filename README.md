@@ -237,9 +237,9 @@ Die Abbildung der CCU-Datentypen auf JSON ist im nächsten Abschnitt zu finden.
 
 Ab Version 2 des CCU-Jacks werden virtuelle Geräte in der CCU unterstützt. Diese bieten eine nahtlose Integration in die Bedien- und Beobachtungsoberfläche der CCU und können in CCU-Programmen wie reale Geräte abgefragt und gesteuert werden. Dadurch wird der Logik-Schicht der CCU (ReGaHss) selbst ermöglicht, Daten aus Fremdsystemen oder -geräten abzufragen oder an diese zu übertragen. 
 
-**Achtung:** Virtuelle Geräte funktionieren nur dann, wenn der CCU-Jack als Add-On auf der CCU installiert wurde. Ein Neustart der CCU ist erforderlich! Eine neue Geräteschnittstelle wird zur Projektierung der CCU hinzugefügt. Der Hersteller der CCU kann unter Umständen Support-Leistungen ablehnen. Dies betrifft generell jede zusätzlich installierte Software auf der CCU.
+**Achtung:** Virtuelle Geräte funktionieren nur dann, wenn der CCU-Jack als Add-On auf der CCU installiert wurde. Eine neue Geräteschnittstelle wird zur Projektierung der CCU hinzugefügt. Der Hersteller der CCU kann unter Umständen Support-Leistungen ablehnen. Dies betrifft generell jede zusätzlich installierte Software auf der CCU.
 
-Virtuelle Geräte werden über die Web-UI des CCU-Jacks angelegt und konfiguriert. Danach erscheinen sie direkt im Geräte-Posteingang der CCU. Spezifische Einstellungen der Geräte können dann in der CCU vorgenommen werden.
+Virtuelle Geräte müssen als erstes in der Konfiguration des CCU-Jacks aktiviert werden. Danach ist ein Neustart der CCU erforderlich. Virtuelle Geräte werden dann über die Web-UI des CCU-Jacks angelegt und konfiguriert. Neue angelegte Geräte erscheinen direkt im Geräte-Posteingang der CCU. Spezifische Einstellungen der Geräte können dann in der CCU vorgenommen werden.
 
 Der CCU-Jack bietet verschiedene Gerätetypen an. Der Gerätetyp legt die Basisfunktionalität fest (z.B. Statisch, MQTT oder HTTP). Zu dem Gerät können dann beliebig viele Kanäle unterschiedlichen Typs (z.B. Taster oder Schaltaktor) erstellt werden. Die Kanäle verwenden dann die festgelegte Basisfunktionalität.
 
@@ -252,6 +252,26 @@ Kanaltyp      | Ab Version | Funktion
 Taster        | 2.0.11     | Taster (wie die virtuellen Taster in der CCU)
 Schaltaktor   | 2.0.11     | Schaltaktor (wie HM-LC-Sw1-Pl)
 Analogeingang | 2.0.11     | Analogeingang (wie HmIP-MIO16-PCB Kanal 1)
+
+### Deinstallation der virtuellen Geräte
+
+Falls alle virtuellen Geräte und die CCU-Jack Geräteschnittstelle aus der CCU-Projektierung entfernt werden sollen, ist wie folgt vorzugehen:
+* Alle virtuellen Geräte über die Web-UI des CCU-Jacks oder der CCU löschen.
+* Unterstützung für virtuelle Geräte im CCU-Jack deaktivieren.
+* CCU neu starten.
+* Das HM-Skript (unten) zum Entfernen der Geräteschnittstelle ausführen.
+
+Skript zum Entfernen der Geräteschnittstelle:
+```
+var i = dom.GetObject('CCU-Jack');
+if (i) {
+  WriteLine('Entferne ' # i.ID() # ' ' # i.Name());
+  dom.GetObject(ID_INTERFACES).Remove(i);
+  dom.DeleteObject(i);
+  system.Save();
+} 
+WriteLine('Skript ausgeführt.');
+```
 
 ## Abbildung der CCU-Datentypen
 
