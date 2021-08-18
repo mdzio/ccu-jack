@@ -13,6 +13,7 @@ Zudem kann der CCU-Jack die Kombination der zwei Add-Ons [hm2mqtt](https://githu
 * [Download](#download)
 * [Beschreibung REST-API](https://github.com/mdzio/ccu-jack/blob/master/doc/curl.md)
 * [Beschreibung MQTT-API](#beschreibung-der-mqtt-schnittstelle)
+* [Beschreibung der virtuellen Geräte](#virtuelle-geräte)
 
 ## Hauptmerkmale
 
@@ -40,9 +41,11 @@ Folgende Leitlinien sind bei der Entwicklung des CCU-Jacks maßgebend:
 
 Mit der Veröffentlichung der V1.0 ist die für den CCU-Jack ursprünglich angedachte Funktionalität implementiert. Die REST-API (z.B. Pfade und Datenformat) und die MQTT-API (z.B. Topic-Aufbau) gelten als stabil. Alle zukünftigen Versionen erweitern höchstens das Grundgerüst (z.B. zusätzliche Pfade/Topics/Attribute). Alle Clients, die für die V1.0 entwickelt werden, sollten ohne Änderung mit zukünftigen Versionen des CCU-Jacks funktionieren.
 
-Langfristig sind bereits folgende Erweiterungen geplant:
-* Erweiterungen für MQTT
-  * Konfigurierbare Regeln für die Umwandlung von _Topics_ und _Payloads_, um die Integration von MQTT-Geräten (z.B. [Tasmota](https://www.tasmota.info/)) zu erleichtern. 
+Bisher hat der CCU-Jack primär Fremdapplikationen einen leichten Zugriff auf die Datenpunkte der CCU über das Netzwerk ermöglicht. Es soll aber auch der Logik-Schicht der CCU (ReGaHss) selbst ermöglicht werden, Daten aus Fremdsystemen oder -geräten abzufragen oder an diese zu übertragen. Dazu unterstützt der CCU-Jack ab Version 2 virtuelle Geräte in der CCU. Diese bieten eine nahtlose Integration in die Bedien- und Beobachtungsoberfläche der CCU und können in CCU-Programmen wie reale Geräte abgefragt und gesteuert werden.
+
+Langfristig sind daher folgende Erweiterungen geplant:
+* Virtuelle Geräte für beliebige MQTT-Konventionen (z.B. [Tasmota](https://www.tasmota.info/), [ESPEasy](https://github.com/letscontrolit/ESPEasy), [Shelly](https://shelly.cloud/))
+* Virtuelle Geräte für HTTP-Abfragen
 
 Zukünftige Ideen:
 * Austausch von Datenpunkten mit anderen CCUs oder MQTT-Servern. Dadurch könnten z.B. zwei CCUs direkt gekoppelt werden, oder bestimmte Datenpunkte an einen MQTT-Server im Internet gesendet oder von dort abgeholt werden.
@@ -131,7 +134,12 @@ Beispielkonfigurationsdatei:
     "ServerCertFile": "svrcert.pem",
     "ServerKeyFile": "svrcert.key"
   },
-  "Users": {}
+  "Users": {},
+  "VirtualDevices": {
+    "Enable": false,
+    "NextSerialNo": 0,
+    "Devices": {}
+  }
 }
 ```
 
@@ -171,6 +179,10 @@ Durch Klick auf das Stift-Symbol kann der Wert eines Datenpunktes geändert werd
 Variablen können für die Überwachung ausgewählt werden. Es werden in Echtzeit die aktuellen Werte angezeigt und Wertänderungen hervorgehoben:
 
 ![Überwachung](doc/web-ui-watcher.png)
+
+Für eine nahtlose Integration in die Logik-Schicht der CCU (ReGaHss) unterstützt der CCU-Jack *virtuelle Geräte*:
+
+![Virtuelle Geräte](doc/web-ui-virtualdevices.png)
 
 Die wichtigsten Konfigurationsoptionen des CCU-Jacks können über die Web-Oberfläche geändert werden:
 
@@ -220,6 +232,26 @@ Für das Setzen von Datenpunkten wird nur die Eigenschaft `v` benötigt. Beispie
 Die Retain-Eigenschaft wird bei allen Datenpunkten gesetzt, außer der Parametername ist *INSTALL_TEST* oder beginnt mit *PRESS_*.
 
 Die Abbildung der CCU-Datentypen auf JSON ist im nächsten Abschnitt zu finden.
+
+## Virtuelle Geräte
+
+Ab Version 2 des CCU-Jacks werden virtuelle Geräte in der CCU unterstützt. Diese bieten eine nahtlose Integration in die Bedien- und Beobachtungsoberfläche der CCU und können in CCU-Programmen wie reale Geräte abgefragt und gesteuert werden. Dadurch wird der Logik-Schicht der CCU (ReGaHss) selbst ermöglicht, Daten aus Fremdsystemen oder -geräten abzufragen oder an diese zu übertragen. 
+
+**Achtung:** Virtuelle Geräte funktionieren nur dann, wenn der CCU-Jack als Add-On auf der CCU installiert wurde. Ein Neustart der CCU ist erforderlich! Eine neue Geräteschnittstelle wird zur Projektierung der CCU hinzugefügt. Der Hersteller der CCU kann unter Umständen Support-Leistungen ablehnen. Dies betrifft generell jede zusätzlich installierte Software auf der CCU.
+
+Virtuelle Geräte werden über die Web-UI des CCU-Jacks angelegt und konfiguriert. Danach erscheinen sie direkt im Geräte-Posteingang der CCU. Spezifische Einstellungen der Geräte können dann in der CCU vorgenommen werden.
+
+Der CCU-Jack bietet verschiedene Gerätetypen an. Der Gerätetyp legt die Basisfunktionalität fest (z.B. Statisch, MQTT oder HTTP). Zu dem Gerät können dann beliebig viele Kanäle unterschiedlichen Typs (z.B. Taster oder Schaltaktor) erstellt werden. Die Kanäle verwenden dann die festgelegte Basisfunktionalität.
+
+### Statische Geräte (Keine Logik)
+
+Statische Geräte besitzen keine interne Logik. Sie dienen dazu, zusätzliche Datenpunkte zu erschaffen, die über die MQTT- und REST-API des CCU-Jacks angesprochen werden können. Gleichzeitig können sie nahtlos in CCU-Programmen verwendet werden.
+
+Kanaltyp      | Ab Version | Funktion
+--------------|------------|---------------
+Taster        | 2.0.11     | Taster (wie die virtuellen Taster in der CCU)
+Schaltaktor   | 2.0.11     | Schaltaktor (wie HM-LC-Sw1-Pl)
+Analogeingang | 2.0.11     | Analogeingang (wie HmIP-MIO16-PCB Kanal 1)
 
 ## Abbildung der CCU-Datentypen
 
