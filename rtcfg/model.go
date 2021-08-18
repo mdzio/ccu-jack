@@ -1,6 +1,8 @@
 package rtcfg
 
 import (
+	"encoding/json"
+	"errors"
 	"path"
 
 	"github.com/mdzio/go-hmccu/itf"
@@ -10,14 +12,63 @@ import (
 
 // Config is the entry object of the runtime config.
 type Config struct {
-	CCU          CCU
-	Host         Host
-	Logging      Logging
-	HTTP         HTTP
-	MQTT         MQTT
-	BINRPC       BINRPC
-	Certificates Certificates
-	Users        map[string]*User /* Identifier is key. */
+	CCU            CCU
+	Host           Host
+	Logging        Logging
+	HTTP           HTTP
+	MQTT           MQTT
+	BINRPC         BINRPC
+	Certificates   Certificates
+	Users          map[string]*User // Identifier is key.
+	VirtualDevices VirtualDevices
+}
+
+// CopyTo deep copies the configuration.
+func (c *Config) CopyTo(cc *Config) error {
+	// simple but slow deep copy
+	b, err := json.Marshal(c)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(b, cc)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Authenticate authenticates a user.
+func (c *Config) Authenticate(endpoint Endpoint, identifier, password string) *User {
+	// find user
+	u, ok := c.Users[identifier]
+	if !ok {
+		return nil
+	}
+	// active?
+	if !u.Active {
+		return nil
+	}
+	// check all permissions
+	for _, per := range u.Permissions {
+		// check endpoint
+		if endpoint&per.Endpoint == endpoint {
+			// check password
+			err := bcrypt.CompareHashAndPassword([]byte(u.EncryptedPassword), []byte(password))
+			if err != nil {
+				return nil
+			}
+			return u
+		}
+	}
+	return nil
+}
+
+// AddUser adds a user to the security config.
+func (c *Config) AddUser(u *User) {
+	if c.Users == nil {
+		c.Users = make(map[string]*User)
+	}
+	c.Users[u.Identifier] = u
 }
 
 // CCU configuration
@@ -68,40 +119,6 @@ type Certificates struct {
 	ServerKeyFile  string
 }
 
-// Authenticate authenticates a user.
-func (c *Config) Authenticate(endpoint Endpoint, identifier, password string) *User {
-	// find user
-	u, ok := c.Users[identifier]
-	if !ok {
-		return nil
-	}
-	// active?
-	if !u.Active {
-		return nil
-	}
-	// check all permissions
-	for _, per := range u.Permissions {
-		// check endpoint
-		if endpoint&per.Endpoint == endpoint {
-			// check password
-			err := bcrypt.CompareHashAndPassword([]byte(u.EncryptedPassword), []byte(password))
-			if err != nil {
-				return nil
-			}
-			return u
-		}
-	}
-	return nil
-}
-
-// AddUser adds a user to the security config.
-func (c *Config) AddUser(u *User) {
-	if c.Users == nil {
-		c.Users = make(map[string]*User)
-	}
-	c.Users[u.Identifier] = u
-}
-
 // User represents a user or a device.
 type User struct {
 	Identifier        string
@@ -109,7 +126,7 @@ type User struct {
 	Description       string
 	Password          string                 // unencrypted password (only temporary)
 	EncryptedPassword string                 // bcrypt hash
-	Permissions       map[string]*Permission /* Identifier is key. */
+	Permissions       map[string]*Permission // Identifier is key.
 }
 
 // Authorized checks whether an authorization exists. The request must contain
@@ -188,3 +205,104 @@ const (
 	PermWritePV
 	PermReadPV
 )
+
+// Virtual devices
+type VirtualDevices struct {
+	Enable       bool
+	NextSerialNo int
+	Devices      map[string]*Device // Address is key.
+}
+
+type DeviceLogic int
+
+const (
+	LogicStatic DeviceLogic = iota
+)
+
+var (
+	logicStr = []string{
+		LogicStatic: "STATIC",
+	}
+	errLogic = errors.New("invalid device logic identifier (expected: STATIC)")
+)
+
+// String implements interface Stringer.
+func (k DeviceLogic) String() string {
+	return logicStr[k]
+}
+
+// MarshalText implements TextUnmarshaler (for e.g. JSON encoding). For the
+// method to be found by the JSON encoder, use a value receiver.
+func (k DeviceLogic) MarshalText() ([]byte, error) {
+	return []byte(k.String()), nil
+}
+
+// UnmarshalText implements TextMarshaler (for e.g. JSON decoding).
+func (k *DeviceLogic) UnmarshalText(text []byte) error {
+	if idx := findEntry(logicStr, string(text)); idx != -1 {
+		*k = DeviceLogic(idx)
+		return nil
+	}
+	return errLogic
+}
+
+// Device stores the configuration and master data of a virtual device.
+type Device struct {
+	Address  string
+	HMType   string
+	Logic    DeviceLogic
+	Specific int
+	Channels []Channel
+}
+
+type ChannelKind int
+
+const (
+	ChannelKey ChannelKind = iota
+	ChannelSwitch
+	ChannelAnalogInput
+)
+
+var (
+	channelKindStr = []string{
+		ChannelKey:         "KEY",
+		ChannelSwitch:      "SWITCH",
+		ChannelAnalogInput: "ANALOG_INPUT",
+	}
+	errChannelKind = errors.New("invalid channel kind identifier (expected: KEY, SWITCH, ANALOG_INPUT)")
+)
+
+// String implements interface Stringer.
+func (k ChannelKind) String() string {
+	return channelKindStr[k]
+}
+
+// MarshalText implements TextUnmarshaler (for e.g. JSON encoding). For the
+// method to be found by the JSON encoder, use a value receiver.
+func (k ChannelKind) MarshalText() ([]byte, error) {
+	return []byte(k.String()), nil
+}
+
+// UnmarshalText implements TextMarshaler (for e.g. JSON decoding).
+func (k *ChannelKind) UnmarshalText(text []byte) error {
+	if idx := findEntry(channelKindStr, string(text)); idx != -1 {
+		*k = ChannelKind(idx)
+		return nil
+	}
+	return errChannelKind
+}
+
+type Channel struct {
+	Kind           ChannelKind
+	Specific       int
+	MasterParamset map[string]interface{}
+}
+
+func findEntry(entries []string, value string) int {
+	for idx := range entries {
+		if value == entries[idx] {
+			return idx
+		}
+	}
+	return -1
+}

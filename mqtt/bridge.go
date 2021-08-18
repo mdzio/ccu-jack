@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	// topic prefixes for CCU devices
 	deviceStatusTopic = "device/status"
 	deviceSetTopic    = "device/set"
 	// path prefix for device data points in the VEAP address space
@@ -27,6 +28,12 @@ const (
 	prgTopic = "program"
 	// path prefix for programs in the VEAP address space
 	prgVeapPath = "/program"
+
+	// topic prefixes for virtual devices
+	virtDevStatusTopic = "virtdev/status"
+	virtDevSetTopic    = "virtdev/set"
+	// path prefix for virtual devices in the VEAP address space
+	virtDevVeapPath = "/virtdev"
 )
 
 // Bridge connects MQTT and VEAP.
@@ -56,21 +63,24 @@ func (b *Bridge) Start() {
 		}
 
 		// map topic to VEAP address
+		var path string
 		topic := string(msg.Topic())
-		if !strings.HasPrefix(topic, deviceSetTopic+"/") {
+		if strings.HasPrefix(topic, deviceSetTopic+"/") {
+			path = deviceVeapPath + topic[len(deviceSetTopic):]
+		} else if strings.HasPrefix(topic, virtDevSetTopic+"/") {
+			path = virtDevVeapPath + topic[len(virtDevSetTopic):]
+		} else {
 			return fmt.Errorf("Unexpected topic: %s", topic)
 		}
 
-		// path with leading /
-		path := topic[len(deviceSetTopic):]
-
 		// use VEAP service to write PV
-		if err = b.Service.WritePV(deviceVeapPath+path, pv); err != nil {
+		if err = b.Service.WritePV(path, pv); err != nil {
 			return err
 		}
 		return nil
 	}
 	b.Server.Subscribe(deviceSetTopic+"/+/+/+", message.QosExactlyOnce, &b.onSetDevice)
+	b.Server.Subscribe(virtDevSetTopic+"/+/+/+", message.QosExactlyOnce, &b.onSetDevice)
 
 	// adapt VEAP system variables
 	b.sysVarAdapter = &vadapter{
@@ -90,7 +100,6 @@ func (b *Bridge) Start() {
 		veapService: b.Service,
 	}
 	b.prgAdapter.start()
-
 }
 
 // Stop stops the MQTT/VEAP-Bridge.
@@ -99,5 +108,6 @@ func (b *Bridge) Stop() {
 	b.prgAdapter.stop()
 	b.sysVarAdapter.stop()
 
+	b.Server.Unsubscribe(virtDevSetTopic+"/+/+/+", &b.onSetDevice)
 	b.Server.Unsubscribe(deviceSetTopic+"/+/+/+", &b.onSetDevice)
 }

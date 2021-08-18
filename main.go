@@ -15,6 +15,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/mdzio/ccu-jack/mqtt"
 	"github.com/mdzio/ccu-jack/rtcfg"
+	"github.com/mdzio/ccu-jack/virtdev"
 	"github.com/mdzio/ccu-jack/vmodel"
 	"github.com/mdzio/go-hmccu/itf"
 	"github.com/mdzio/go-hmccu/script"
@@ -55,17 +56,20 @@ var (
 	store        rtcfg.Store
 	httpServer   *httputil.Server
 	modelRoot    *model.Root
+	configVar    *vmodel.Config
 	modelService *model.Service
 	mqttServer   *mqtt.Server
 
 	// application services
-	scriptClient *script.Client
-	sysVarCol    *vmodel.SysVarCol
-	prgCol       *vmodel.ProgramCol
-	sysVarReader *mqtt.SysVarReader
-	reGaDOM      *script.ReGaDOM
-	deviceCol    *vmodel.DeviceCol
-	intercon     *itf.Interconnector
+	virtualDevices   *virtdev.VirtualDevices
+	scriptClient     *script.Client
+	sysVarCol        *vmodel.SysVarCol
+	prgCol           *vmodel.ProgramCol
+	sysVarReader     *mqtt.SysVarReader
+	reGaDOM          *script.ReGaDOM
+	virtualDeviceCol *vmodel.VirtualDeviceCol
+	deviceCol        *vmodel.DeviceCol
+	intercon         *itf.Interconnector
 )
 
 func configure() error {
@@ -136,6 +140,7 @@ func message() {
 	log.Info("  CCU address: ", cfg.CCU.Address)
 	log.Info("  Interfaces: ", cfg.CCU.Interfaces.String())
 	log.Info("  Init ID: ", cfg.CCU.InitID)
+	log.Info("  Virtual devices: ", cfg.VirtualDevices.Enable)
 }
 
 func certificates() error {
@@ -206,7 +211,7 @@ func newRoot(handlerStats *veap.HandlerStats) *model.Root {
 		VendorName:        appVendor,
 		Collection:        r,
 	})
-	vmodel.NewConfig(vendor, &store)
+	configVar = vmodel.NewConfig(vendor, &store)
 	NewDiagnostics(vendor)
 	model.NewHandlerStats(vendor, handlerStats)
 	return r
@@ -331,10 +336,30 @@ func runApp() error {
 		Addr: cfg.CCU.Address,
 	}
 
-	// intermediate unlock while waiting
+	// remember for later
+	enableVirtualDevices := cfg.VirtualDevices.Enable
+
+	// intermediate unlock
 	store.RUnlock()
 
-	// wait for ReGaHss
+	// start virtual devices (store must be unlocked)
+	if enableVirtualDevices {
+		virtualDevices = &virtdev.VirtualDevices{
+			Store: &store,
+			EventPublisher: &mqtt.VirtDevEventReceiver{
+				Server: mqttServer,
+			},
+		}
+		virtualDevices.Start()
+		defer virtualDevices.Stop()
+		// listen for configuration changes
+		configVar.SetChangeListener(func(cfg *rtcfg.Config) {
+			virtualDevices.SynchronizeDevices(cfg.VirtualDevices.Devices)
+		})
+		defer configVar.SetChangeListener(nil)
+	}
+
+	// wait for ReGaHss to come online
 	if shutdown, err := waitForReGaHss(); shutdown || err != nil {
 		return err
 	}
@@ -366,7 +391,7 @@ func runApp() error {
 	mqttVeapBridge.Start()
 	defer mqttVeapBridge.Stop()
 
-	// event receiver for MQTT
+	// CCU device event receiver for MQTT
 	mqttReceiver := &mqtt.EventReceiver{
 		Server: mqttServer,
 		// forward events
@@ -403,6 +428,14 @@ func runApp() error {
 	// create room and function collections
 	vmodel.NewRoomCol(modelRoot, reGaDOM, modelService)
 	vmodel.NewFunctionCol(modelRoot, reGaDOM, modelService)
+
+	// create virtual devices collection
+	if enableVirtualDevices {
+		virtualDeviceCol = vmodel.NewVirtualDeviceCol(modelRoot)
+		virtualDeviceCol.Container = virtualDevices.Devices
+		virtualDeviceCol.ModelService = modelService
+		virtualDeviceCol.ReGaDOM = reGaDOM
+	}
 
 	// startup device domain (starts handling of events)
 	deviceCol.Interconnector = intercon

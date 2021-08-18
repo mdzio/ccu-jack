@@ -40,6 +40,9 @@ function Layout() {
                             onclick: function () { m.route.set("/watcher") }
                         }, viewWatcherTitle()),
                         m("button.btn.btn-block.my-2", {
+                            onclick: function () { m.route.set("/virtdev") }
+                        }, "Virtuelle Geräte"),
+                        m("button.btn.btn-block.my-2", {
                             onclick: function () { m.route.set("/config") }
                         }, "Konfiguration"),
                         m("button.btn.btn-block.my-2", {
@@ -71,6 +74,11 @@ m.route(document.body, "/navigator", {
     "/watcher": {
         render: function () {
             return m(Layout, m(Watcher))
+        }
+    },
+    "/virtdev": {
+        render: function () {
+            return m(Layout, m(VirtualDevices))
         }
     },
     "/config": {

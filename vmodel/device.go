@@ -546,7 +546,7 @@ func (p *parameter) ReadAttributes() veap.AttrValues {
 	}
 
 	// parameter writeable?
-	if p.descr.Operations&0x02 != 0 {
+	if p.descr.Operations&itf.ParameterOperationWrite != 0 {
 		attrs["mqttSetTopic"] = "device/set/" + mqttTopic
 	}
 	return attrs

@@ -204,7 +204,8 @@ function Config() {
                         modified = true
                     }
                 }),
-                m("i.form-icon"), "BidCos-Wired Geräte (HMW-...) anbinden (Neustart vom CCU-Jack ist erforderlich!)"
+                m("i.form-icon"), "BidCos-Wired Geräte (HMW-...) anbinden", m("br"),
+                "Achtung: Neustart vom CCU-Jack ist erforderlich!"
             ),
             m("label.form-switch",
                 m("input[type=checkbox]", {
@@ -219,7 +220,26 @@ function Config() {
                         modified = true
                     }
                 }),
-                m("i.form-icon"), "CUxD Geräte anbinden (Neustart vom CCU-Jack ist erforderlich!)"
+                m("i.form-icon"), "CUxD Geräte anbinden", m("br"),
+                "Achtung: Neustart vom CCU-Jack ist erforderlich!"
+            ),
+            m("label.form-switch",
+                m("input[type=checkbox]", {
+                    checked: config.VirtualDevices.Enable,
+                    onchange: function (e) {
+                        if (e.target.checked) {
+                            config.VirtualDevices.Enable = true
+                        } else {
+                            config.VirtualDevices.Enable = false
+                        }
+                        modified = true
+                    }
+                }),
+                m("i.form-icon"), "Virtuelle Geräte aktivieren", m("br"),
+                "Achtung: Virtuelle Geräte funktionieren nur dann, wenn der CCU-Jack als Add-On auf der CCU installiert wurde. ",
+                "Ein Neustart der CCU ist erforderlich! Eine neue Geräteschnittstelle wird zur Projektierung der CCU hinzugefügt. ",
+                "Der Hersteller der CCU kann unter Umständen Support-Leistungen ablehnen. Dies betrifft generell jede zusätzlich ",
+                "installierte Software auf der CCU."
             ),
         )
     }

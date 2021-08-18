@@ -116,11 +116,15 @@ func (ao *aspectObj) ReadLinks() []model.Link {
 		}
 		devAddr := addr[0:p]
 		chAddr := addr[p+1:]
-		// lookup veap object
+		// lookup device object
 		chObj, err := ao.service.EvalPath("/device/" + devAddr + "/" + chAddr)
 		if err != nil {
-			// object not found
-			continue
+			// lookup virtual device object
+			chObj, err = ao.service.EvalPath("/virtdev/" + devAddr + "/" + chAddr)
+			if err != nil {
+				// object not found
+				continue
+			}
 		}
 		links = append(links, model.BasicLink{Target: chObj, Role: "channel"})
 	}
