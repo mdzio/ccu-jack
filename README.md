@@ -239,19 +239,19 @@ Ab Version 2 des CCU-Jacks werden virtuelle Geräte in der CCU unterstützt. Die
 
 **Achtung:** Virtuelle Geräte funktionieren nur dann, wenn der CCU-Jack als Add-On auf der CCU installiert wurde. Eine neue Geräteschnittstelle wird zur Projektierung der CCU hinzugefügt. Der Hersteller der CCU kann unter Umständen Support-Leistungen ablehnen. Dies betrifft generell jede zusätzlich installierte Software auf der CCU.
 
-Virtuelle Geräte müssen als erstes in der Konfiguration des CCU-Jacks aktiviert werden. Danach ist ein Neustart der CCU erforderlich. Virtuelle Geräte werden dann über die Web-UI des CCU-Jacks angelegt und konfiguriert. Neue angelegte Geräte erscheinen direkt im Geräte-Posteingang der CCU. Spezifische Einstellungen der Geräte können dann in der CCU vorgenommen werden.
+Virtuelle Geräte müssen als erstes in der Konfiguration des CCU-Jacks aktiviert werden. Danach ist ein Neustart der CCU erforderlich. Virtuelle Geräte werden dann über die Web-UI des CCU-Jacks angelegt und auch die gewünschten Kanäle hinzugefügt. Neu angelegte Geräte erscheinen direkt im Geräte-Posteingang der CCU. Spezifische Einstellungen der Geräte können dann in der CCU vorgenommen werden (_Einstellungen_ → _Geräte_ → Gerät auswählen → _Eintellen_).
 
 Der CCU-Jack bietet verschiedene Gerätetypen an. Der Gerätetyp legt die Basisfunktionalität fest (z.B. Statisch, MQTT oder HTTP). Zu dem Gerät können dann beliebig viele Kanäle unterschiedlichen Typs (z.B. Taster oder Schaltaktor) erstellt werden. Die Kanäle verwenden dann die festgelegte Basisfunktionalität.
 
 ### Statische Geräte (Keine Logik)
 
-Statische Geräte besitzen keine interne Logik. Sie dienen dazu, zusätzliche Datenpunkte zu erschaffen, die über die MQTT- und REST-API des CCU-Jacks angesprochen werden können. Gleichzeitig können sie nahtlos in CCU-Programmen verwendet werden.
+Statische Geräte besitzen keine interne Logik und keine Einstellmöglichkeiten. Sie dienen dazu, zusätzliche Datenpunkte zu erschaffen, die über die MQTT- und REST-API des CCU-Jacks angesprochen werden können. Gleichzeitig können sie nahtlos in CCU-Programmen verwendet werden.
 
 Kanaltyp      | Ab Version | Funktion
---------------|------------|---------------
+--------------|------------|-----------------------------------------------------
 Taster        | 2.0.11     | Taster (wie die virtuellen Taster in der CCU)
 Schaltaktor   | 2.0.11     | Schaltaktor (wie HM-LC-Sw1-Pl)
-Analogeingang | 2.0.11     | Analogeingang (wie HmIP-MIO16-PCB Kanal 1)
+Analogeingang | 2.0.11     | Analogeingang (wie HmIP-MIO16-PCB Kanal 1, aber der Eingang kann zusätzlich von der CCU oder von extern _gesetzt_ werden)
 
 ### Deinstallation der virtuellen Geräte
 

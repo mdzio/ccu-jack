@@ -205,7 +205,7 @@ function Config() {
                     }
                 }),
                 m("i.form-icon"), "BidCos-Wired Geräte (HMW-...) anbinden", m("br"),
-                "Achtung: Neustart vom CCU-Jack ist erforderlich!"
+                "Achtung: Neustart vom CCU-Jack ist erforderlich! Falls virtuelle Geräte ebenfalls aktiviert sind, ist ein Neustart der CCU notwendig!"
             ),
             m("label.form-switch",
                 m("input[type=checkbox]", {
@@ -221,7 +221,7 @@ function Config() {
                     }
                 }),
                 m("i.form-icon"), "CUxD Geräte anbinden", m("br"),
-                "Achtung: Neustart vom CCU-Jack ist erforderlich!"
+                "Achtung: Neustart vom CCU-Jack ist erforderlich! Falls virtuelle Geräte ebenfalls aktiviert sind, ist ein Neustart der CCU notwendig!"
             ),
             m("label.form-switch",
                 m("input[type=checkbox]", {
