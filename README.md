@@ -253,6 +253,23 @@ Taster        | 2.0.11     | Taster (wie die virtuellen Taster in der CCU)
 Schaltaktor   | 2.0.11     | Schaltaktor (wie HM-LC-Sw1-Pl)
 Analogeingang | 2.0.11     | Analogeingang (wie HmIP-MIO16-PCB Kanal 1, aber der Eingang kann zusätzlich von der CCU oder von extern _gesetzt_ werden)
 
+### MQTT-Geräte (Senden und Empfangen von MQTT-Nachrichten)
+
+**MQTT-Geräte befinden sich in Planung und sind noch nicht implementiert.**
+
+MQTT-Geräte senden bei Zustandsänderungen (z.B. Tastendruck, Schalten eines Aktors) frei konfigurierbare Nachrichten (MQTT-Payload) auf frei konfigurierbaren MQTT-Topics. Zudem können MQTT-Geräte Topics abonnieren und bei eingehenden Nachrichten ihren eigenen Zustand anpassen (z.B. Rückmeldungen von Schaltaktoren, Messwerte). 
+
+Durch die weite Verbreitung des MQTT-Protokolls können eine Vielzahl an Geräten einfach an die CCU angebunden und in die CCU-Automatisierung integriert werden. Im Folgenden sind einige Beispiele aufgelistet:
+* [DeLock WLAN-Steckdosen](https://www.delock.de/produkte/G_1744_Geraete.html)
+* [Shelly](https://shelly.cloud/)
+* Geräte-Firmwares mit MQTT-Unterstützung
+  * [Tasmota-Firmware](https://tasmota.github.io/docs/)
+  * [Espurna-Firmware](https://github.com/xoseperez/espurna)
+  * [ESPEasy-Firmware](https://github.com/letscontrolit/ESPEasy)
+  * [ESPHome-Firmware](https://esphome.io)
+
+In der MQTT-Konfiguration der Geräte muss die CCU als MQTT-Server (bzw. Broker) eingetragen werden. Der MQTT-Port 1883 muss in der CCU-Firewall freigegeben sein.
+
 ### Deinstallation der virtuellen Geräte
 
 Falls alle virtuellen Geräte und die CCU-Jack Geräteschnittstelle aus der CCU-Projektierung entfernt werden sollen, ist wie folgt vorzugehen:
