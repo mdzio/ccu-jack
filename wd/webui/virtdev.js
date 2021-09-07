@@ -1,35 +1,28 @@
 // ChannelKindSelect component
 // Attributes:
 //     Object channel: Channel
-//     String logic: Logic of the device (e.g. "STATIC")
 function ChannelKindSelect() {
-
-    function static(channel) {
-        return m("select.form-select", { onchange: function (e) { channel.Kind = e.target.value } },
-            m("option[value=KEY]", { selected: channel.Kind === "KEY" }, "Taster"),
-            m("option[value=SWITCH]", { selected: channel.Kind === "SWITCH" }, "Schaltaktor"),
-            m("option[value=ANALOG_INPUT]", { selected: channel.Kind === "ANALOG_INPUT" }, "Analogeingang"),
-        )
-    }
 
     // mithril component
     return {
         view: function (vnode) {
-            switch (vnode.attrs.logic) {
-                case "STATIC": return static(vnode.attrs.channel)
-                default: return "Keine Konfigurationsmöglichkeiten"
-            }
+            const channel = vnode.attrs.channel
+            return m("select.form-select", { onchange: function (e) { channel.Kind = e.target.value } },
+                m("option[value=STATIC_KEY]", { selected: channel.Kind === "STATIC_KEY" }, "Statischer Taster"),
+                m("option[value=STATIC_SWITCH]", { selected: channel.Kind === "STATIC_SWITCH" }, "Statischer Schaltaktor"),
+                m("option[value=STATIC_ANALOG]", { selected: channel.Kind === "STATIC_ANALOG" }, "Statischer Analogwerteingang"),
+                m("option[value=MQTT_KEY_SENDER]", { selected: channel.Kind === "MQTT_KEY_SENDER" }, "MQTT Sendetaster"),
+                m("option[value=MQTT_KEY_RECEIVER]", { selected: channel.Kind === "MQTT_KEY_RECEIVER" }, "MQTT Empfangstaster"),
+                m("option[value=MQTT_SWITCH]", { selected: channel.Kind === "MQTT_SWITCH" }, "MQTT Schaltaktor"),
+                m("option[value=MQTT_SWITCH_FEEDBACK]", { selected: channel.Kind === "MQTT_SWITCH_FEEDBACK" }, "MQTT Schaltaktor mit Rückmeldung"),
+                m("option[value=MQTT_ANALOG_RECEIVER]", { selected: channel.Kind === "MQTT_ANALOG_RECEIVER" }, "MQTT Analogwertempfänger"),
+            )
         }
     }
 }
 
-const LogicText = {
-    STATIC: "Statisch (Keine Logik)"
-}
-
 // VirtualDeviceModal is a modal dialog for creating a new virtual device.
 // Attributes:
-//     String logic: Logic of the new device (e.g. "STATIC")
 //     Object config: Current configuration
 //     Function onclose(boolean configModified): Callback for closing modal
 function VirtualDeviceModal() {
@@ -57,10 +50,13 @@ function VirtualDeviceModal() {
     }
 
     function addChannel() {
-        // add a new channel based on the device logic to the edited device
+        // limit number of channels
+        if (device.Channels.length >= 32) {
+            return
+        }
+        // add a new channel to the edited device
         const channel = {
-            "Kind": "KEY",
-            "Specific": 0,
+            "Kind": "STATIC_KEY",
             "MasterParamset": {}
         }
         device.Channels.push(channel)
@@ -84,7 +80,6 @@ function VirtualDeviceModal() {
             device = {
                 Address: addr,
                 HMType: "HmIP-MIO16-PCB",
-                Logic: vnode.attrs.logic,
                 Specific: 0,
                 Channels: []
             }
@@ -98,7 +93,7 @@ function VirtualDeviceModal() {
                 m(".modal-container",
                     m(".modal-header",
                         m("button.btn.btn-clear.float-right", { onclick: cancel }),
-                        m(".modal-title.h5", "Virtuelles Gerät erstellen: " + LogicText[device.Logic]),
+                        m(".modal-title.h5", "Virtuelles Gerät erstellen"),
                     ),
                     m(".modal-body",
                         m(".content",
@@ -114,7 +109,7 @@ function VirtualDeviceModal() {
                                     device.Channels.map(function (channel, idx) {
                                         return m("tr",
                                             m("td", ":" + (idx + 1)),
-                                            m("td", m(ChannelKindSelect, { logic: device.Logic, channel: channel })),
+                                            m("td", m(ChannelKindSelect, { channel: channel })),
                                             m("td",
                                                 m("button.btn.btn-sm",
                                                     { onclick: function () { deleteChannel(idx) } },
@@ -130,7 +125,10 @@ function VirtualDeviceModal() {
                         ),
                     ),
                     m(".modal-footer",
-                        m("button.btn.input-group-btn.float-left", { onclick: addChannel }, "Kanal hinzufügen"),
+                        m("button.btn.input-group-btn.float-left",
+                            { class: device.Channels.length < 32 ? "" : "disabled", onclick: addChannel },
+                            "Kanal hinzufügen"
+                        ),
                         m(".btn-group",
                             m("button.btn", { class: ok ? "" : "disabled", onclick: create }, "Erstellen"),
                             m("button.btn", { onclick: cancel }, "Abbrechen"),
@@ -167,7 +165,6 @@ function VirtualDevices() {
     var config
     var modified = false
     var errorMessage
-    var logic = "STATIC"
     var deviceModal = false
 
     function fetch() {
@@ -234,7 +231,6 @@ function VirtualDevices() {
                         m("tr",
                             m("th", "Seriennummer"),
                             m("th", "Name"),
-                            m("th", "Gerätelogik"),
                             m("th", "Anzahl Kanäle"),
                             m("th", ""),
                         ),
@@ -245,7 +241,6 @@ function VirtualDevices() {
                             return m("tr",
                                 m("td", device.Address),
                                 m("td", m(VirtualDeviceTitle, { addr: addr })),
-                                m("td", LogicText[device.Logic]),
                                 m("td", device.Channels.length),
                                 m("td",
                                     m("button.btn.btn-sm", { onclick: function () { deleteDevice(device) } }, m("i.icon.icon-delete")),
@@ -256,14 +251,7 @@ function VirtualDevices() {
                 ),
                 deviceAddrs.length != 0 ||
                 m("p", "Keine virtuellen Geräte vorhanden."),
-                m(".input-group.float-left.my-2",
-                    m("span.input-group-addon", "Gerätelogik"),
-                    m("select.form-select",
-                        { onchange: function (e) { logic = e.target.value } },
-                        m("option[value=STATIC]", { selected: logic === "STATIC" }, LogicText.STATIC),
-                    ),
-                    m("button.btn.input-group-btn", { onclick: openDeviceModal }, "Virtuelles Gerät erstellen")
-                ),
+                m("button.btn.my-2.float-left", { onclick: openDeviceModal }, "Virtuelles Gerät erstellen"),
                 modified &&
                 m(".btn-group.float-right",
                     m("button.btn.my-2", { onclick: save }, "Konfiguration speichern"),
@@ -271,7 +259,6 @@ function VirtualDevices() {
                 ),
                 deviceModal &&
                 m(VirtualDeviceModal, {
-                    logic: logic,
                     config: config,
                     onclose: closeDeviceModal
                 })
