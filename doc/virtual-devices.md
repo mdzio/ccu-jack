@@ -71,7 +71,16 @@ Für reguläre Ausdrücke werden die üblichen Operatoren und Zeichenklassen unt
 
 ### MQTT-Schaltaktor                
 
-_In Arbeit_
+MQTT-Schaltaktor sendet beim Ein- oder Ausschalten jeweils eine MQTT-Nachricht.
+
+Liste der Einstellungsparameter:
+
+Name              | Bedeutung
+------------------|-------------------------------------------------------------------------------
+TOPIC             | MQTT-Topic für das Ein- oder Ausschalten
+RETAIN            | Der MQTT-Server soll die zuletzt gesendete Nachricht speichern.
+ON_PAYLOAD        | MQTT-Payload für das Einschalten
+OFF_PAYLOAD       | MQTT-Payload für das Ausschalten
 
 ### MQTT-Schaltaktor mit Rückmeldung
 

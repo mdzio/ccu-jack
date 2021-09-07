@@ -251,6 +251,8 @@ Der CCU-Jack bietet die Möglichkeit virtuelle Geräte aus bis zu 32 beliebigen 
 
 [Der CCU-Jack unterstützt eine Vielzahl an virtuellen Geräten. Deren Funktionen sind an gesonderter Stelle beschrieben.](https://github.com/mdzio/ccu-jack/blob/master/doc/virtual-devices.md)
 
+[Beispielanbindung einer WLAN-Steckdose mit Tasmota-Firmware.](https://github.com/mdzio/ccu-jack/blob/master/doc/tasmota.md)
+
 ### Deinstallation der virtuellen Geräte
 
 Falls alle virtuellen Geräte und die CCU-Jack Geräteschnittstelle aus der CCU-Projektierung entfernt werden sollen, ist wie folgt vorzugehen:
