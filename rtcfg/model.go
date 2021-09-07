@@ -213,45 +213,10 @@ type VirtualDevices struct {
 	Devices      map[string]*Device // Address is key.
 }
 
-type DeviceLogic int
-
-const (
-	LogicStatic DeviceLogic = iota
-)
-
-var (
-	logicStr = []string{
-		LogicStatic: "STATIC",
-	}
-	errLogic = errors.New("invalid device logic identifier (expected: STATIC)")
-)
-
-// String implements interface Stringer.
-func (k DeviceLogic) String() string {
-	return logicStr[k]
-}
-
-// MarshalText implements TextUnmarshaler (for e.g. JSON encoding). For the
-// method to be found by the JSON encoder, use a value receiver.
-func (k DeviceLogic) MarshalText() ([]byte, error) {
-	return []byte(k.String()), nil
-}
-
-// UnmarshalText implements TextMarshaler (for e.g. JSON decoding).
-func (k *DeviceLogic) UnmarshalText(text []byte) error {
-	if idx := findEntry(logicStr, string(text)); idx != -1 {
-		*k = DeviceLogic(idx)
-		return nil
-	}
-	return errLogic
-}
-
 // Device stores the configuration and master data of a virtual device.
 type Device struct {
 	Address  string
 	HMType   string
-	Logic    DeviceLogic
-	Specific int
 	Channels []Channel
 }
 
@@ -260,16 +225,28 @@ type ChannelKind int
 const (
 	ChannelKey ChannelKind = iota
 	ChannelSwitch
-	ChannelAnalogInput
+	ChannelAnalog
+
+	ChannelMQTTKeySender
+	ChannelMQTTKeyReceiver
+	ChannelMQTTSwitch
+	ChannelMQTTSwitchFeedback
+	ChannelMQTTAnalogReceiver
 )
 
 var (
 	channelKindStr = []string{
-		ChannelKey:         "KEY",
-		ChannelSwitch:      "SWITCH",
-		ChannelAnalogInput: "ANALOG_INPUT",
+		ChannelKey:    "STATIC_KEY",
+		ChannelSwitch: "STATIC_SWITCH",
+		ChannelAnalog: "STATIC_ANALOG",
+
+		ChannelMQTTKeySender:      "MQTT_KEY_SENDER",
+		ChannelMQTTKeyReceiver:    "MQTT_KEY_RECEIVER",
+		ChannelMQTTSwitch:         "MQTT_SWITCH",
+		ChannelMQTTSwitchFeedback: "MQTT_SWITCH_FEEDBACK",
+		ChannelMQTTAnalogReceiver: "MQTT_ANALOG_RECEIVER",
 	}
-	errChannelKind = errors.New("invalid channel kind identifier (expected: KEY, SWITCH, ANALOG_INPUT)")
+	errChannelKind = errors.New("invalid channel kind identifier")
 )
 
 // String implements interface Stringer.
@@ -294,7 +271,6 @@ func (k *ChannelKind) UnmarshalText(text []byte) error {
 
 type Channel struct {
 	Kind           ChannelKind
-	Specific       int
 	MasterParamset map[string]interface{}
 }
 

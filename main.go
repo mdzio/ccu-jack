@@ -349,12 +349,13 @@ func runApp() error {
 			EventPublisher: &mqtt.VirtDevEventReceiver{
 				Server: mqttServer,
 			},
+			MQTTServer: mqttServer,
 		}
 		virtualDevices.Start()
 		defer virtualDevices.Stop()
 		// listen for configuration changes
 		configVar.SetChangeListener(func(cfg *rtcfg.Config) {
-			virtualDevices.SynchronizeDevices(cfg.VirtualDevices.Devices)
+			virtualDevices.SynchronizeDevices()
 		})
 		defer configVar.SetChangeListener(nil)
 	}

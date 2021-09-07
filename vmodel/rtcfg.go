@@ -181,16 +181,9 @@ func updateConfig(cfg *rtcfg.Config, v interface{}) error {
 
 			// decode device
 			rd := rdq.Map()
-			var rl rtcfg.DeviceLogic
-			err := rl.UnmarshalText([]byte(rd.Key("Logic").String()))
-			if err != nil {
-				q.SetErr(err)
-			}
 			d := rtcfg.Device{
 				Address:  rd.Key("Address").String(),
 				HMType:   rd.Key("HMType").String(),
-				Logic:    rl,
-				Specific: int(rd.Key("Specific").Float64()),
 				Channels: make([]rtcfg.Channel, 0, 8), // prevents JSON null for empty arrays
 			}
 			// add device
@@ -202,13 +195,12 @@ func updateConfig(cfg *rtcfg.Config, v interface{}) error {
 				// decode channel
 				rc := rcq.Map()
 				var rk rtcfg.ChannelKind
-				err = rk.UnmarshalText(([]byte)(rc.Key("Kind").String()))
+				err := rk.UnmarshalText(([]byte)(rc.Key("Kind").String()))
 				if err != nil {
 					q.SetErr(err)
 				}
 				c := rtcfg.Channel{
 					Kind:           rk,
-					Specific:       int(rc.Key("Specific").Float64()),
 					MasterParamset: make(map[string]interface{}),
 				}
 				// decode master paramset

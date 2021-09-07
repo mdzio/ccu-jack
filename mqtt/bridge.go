@@ -54,7 +54,7 @@ type Bridge struct {
 func (b *Bridge) Start() {
 	// subscribe set device topics
 	b.onSetDevice = func(msg *message.PublishMessage) error {
-		log.Tracef("Set device message received: %s: %s", msg.Topic(), msg.Payload())
+		log.Tracef("Set device message received: %s, %s", msg.Topic(), msg.Payload())
 
 		// parse PV
 		pv, err := wireToPV(msg.Payload())

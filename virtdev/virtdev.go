@@ -3,10 +3,9 @@ package virtdev
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
-	"strings"
 
+	"github.com/mdzio/ccu-jack/mqtt"
 	"github.com/mdzio/ccu-jack/rtcfg"
 	"github.com/mdzio/go-hmccu/itf"
 	"github.com/mdzio/go-hmccu/itf/vdevices"
@@ -17,9 +16,6 @@ import (
 const (
 	// path to the file InterfacesList.xml on the CCU3
 	itfListFile = "/etc/config/InterfacesList.xml"
-
-	// template for a new interface entry
-	itfTmpl = "\t<ipc>\n\t \t<name>%s</name>\n\t \t<url>%s</url>\n\t \t<info>%s</info>\n\t</ipc>\n"
 
 	// Use /RPC3 for calls from ReGaHss. RPC2 is already used for callbacks from
 	// interface processes (e.g. BidCos-RF).
@@ -37,6 +33,8 @@ type VirtualDevices struct {
 	// EventPublisher for receiving value change events, must be set before
 	// calling Start.
 	EventPublisher vdevices.EventPublisher
+	// MQTT server for MQTT virtual devices, must be set before calling Start.
+	MQTTServer *mqtt.Server
 
 	// Container for virtual devices.
 	Devices *vdevices.Container
@@ -55,7 +53,7 @@ func (vd *VirtualDevices) Start() {
 	cfg := vd.Store.Config
 
 	// add device layer to InterfacesList.xml
-	err := addToInterfaceList(
+	err := vdevices.AddToInterfaceList(
 		itfListFile,
 		itfListFile,
 		InterfaceID,
@@ -100,83 +98,94 @@ func (vd *VirtualDevices) Start() {
 	http.Handle(xmlrpcPath, httpHandler)
 
 	// add configured devices
-	vd.SynchronizeDevices(cfg.VirtualDevices.Devices)
+	vd.SynchronizeDevices()
 }
 
 func (vd *VirtualDevices) Stop() {
 	// only stop, if successfully started
 	if vd.deviceHandler != nil {
-		log.Debug("Stopping virtual devices")
+		log.Debug("Stopping virtual device handler")
 		vd.deviceHandler.Close()
+		log.Debug("Shutting down virtual devices")
+		vd.Devices.Dispose()
 	}
 }
 
 // SynchronizeDevices updates the virtual device container based on the
-// configuration. The configuration must be locked for reading.
-func (vd *VirtualDevices) SynchronizeDevices(devices map[string]*rtcfg.Device) {
+// configuration. The configuration (field Store) must be locked for reading.
+func (vd *VirtualDevices) SynchronizeDevices() {
+	// devices in configuration
+	devcfgs := vd.Store.Config.VirtualDevices.Devices
+
 	// delete non existing devices
 	for _, dev := range vd.Devices.Devices() {
 		// exists device in config?
-		_, exist := devices[dev.Description().Address]
+		_, exist := devcfgs[dev.Description().Address]
 		if !exist {
 			// if not, remove it from container
 			log.Infof("Removing virtual device: %s", dev.Description().Address)
-			vd.Devices.RemoveDevice(dev.Description().Address)
+			if err := vd.Devices.RemoveDevice(dev.Description().Address); err != nil {
+				log.Errorf("Remove of virtual device %s failed: %v", dev.Description().Address, err)
+			}
 		}
 	}
 
 	// add new devices
-	for addr, dev := range devices {
+	for addr, devcfg := range devcfgs {
 		// exists device in runtime?
 		if _, err := vd.Devices.Device(addr); err != nil {
 			// if not, create it
-			vd.createDevice(dev)
+			log.Infof("Creating virtual device %s with %d channel(s)", devcfg.Address, len(devcfg.Channels))
+			if err := vd.createDevice(devcfg); err != nil {
+				log.Errorf("Creation of virtual device %s failed: %v", devcfg.Address, err)
+			}
 		}
 	}
 }
 
-func (vd *VirtualDevices) createDevice(device *rtcfg.Device) {
-	log.Infof("Creating virtual device %s with logic %s and %d channel(s)", device.Address, device.Logic, len(device.Channels))
-	var dev vdevices.GenericDevice
-	var err error
-	switch device.Logic {
-	case rtcfg.LogicStatic:
-		dev, err = createStaticDevice(device, vd.eventPublisher)
-	default:
-		err = fmt.Errorf("Virtual device logic not implemented: %v", device.Logic)
-	}
-	if err == nil {
-		err = vd.Devices.AddDevice(dev)
-	}
-	if err != nil {
-		log.Errorf("Creation of virtual device failed: %v", err)
-		return
-	}
-}
+func (vd *VirtualDevices) createDevice(devcfg *rtcfg.Device) error {
+	// create device
+	dev := vdevices.NewDevice(devcfg.Address, devcfg.HMType, vd.eventPublisher)
+	// add maintenance channel
+	vdevices.NewMaintenanceChannel(dev)
 
-func addToInterfaceList(inFilePath, outFilePath, name, url, info string) error {
-	// read file
-	bs, err := os.ReadFile(inFilePath)
-	if err != nil {
-		return err
+	// create channels
+	for _, chcfg := range devcfg.Channels {
+		switch chcfg.Kind {
+
+		case rtcfg.ChannelKey:
+			ch := vdevices.NewKeyChannel(dev)
+			log.Debugf("Created static key channel: %s", ch.Description().Address)
+		case rtcfg.ChannelSwitch:
+			ch := vdevices.NewSwitchChannel(dev)
+			log.Debugf("Created static switch channel: %s", ch.Description().Address)
+		case rtcfg.ChannelAnalog:
+			ch := vdevices.NewAnalogInputChannel(dev)
+			log.Debugf("Created static analog input channel: %s", ch.Description().Address)
+
+		case rtcfg.ChannelMQTTKeySender:
+			ch := vd.addMQTTKeySender(dev)
+			log.Debugf("Created MQTT key sender channel: %s", ch.Description().Address)
+		case rtcfg.ChannelMQTTKeyReceiver:
+			ch := vd.addMQTTKeyReceiver(dev)
+			log.Debugf("Created MQTT key receiver channel: %s", ch.Description().Address)
+		case rtcfg.ChannelMQTTSwitch:
+			ch := vd.addMQTTSwitch(dev)
+			log.Debugf("Created MQTT switch channel: %s", ch.Description().Address)
+		case rtcfg.ChannelMQTTSwitchFeedback:
+			ch := vd.addMQTTSwitchFeedback(dev)
+			log.Debugf("Created MQTT switch with feedback channel: %s", ch.Description().Address)
+		case rtcfg.ChannelMQTTAnalogReceiver:
+			ch := vd.addMQTTAnalogReceiver(dev)
+			log.Debugf("Created MQTT analog receiver channel: %s", ch.Description().Address)
+
+		default:
+			return fmt.Errorf("Unsupported kind of channel in device %s: %v", devcfg.Address, chcfg.Kind)
+		}
 	}
-	in := string(bs)
 
-	// generate entry
-	e := fmt.Sprintf(itfTmpl, name, url, info)
-	log.Tracef("Inserting into %s: %s", inFilePath, e)
-
-	// insert entry
-	p := strings.Index(in, "</interfaces>")
-	if p == -1 {
-		return fmt.Errorf("Invalid file format: %s", inFilePath)
-	}
-	out := in[:p] + e + in[p:]
-
-	// write file
-	err = os.WriteFile(outFilePath, []byte(out), 0644)
-	if err != nil {
-		return err
+	if err := vd.Devices.AddDevice(dev); err != nil {
+		return fmt.Errorf("Registration failed: %v", err)
 	}
 	return nil
 }
