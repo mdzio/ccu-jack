@@ -84,10 +84,43 @@ OFF_PAYLOAD       | MQTT-Payload für das Ausschalten
 
 ### MQTT-Schaltaktor mit Rückmeldung
 
-_In Arbeit_
+MQTT-Schaltaktor sendet ebenfalls beim Ein- oder Ausschalten jeweils eine MQTT-Nachricht. Der Zustand wird aber erst aktualisiert, wenn eine Rückmeldung vom MQTT-Gerät eingeht.
+
+Liste der Einstellungsparameter:
+
+Name              | Bedeutung
+------------------|-------------------------------------------------------------------------------
+COMMAND_TOPIC     | MQTT-Topic für das Ein- oder Ausschalten
+RETAIN            | Der MQTT-Server soll die zuletzt gesendete Nachricht speichern.
+ON_PAYLOAD        | MQTT-Payload für das Einschalten
+OFF_PAYLOAD       | MQTT-Payload für das Ausschalten
+FEEDBACK_TOPIC    | MQTT-Topic für die Rückmeldung. Die Platzhalter + und # werden unterstützt.
+MATCHER           | Vergleichsfunktion für die Überprüfung der Payload mit dem Prüfmuster (EXACT: Die Payload muss dem Prüfmuster entsprechen; CONTAINS: In der Payload muss das Prüfmuster enthalten sein; REGEXP: Das Prüfmuster ist ein regulärer Ausdruck, der zutreffen muss.)
+ON_PATTERN        | Prüfmuster für die MQTT-Payload für den eingeschalteten Zustand (abhängig von MATCHER)
+OFF_PATTERN       | Prüfmuster für die MQTT-Payload für den ausgeschalteten Zustand (abhängig von MATCHER)
+
+Für reguläre Ausdrücke werden die üblichen Operatoren und Zeichenklassen unterstützt. Weitere Informationen sind in der [Spezifikation](https://github.com/google/re2/wiki/Syntax) zu finden.
 
 ### MQTT-Analogwertempfänger        
 
 Der MQTT-Analogwertempfänger extrahiert aus der MQTT-Payload eine als Text übertragene Zahl und stellt sie als Analogwert der CCU zur Verfügung. Diese kann optional ein . (Punkt) als Dezimaltrennzeichen enthalten. Falls die Zahl nicht extrahiert werden kann, so wird der Status vom Analogwert auf _Überlauf_ gesetzt.
 
-_In Arbeit_
+Liste der Einstellungsparameter:
+
+Name              | Bedeutung
+------------------|-------------------------------------------------------------------------------
+TOPIC             | MQTT-Topic für die zu empfangenden Nachrichten. Die Platzhalter + und # werden unterstützt.
+PATTERN           | Suchmuster für den Zahlenwert in der MQTT-Payload (abhängig von EXTRACTOR)
+EXTRACTOR         | (AFTER: Der Zahlenwert befindet sich direkt hinter dem Suchmuster; BEFORE: Der Zahlenwert befindet sich direkt vor dem Suchmuster; REGEXP: Das Suchmuster ist ein regulärer Ausdruck. Der Zahlenwert befindet sich in einer bestimmten Gruppe.)
+REGEXP_GROUP      | Nummer der zu verwendenden Gruppe des regulären Ausdrucks, wenn EXTRACTOR auf REGEXP gesetzt ist. 
+
+Beispiele:
+
+EXTRACTOR | PATTERN           | REGEXP_GROUP | MQTT-Payload                   | Extrahierter Zahlenwert | Bemerkungen
+----------|-------------------|--------------|--------------------------------|-------------------------|--------------------
+BEFORE    | cm                | 0            | 100 l 52 cm                    | 52,0                    | REGEXP_GROUP ist egal.
+AFTER     | "Vcc":            | 0            | { "Vcc": 3.3, "Version": 2.2 } | 3,3                     | REGEXP_GROUP ist egal. Hinweis für das " Zeichen beachten.
+REGEXP    | (\S+) (\S+) (\S+) | 1            | 123 543.31 21.3                | 123,0                   | 1. Zahl wird extrahiert.
+REGEXP    | (\S+) (\S+) (\S+) | 2            | 123 543.31 21.3                | 543,31                  | 2. Zahl wird extrahiert.
+
+Für reguläre Ausdrücke werden die üblichen Operatoren und Zeichenklassen unterstützt. Weitere Informationen sind in der [Spezifikation](https://github.com/google/re2/wiki/Syntax) zu finden.
