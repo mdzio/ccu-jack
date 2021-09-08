@@ -6,6 +6,7 @@ Folgende Schritte sind einmalig auszuführen:
 
 * Installation CCU-Jack als Add-On auf der CCU3 oder RaspberryMatic
 * Freischaltung der Ports 2121 und 1883 in der CCU-Firewall
+* Akivierung von virtuellen Geräten in der Konfigurationsoberfläche des CCU-Jacks (Web-UI CCU → Einstellungen → Systemsteuerung → CCU-Jack → Konfiguration → CCU-Anbindung → Virtuelle Geräte aktivieren)
 
 Hilfreiche Werkzeuge:
 * [MQTT Explorer](https://mqtt-explorer.com/)
@@ -14,7 +15,6 @@ Hilfreiche Werkzeuge:
 
 * Die WLAN-Steckdose, wie in der Tasmota-Dokumentation beschrieben, in das eigene Netzwerk einbinden.
 * Die IP-Adresse der CCU als MQTT-Server in der Konfiguration eintragen. (Später können noch Zugangsdaten eingerichtet werden.)
-* Akivierung von virtuellen Geräten in der Konfigurationsoberfläche des CCU-Jacks (Web-UI CCU → Einstellungen → Systemsteuerung → CCU-Jack → Konfiguration → CCU-Anbindung → Virtuelle Geräte aktivieren)
 
 Beispiel:
 
@@ -32,7 +32,7 @@ Der Topic-Baum der WLAN-Steckdose ist aus folgendem Bild ersichtlich:
 
 ## Virtuelles Gerät im CCU-Jack anlegen
 
-In der Web-UI des CCU-Jacks unter _Virtuelle Geräte_ ein neues Gerät mit folgenden Kanälen erstellen:
+In der Web-UI des CCU-Jacks unter _Virtuelle Geräte_ ein neues Gerät mit folgenden Kanälen erstellen und die Konfiguration speichern:
 
 ![Virtuelle Kanäle](tasmota-channels.png)
 
