@@ -4,6 +4,8 @@ Im Folgenden sind die unterstützten virtuellen Geräte beschrieben. Spezifische
 
 _Hinweis: Durch einen Fehler in der Web-UI der CCU können zwar die Zeichen `'` und `"` (einfaches und doppeltes Hochkomma) in Werten von Text-Parametern angegeben werden, beim Anzeigen dieser Zeichen werden sie aber fälschlicherweise als HTML-Sonderzeichen kodiert. Vor dem erneuten Setzen der Parameter müssen diese wieder korrigiert werden._
 
+_Hinweis: Die Zeichen `üöäÜÖÄß` werden falsch von der Web-UI an den CCU-Jack übermittelt und können zurzeit noch nicht in Text-Parametern verwendet werden._ 
+
 ## Statische Geräte (Keine Logik)
 
 Statische Geräte besitzen keine interne Logik und keine Einstellmöglichkeiten. Sie dienen dazu, zusätzliche Datenpunkte zu erschaffen, die über die MQTT- und REST-API des CCU-Jacks angesprochen werden können. Gleichzeitig können sie nahtlos in CCU-Programmen verwendet werden.
