@@ -541,6 +541,11 @@ func (e *extractor) Extract(payload []byte) (float64, error) {
 	return fval, nil
 }
 
+const (
+	numberPattern = `([+-]?(\d+(\.\d*)?|\.\d+))`
+	skipPattern   = `[^\d.+-]*`
+)
+
 func newExtractor(kindParam *vdevices.IntParameter, patternParam *vdevices.StringParameter,
 	groupParam *vdevices.IntParameter) (*extractor, error) {
 	kind := extractorKind(kindParam.Value().(int))
@@ -548,16 +553,17 @@ func newExtractor(kindParam *vdevices.IntParameter, patternParam *vdevices.Strin
 	groupIdx := groupParam.Value().(int)
 	switch kind {
 	case ExtractorAfter:
-		pattern = regexp.QuoteMeta(pattern) + `\s*(\d+(\.\d*)?)`
+		pattern = regexp.QuoteMeta(pattern) + skipPattern + numberPattern
 		groupIdx = 1
 	case ExtractorBefore:
-		pattern = `(\d+(\.\d*)?)\s*` + regexp.QuoteMeta(pattern)
+		pattern = numberPattern + skipPattern + regexp.QuoteMeta(pattern)
 		groupIdx = 1
 	case ExtractorRegexp:
 		// nothing change
 	default:
 		return nil, fmt.Errorf("Invalid extractor kind: %d", kind)
 	}
+	log.Tracef("Creating extractor with regular expression %s and group %d", pattern, groupIdx)
 	regexp, err := regexp.Compile(pattern)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid regular expression: %s", pattern)

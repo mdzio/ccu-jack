@@ -12,7 +12,7 @@ import (
 const (
 	logLevel   = logging.InfoLevel
 	appName    = "ccu-jack"
-	appVersion = "2.0.32"
+	appVersion = "2.0.34"
 	appPkg     = "github.com/mdzio/ccu-jack"
 	ldFlags    = "-s -w -X main.appVersion=" + appVersion
 	buildDir   = ".."
@@ -21,13 +21,13 @@ const (
 var (
 	// target systems to be built
 	targetSystems = []string{
-		"rm-rp0+1",
 		"ccu3-rm-rp2+3",
-		"rm-rp4",
-		"vccu-x86",
-		"win",
-		"linux",
-		"darwin",
+		// "rm-rp0+1",
+		// "rm-rp4",
+		// "vccu-x86",
+		// "win",
+		// "linux",
+		// "darwin",
 	}
 
 	// target system specifications
