@@ -22,12 +22,12 @@ var (
 	// target systems to be built
 	targetSystems = []string{
 		"ccu3-rm-rp2+3",
-		// "rm-rp0+1",
-		// "rm-rp4",
-		// "vccu-x86",
-		// "win",
-		// "linux",
-		// "darwin",
+		"rm-rp0+1",
+		"rm-rp4",
+		"vccu-x86",
+		"win",
+		"linux",
+		"darwin",
 	}
 
 	// target system specifications
