@@ -2,9 +2,9 @@
 
 Im Folgenden sind die unterstützten virtuellen Geräte beschrieben. Spezifische Einstellungen der Geräte können in der CCU vorgenommen werden (_Einstellungen_ → _Geräte_ → Gerät auswählen → _Einstellen_).
 
-_Hinweis: Durch einen Fehler in der Web-UI der CCU können zwar die Zeichen `'` und `"` (einfaches und doppeltes Hochkomma) in Werten von Text-Parametern angegeben werden, beim Anzeigen dieser Zeichen werden sie aber fälschlicherweise als HTML-Sonderzeichen kodiert. Vor dem erneuten Setzen der Parameter müssen diese wieder korrigiert werden._
+_Hinweis:_
 
-_Hinweis: Die Zeichen `üöäÜÖÄß` werden falsch von der Web-UI an den CCU-Jack übermittelt und können zurzeit noch nicht in Text-Parametern verwendet werden._ 
+_Durch einen Fehler in der Web-UI der CCU können zwar die Zeichen `'` und `"` (einfaches und doppeltes Hochkomma) in Werten von Text-Parametern (z.B. SHORT_PAYLOAD) angegeben werden, beim Anzeigen dieser Zeichen werden sie aber fälschlicherweise als HTML-Entitäten (`&#39;` und `&#34;`) kodiert. Bei einem erneuten Setzen werden die HTML-Entitäten durch den CCU-Jack automatisch zurückgewandelt. Zudem dürfen in Text-Parametern zurzeit nur ASCII-Zeichen verwendet werden. Beispielsweise sind die Zeichen `üöäÜÖÄß` nicht zulässig._
 
 ## Statische Geräte (Keine Logik)
 
