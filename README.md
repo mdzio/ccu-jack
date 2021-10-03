@@ -237,6 +237,8 @@ Für das Setzen von Datenpunkten wird nur die Eigenschaft `v` benötigt. Beispie
 
 Die Retain-Eigenschaft wird bei allen Datenpunkten gesetzt, außer der Parametername ist *INSTALL_TEST* oder beginnt mit *PRESS_*.
 
+_Hinweis:_ Homematic **IP** Sender (z.B. Taster) senden erst Benachrichtigungen an die CCU und damit an den CCU-Jack, wenn sie in einem CCU-Programm verwendet werden. Gegebenenfalls müssen sie also in einem funktionslosen CCU-Programm als Auslöser angegeben werden. (Stichwort: reportValueUsage)
+
 Die Abbildung der CCU-Datentypen auf JSON ist im nächsten Abschnitt zu finden.
 
 ## Virtuelle Geräte
