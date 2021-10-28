@@ -107,8 +107,8 @@ type mqttKeyReceiver struct {
 }
 
 func (c *mqttKeyReceiver) start() {
-	c.shortSubscribedTopic = c.paramShortTopic.Value().(string)
-	if c.shortSubscribedTopic != "" {
+	shortTopic := c.paramShortTopic.Value().(string)
+	if shortTopic != "" {
 		matcher, err := newMatcher(c.paramShortMatcherKind, c.paramShortPattern)
 		if err != nil {
 			log.Errorf("Creation of matcher for short keypress failed: %v", err)
@@ -122,12 +122,16 @@ func (c *mqttKeyReceiver) start() {
 				}
 				return nil
 			}
-			c.mqttServer.Subscribe(c.shortSubscribedTopic, message.QosExactlyOnce, &c.shortOnPublish)
+			if err := c.mqttServer.Subscribe(shortTopic, message.QosExactlyOnce, &c.shortOnPublish); err != nil {
+				log.Errorf("Subscribe failed on topic %s: %v", shortTopic, err)
+			} else {
+				c.shortSubscribedTopic = shortTopic
+			}
 		}
 	}
 
-	c.longSubscribedTopic = c.paramLongTopic.Value().(string)
-	if c.longSubscribedTopic != "" {
+	longTopic := c.paramLongTopic.Value().(string)
+	if longTopic != "" {
 		matcher, err := newMatcher(c.paramLongMatcherKind, c.paramLongPattern)
 		if err != nil {
 			log.Errorf("Creation of matcher for long keypress failed: %v", err)
@@ -141,7 +145,11 @@ func (c *mqttKeyReceiver) start() {
 				}
 				return nil
 			}
-			c.mqttServer.Subscribe(c.longSubscribedTopic, message.QosExactlyOnce, &c.longOnPublish)
+			if err := c.mqttServer.Subscribe(longTopic, message.QosExactlyOnce, &c.longOnPublish); err != nil {
+				log.Errorf("Subscribe failed on topic %s: %v", longTopic, err)
+			} else {
+				c.longSubscribedTopic = longTopic
+			}
 		}
 	}
 }
@@ -149,9 +157,11 @@ func (c *mqttKeyReceiver) start() {
 func (c *mqttKeyReceiver) stop() {
 	if c.shortSubscribedTopic != "" {
 		c.mqttServer.Unsubscribe(c.shortSubscribedTopic, &c.shortOnPublish)
+		c.shortSubscribedTopic = ""
 	}
 	if c.longSubscribedTopic != "" {
 		c.mqttServer.Unsubscribe(c.longSubscribedTopic, &c.longOnPublish)
+		c.longSubscribedTopic = ""
 	}
 }
 
@@ -269,8 +279,8 @@ func (vd *VirtualDevices) addMQTTSwitch(dev *vdevices.Device) vdevices.GenericCh
 
 type mqttSwitchFeedback struct {
 	baseChannel
-	switchChannel *vdevices.SwitchChannel
-	mqttServer    *mqtt.Server
+	digitalChannel *vdevices.DigitalChannel
+	mqttServer     *mqtt.Server
 
 	// sending parameters
 	paramCommandTopic *vdevices.StringParameter
@@ -289,8 +299,8 @@ type mqttSwitchFeedback struct {
 }
 
 func (c *mqttSwitchFeedback) start() {
-	c.subscribedTopic = c.paramFBTopic.Value().(string)
-	if c.subscribedTopic != "" {
+	topic := c.paramFBTopic.Value().(string)
+	if topic != "" {
 		onMatcher, err := newMatcher(c.paramMatcherKind, c.paramOnPattern)
 		if err != nil {
 			log.Errorf("Creation of matcher for 'on' failed: %v", err)
@@ -306,23 +316,28 @@ func (c *mqttSwitchFeedback) start() {
 				c.Description().Index, msg.Topic(), msg.Payload())
 			if onMatcher.Match(msg.Payload()) {
 				log.Debugf("Turning on switch %s:%d", c.Description().Parent, c.Description().Index)
-				c.switchChannel.SetState(true)
+				c.digitalChannel.SetState(true)
 			} else if offMatcher.Match(msg.Payload()) {
 				log.Debugf("Turning off switch %s:%d", c.Description().Parent, c.Description().Index)
-				c.switchChannel.SetState(false)
+				c.digitalChannel.SetState(false)
 			} else {
 				log.Warningf("Invalid message for switch %s:%d received: %s", c.Description().Parent,
 					c.Description().Index, msg.Payload())
 			}
 			return nil
 		}
-		c.mqttServer.Subscribe(c.subscribedTopic, message.QosExactlyOnce, &c.onPublish)
+		if err := c.mqttServer.Subscribe(topic, message.QosExactlyOnce, &c.onPublish); err != nil {
+			log.Errorf("Subscribe failed on topic %s: %v", topic, err)
+		} else {
+			c.subscribedTopic = topic
+		}
 	}
 }
 
 func (c *mqttSwitchFeedback) stop() {
 	if c.subscribedTopic != "" {
 		c.mqttServer.Unsubscribe(c.subscribedTopic, &c.onPublish)
+		c.subscribedTopic = ""
 	}
 }
 
@@ -330,8 +345,8 @@ func (vd *VirtualDevices) addMQTTSwitchFeedback(dev *vdevices.Device) vdevices.G
 	ch := new(mqttSwitchFeedback)
 
 	// inititalize baseChannel
-	ch.switchChannel = vdevices.NewSwitchChannel(dev)
-	ch.GenericChannel = ch.switchChannel
+	ch.digitalChannel = vdevices.NewSwitchChannel(dev)
+	ch.GenericChannel = ch.digitalChannel
 	ch.store = vd.Store
 	ch.mqttServer = vd.MQTTServer
 
@@ -368,7 +383,7 @@ func (vd *VirtualDevices) addMQTTSwitchFeedback(dev *vdevices.Device) vdevices.G
 	ch.AddMasterParam(ch.paramMatcherKind)
 
 	// state change
-	ch.switchChannel.OnSetState = func(state bool) bool {
+	ch.digitalChannel.OnSetState = func(state bool) bool {
 		var payload string
 		if state {
 			payload = ch.paramOnPayload.Value().(string)
@@ -386,7 +401,109 @@ func (vd *VirtualDevices) addMQTTSwitchFeedback(dev *vdevices.Device) vdevices.G
 	}
 
 	// clean up
-	ch.switchChannel.OnDispose = ch.stop
+	ch.digitalChannel.OnDispose = ch.stop
+
+	// store master param on PutParamset, reregister topics
+	ch.MasterParamset().HandlePutParamset(func() {
+		ch.stop()
+		ch.storeMasterParamset()
+		ch.start()
+	})
+
+	// load master parameters from config
+	ch.loadMasterParamset()
+
+	// register topics
+	ch.Lock()
+	defer ch.Unlock()
+	ch.start()
+	return ch
+}
+
+type mqttDigitalInput struct {
+	baseChannel
+	digitalChannel *vdevices.DigitalChannel
+	mqttServer     *mqtt.Server
+
+	paramTopic       *vdevices.StringParameter
+	paramOnPattern   *vdevices.StringParameter
+	paramOffPattern  *vdevices.StringParameter
+	paramMatcherKind *vdevices.IntParameter
+
+	subscribedTopic string
+	onPublish       service.OnPublishFunc
+}
+
+func (c *mqttDigitalInput) start() {
+	topic := c.paramTopic.Value().(string)
+	if topic != "" {
+		onMatcher, err := newMatcher(c.paramMatcherKind, c.paramOnPattern)
+		if err != nil {
+			log.Errorf("Creation of matcher for 'on' failed: %v", err)
+			return
+		}
+		offMatcher, err := newMatcher(c.paramMatcherKind, c.paramOffPattern)
+		if err != nil {
+			log.Errorf("Creation of matcher for 'off' failed: %v", err)
+			return
+		}
+		c.onPublish = func(msg *message.PublishMessage) error {
+			log.Debugf("Message for digital input %s:%d received: %s, %s", c.Description().Parent,
+				c.Description().Index, msg.Topic(), msg.Payload())
+			if onMatcher.Match(msg.Payload()) {
+				log.Debugf("Turning on digital input %s:%d", c.Description().Parent, c.Description().Index)
+				c.digitalChannel.SetState(true)
+			} else if offMatcher.Match(msg.Payload()) {
+				log.Debugf("Turning off digital input %s:%d", c.Description().Parent, c.Description().Index)
+				c.digitalChannel.SetState(false)
+			} else {
+				log.Warningf("Invalid message for digital input %s:%d received: %s", c.Description().Parent,
+					c.Description().Index, msg.Payload())
+			}
+			return nil
+		}
+		if err := c.mqttServer.Subscribe(topic, message.QosExactlyOnce, &c.onPublish); err != nil {
+			log.Errorf("Subscribe failed on topic %s: %v", topic, err)
+			return
+		}
+		c.subscribedTopic = topic
+	}
+}
+
+func (c *mqttDigitalInput) stop() {
+	if c.subscribedTopic != "" {
+		c.mqttServer.Unsubscribe(c.subscribedTopic, &c.onPublish)
+		c.subscribedTopic = ""
+	}
+}
+
+func (vd *VirtualDevices) addMQTTDoorSensor(dev *vdevices.Device) vdevices.GenericChannel {
+	ch := new(mqttDigitalInput)
+
+	// inititalize baseChannel
+	ch.digitalChannel = vdevices.NewDoorSensorChannel(dev)
+	ch.GenericChannel = ch.digitalChannel
+	ch.store = vd.Store
+	ch.mqttServer = vd.MQTTServer
+
+	// TOPIC
+	ch.paramTopic = vdevices.NewStringParameter("TOPIC")
+	ch.AddMasterParam(ch.paramTopic)
+
+	// OPEN_PATTERN
+	ch.paramOnPattern = vdevices.NewStringParameter("OPEN_PATTERN")
+	ch.AddMasterParam(ch.paramOnPattern)
+
+	// CLOSED_PATTERN
+	ch.paramOffPattern = vdevices.NewStringParameter("CLOSED_PATTERN")
+	ch.AddMasterParam(ch.paramOffPattern)
+
+	// MATCHER
+	ch.paramMatcherKind = newMatcherKindParameter("MATCHER")
+	ch.AddMasterParam(ch.paramMatcherKind)
+
+	// clean up
+	ch.digitalChannel.OnDispose = ch.stop
 
 	// store master param on PutParamset, reregister topics
 	ch.MasterParamset().HandlePutParamset(func() {
@@ -450,6 +567,7 @@ func (c *mqttAnalogReceiver) start() {
 func (c *mqttAnalogReceiver) stop() {
 	if c.subscribedTopic != "" {
 		c.mqttServer.Unsubscribe(c.subscribedTopic, &c.onPublish)
+		c.subscribedTopic = ""
 	}
 }
 

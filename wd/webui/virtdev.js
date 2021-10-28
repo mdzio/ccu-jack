@@ -11,11 +11,13 @@ function ChannelKindSelect() {
                 m("option[value=STATIC_KEY]", { selected: channel.Kind === "STATIC_KEY" }, "Statischer Taster"),
                 m("option[value=STATIC_SWITCH]", { selected: channel.Kind === "STATIC_SWITCH" }, "Statischer Schaltaktor"),
                 m("option[value=STATIC_ANALOG]", { selected: channel.Kind === "STATIC_ANALOG" }, "Statischer Analogwerteingang"),
+                m("option[value=STATIC_DOOR_SENSOR]", { selected: channel.Kind === "STATIC_DOOR_SENSOR" }, "Statischer Fenster-/Türkontakt"),
                 m("option[value=MQTT_KEY_SENDER]", { selected: channel.Kind === "MQTT_KEY_SENDER" }, "MQTT Sendetaster"),
                 m("option[value=MQTT_KEY_RECEIVER]", { selected: channel.Kind === "MQTT_KEY_RECEIVER" }, "MQTT Empfangstaster"),
                 m("option[value=MQTT_SWITCH]", { selected: channel.Kind === "MQTT_SWITCH" }, "MQTT Schaltaktor"),
                 m("option[value=MQTT_SWITCH_FEEDBACK]", { selected: channel.Kind === "MQTT_SWITCH_FEEDBACK" }, "MQTT Schaltaktor mit Rückmeldung"),
                 m("option[value=MQTT_ANALOG_RECEIVER]", { selected: channel.Kind === "MQTT_ANALOG_RECEIVER" }, "MQTT Analogwertempfänger"),
+                m("option[value=MQTT_DOOR_SENSOR]", { selected: channel.Kind === "MQTT_DOOR_SENSOR" }, "MQTT Fenster-/Türkontakt"),
             )
         }
     }

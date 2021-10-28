@@ -162,6 +162,9 @@ func (vd *VirtualDevices) createDevice(devcfg *rtcfg.Device) error {
 		case rtcfg.ChannelAnalog:
 			ch := vdevices.NewAnalogInputChannel(dev)
 			log.Debugf("Created static analog input channel: %s", ch.Description().Address)
+		case rtcfg.ChannelDoorSensor:
+			ch := vdevices.NewDoorSensorChannel(dev)
+			log.Debugf("Created static door sensor channel: %s", ch.Description().Address)
 
 		case rtcfg.ChannelMQTTKeySender:
 			ch := vd.addMQTTKeySender(dev)
@@ -178,6 +181,9 @@ func (vd *VirtualDevices) createDevice(devcfg *rtcfg.Device) error {
 		case rtcfg.ChannelMQTTAnalogReceiver:
 			ch := vd.addMQTTAnalogReceiver(dev)
 			log.Debugf("Created MQTT analog receiver channel: %s", ch.Description().Address)
+		case rtcfg.ChannelMQTTDoorSensor:
+			ch := vd.addMQTTDoorSensor(dev)
+			log.Debugf("Created MQTT door sensor channel: %s", ch.Description().Address)
 
 		default:
 			return fmt.Errorf("Unsupported kind of channel in device %s: %v", devcfg.Address, chcfg.Kind)

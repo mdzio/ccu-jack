@@ -226,25 +226,29 @@ const (
 	ChannelKey ChannelKind = iota
 	ChannelSwitch
 	ChannelAnalog
+	ChannelDoorSensor
 
 	ChannelMQTTKeySender
 	ChannelMQTTKeyReceiver
 	ChannelMQTTSwitch
 	ChannelMQTTSwitchFeedback
 	ChannelMQTTAnalogReceiver
+	ChannelMQTTDoorSensor
 )
 
 var (
 	channelKindStr = []string{
-		ChannelKey:    "STATIC_KEY",
-		ChannelSwitch: "STATIC_SWITCH",
-		ChannelAnalog: "STATIC_ANALOG",
+		ChannelKey:        "STATIC_KEY",
+		ChannelSwitch:     "STATIC_SWITCH",
+		ChannelAnalog:     "STATIC_ANALOG",
+		ChannelDoorSensor: "STATIC_DOOR_SENSOR",
 
 		ChannelMQTTKeySender:      "MQTT_KEY_SENDER",
 		ChannelMQTTKeyReceiver:    "MQTT_KEY_RECEIVER",
 		ChannelMQTTSwitch:         "MQTT_SWITCH",
 		ChannelMQTTSwitchFeedback: "MQTT_SWITCH_FEEDBACK",
 		ChannelMQTTAnalogReceiver: "MQTT_ANALOG_RECEIVER",
+		ChannelMQTTDoorSensor:     "MQTT_DOOR_SENSOR",
 	}
 	errChannelKind = errors.New("invalid channel kind identifier")
 )
