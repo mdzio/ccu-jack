@@ -8,8 +8,6 @@ require (
 	github.com/mdzio/go-lib v0.1.7
 	github.com/mdzio/go-logging v1.0.0
 	github.com/mdzio/go-mqtt v0.1.2
-	github.com/mdzio/go-veap v0.1.2
+	github.com/mdzio/go-veap v0.2.0
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 )
-
-replace github.com/mdzio/go-veap => ../go-veap
