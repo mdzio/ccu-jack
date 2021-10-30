@@ -11,3 +11,5 @@ require (
 	github.com/mdzio/go-veap v0.1.2
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 )
+
+replace github.com/mdzio/go-veap => ../go-veap

@@ -163,7 +163,7 @@ func wireToPV(payload []byte) (veap.PV, error) {
 		// check for unexpected content
 		c, err2 := ioutil.ReadAll(dec.Buffered())
 		if err2 != nil {
-			return veap.PV{}, fmt.Errorf("ReadAll failed: %v", err)
+			return veap.PV{}, fmt.Errorf("ReadAll failed: %v", err2)
 		}
 		// allow only white space
 		cs := strings.TrimSpace(string(c))
