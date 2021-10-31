@@ -200,9 +200,36 @@ Die Diagnoseseite hilft bei der Fehlersuche weiter:
 
 ## Beschreibung der VEAP-Dienste/REST-API
 
+Für den Zugriff auf die Datenpunkte wird das [Very Easy Automation Protocol](https://github.com/mdzio/veap) vom CCU-Jack implementiert.
+
 Mit dem [Kommandozeilenwerkzeug CURL](https://curl.haxx.se), das praktisch für alle Betriebssysteme und Plattformen verfügbar ist, können alle VEAP-Dienste (z.B. Datenpunkte lesen und setzen) des CCU-Jacks genutzt werden. Die Beschreibung ist auf einer [eigenen Seite](https://github.com/mdzio/ccu-jack/blob/master/doc/curl.md) zu finden.
 
 Die Abbildung der CCU-Datentypen auf JSON ist [weiter unten](#abbildung-der-ccu-datentypen) zu finden.
+
+### Vereinfachter Zugriff
+
+Für HTTP-Clients mit eingeschränkter Funktionalität, werden _zusätzlich_ folgende Vereinfachungen unterstützt: 
+
+Das Schreiben eines Datenpunktes kann zusätzlich durch ein HTTP-GET mit dem URL-Parameter `writepv` erfolgen.
+
+Beispiele: 
+
+Die nötigen Datenpunktadressen können über den [Navigator des CCU-Jacks](#web-basierte-benutzerschnittstelle) ermittelt werden.
+```
+GET /number_datapoint/~pv?writepv=123.456
+GET /boolean_datapoint/~pv?writepv=true
+GET /string_datapoint/~pv?writepv="ABC+abc"
+```
+(Hinweis: In URL-Parametern das Pluszeichen für ein Leerzeichen verwenden.)
+
+Zudem kann der aktuelle Datenpunktwert als reiner Text abgefragt werden, sodass eine Dekodierung von JSON nicht mehr nötig ist. Der Zeitstempel und der Status werden in diesem Fall nicht zurückgegeben.
+
+Beispiele:
+Anfrage | Ergebnis
+--------|---------
+GET /number_datapoint/~pv?format=simple | 123.456
+GET /boolean_datapoint/~pv?format=simple | true
+GET /string_datapoint/~pv?format=simple | ABC abc
 
 ## Beschreibung der MQTT-Schnittstelle
 
@@ -218,6 +245,7 @@ device/status/_Seriennr._/_Kanalnr._/_Parametername_ | Unter diesem _Topic_ werd
 device/set/_Seriennr._/_Kanalnr._/_Parametername_ | Über dieses _Topic_ können Gerätedatenpunkte gesetzt werden.
 sysvar/status/_ISE-ID_ | Unter diesem _Topic_ werden die Wertänderungen von Systemvariablen bekanntgegeben, wenn die Systemvariablenbeschreibung in der CCU das Schlüsselwort `MQTT` enthält, oder vorher an das _Topic_ sysvar/get/_ISE-ID_ gesendet wurde.
 sysvar/set/_ISE-ID_ | Über dieses _Topic_ können Systemvariablen gesetzt werden.
+
 sysvar/get/_ISE-ID_ | Über dieses _Topic_ kann das Lesen einer Systemvariablen angestoßen werden. Der aktuelle Wert wird dann unter dem _Topic_ sysvar/status/_ISE-ID_ bekanntgegeben.
 program/set/_ISE-ID_ | Über dieses _Topic_ können Programme auf der CCU gestartet werden. Es muss der boolesche Wert _true_ gesendet werden.
 program/status/_ISE-ID_ | Unter diesem _Topic_ wird der letzte Ausführungszeitpunkt eines Programms bekanntgegeben, wenn vorher an das _Topic_ program/get/_ISE-ID_ gesendet wurde.
