@@ -10,11 +10,12 @@ _Durch einen Fehler in der Web-UI der CCU können zwar die Zeichen `'` und `"` (
 
 Statische Geräte besitzen keine interne Logik und keine Einstellmöglichkeiten. Sie dienen dazu, zusätzliche Datenpunkte zu erschaffen, die über die MQTT- und REST-API des CCU-Jacks angesprochen werden können. Gleichzeitig können sie nahtlos in CCU-Programmen verwendet werden.
 
-Kanaltyp      | Ab Version | Funktion
---------------|------------|-----------------------------------------------------
-Taster        | 2.0.11     | Taster (wie die virtuellen Taster in der CCU)
-Schaltaktor   | 2.0.11     | Schaltaktor (wie HM-LC-Sw1-Pl)
-Analogeingang | 2.0.11     | Analogeingang (wie HmIP-MIO16-PCB Kanal 1, aber der Eingang kann zusätzlich von der CCU oder von extern _gesetzt_ werden)
+Kanaltyp            | Ab Version | Funktion
+--------------------|------------|-----------------------------------------------------
+Taster              | 2.0.11     | Taster (wie die virtuellen Taster in der CCU)
+Schaltaktor         | 2.0.11     | Schaltaktor (wie HM-LC-Sw1-Pl)
+Analogeingang       | 2.0.11     | Analogeingang (wie HmIP-MIO16-PCB Kanal 1, aber der Eingang kann zusätzlich von der CCU oder von extern _gesetzt_ werden)
+Tür-/Fensterkontakt | 2.0.47     | Tür-/Fensterkontakt (wie HM-Sec-SC-2)
 
 ## MQTT-Geräte (Senden und Empfangen von MQTT-Nachrichten)
 
@@ -39,7 +40,7 @@ MQTT-Schaltaktor                 | 2.0.31     | Schaltaktor zum Senden von MQTT-
 MQTT-Schaltaktor mit Rückmeldung | 2.0.31     | Zusätzlich wird der Status des Schaltaktors durch empfangene MQTT-Nachrichten aktualisiert.
 MQTT-Analogwertempfänger         | 2.0.31     | Ein Zahlenwert wird aus der MQTT-Nachricht extrahiert und als Analogwert zur Verfügung gestellt.
 
-### MQTT-Sendetaster
+### MQTT Sendetaster
 
 Der MQTT-Sendetaster sendet konfigurierbare MQTT-Nachrichten.
 
@@ -54,7 +55,7 @@ LONG_TOPIC        | s.o., für langen Tastendruck
 LONG_PAYLOAD      | s.o., für langen Tastendruck
 LONG_RETAIN       | s.o., für langen Tastendruck
 
-### MQTT-Empfangstaster
+### MQTT Empfangstaster
 
 Der MQTT-Empfangstaster löst einen Tastendruck beim Empfang einer MQTT-Nachricht aus.
 
@@ -71,7 +72,7 @@ LONG_MATCHER      | s.o., für langen Tastendruck
 
 Für reguläre Ausdrücke werden die üblichen Operatoren und Zeichenklassen unterstützt. Weitere Informationen sind in der [Spezifikation](https://github.com/google/re2/wiki/Syntax) zu finden.
 
-### MQTT-Schaltaktor                
+### MQTT Schaltaktor                
 
 MQTT-Schaltaktor sendet beim Ein- oder Ausschalten jeweils eine MQTT-Nachricht.
 
@@ -84,7 +85,7 @@ RETAIN            | Der MQTT-Server soll die zuletzt gesendete Nachricht speiche
 ON_PAYLOAD        | MQTT-Payload für das Einschalten
 OFF_PAYLOAD       | MQTT-Payload für das Ausschalten
 
-### MQTT-Schaltaktor mit Rückmeldung
+### MQTT Schaltaktor mit Rückmeldung
 
 MQTT-Schaltaktor sendet ebenfalls beim Ein- oder Ausschalten jeweils eine MQTT-Nachricht. Der Zustand wird aber erst aktualisiert, wenn eine Rückmeldung vom MQTT-Gerät eingeht.
 
@@ -103,7 +104,7 @@ OFF_PATTERN       | Prüfmuster für die MQTT-Payload für den ausgeschalteten Z
 
 Für reguläre Ausdrücke werden die üblichen Operatoren und Zeichenklassen unterstützt. Weitere Informationen sind in der [Spezifikation](https://github.com/google/re2/wiki/Syntax) zu finden.
 
-### MQTT-Analogwertempfänger        
+### MQTT Analogwertempfänger        
 
 Der MQTT-Analogwertempfänger extrahiert aus der MQTT-Payload eine als Text übertragene Zahl und stellt sie als Analogwert der CCU zur Verfügung. Diese kann optional ein . (Punkt) als Dezimaltrennzeichen enthalten. Falls die Zahl nicht extrahiert werden kann, so wird der Status vom Analogwert auf _Überlauf_ gesetzt.
 
@@ -126,3 +127,16 @@ REGEXP    | (\S+) (\S+) (\S+) | 1            | 123 543.31 21.3                | 
 REGEXP    | (\S+) (\S+) (\S+) | 2            | 123 543.31 21.3                | 543,31                  | 2. Zahl wird extrahiert.
 
 Für reguläre Ausdrücke werden die üblichen Operatoren und Zeichenklassen unterstützt. Weitere Informationen sind in der [Spezifikation](https://github.com/google/re2/wiki/Syntax) zu finden.
+
+### MQTT Fenster-/Türkontakt (ab v2.0.47)
+
+Der Zustand des virtuellen Fenster-/Türkontakts wird aktualisiert, wenn eine Nachricht vom MQTT-Gerät empfangen wird.
+
+Liste der Einstellungsparameter:
+
+Name              | Bedeutung
+------------------|-------------------------------------------------------------------------------
+TOPIC             | MQTT-Topic für die Statusmeldungen. Die Platzhalter + und # werden unterstützt.
+MATCHER           | Vergleichsfunktion für die Überprüfung der Payload mit dem Prüfmuster (EXACT: Die Payload muss dem Prüfmuster entsprechen; CONTAINS: In der Payload muss das Prüfmuster enthalten sein; REGEXP: Das Prüfmuster ist ein regulärer Ausdruck, der zutreffen muss.)
+OPEN_PATTERN      | Prüfmuster für die MQTT-Payload für den geöffneten Zustand (abhängig von MATCHER)
+CLOSED_PATTERN    | Prüfmuster für die MQTT-Payload für den geschossenen Zustand (abhängig von MATCHER)
