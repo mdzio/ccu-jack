@@ -34,11 +34,12 @@ In der MQTT-Konfiguration der Geräte muss die CCU als MQTT-Server (bzw. Broker)
 
 Kanaltyp                         | Ab Version | Funktion
 ---------------------------------|------------|-----------------------------------------------------
-MQTT-Sendetaster                 | 2.0.31     | Taster zum Senden von beliebgien MQTT-Nachrichten
-MQTT-Empfangstaster              | 2.0.31     | Taster zum Empfangen von beliebgien MQTT-Nachrichten
-MQTT-Schaltaktor                 | 2.0.31     | Schaltaktor zum Senden von MQTT-Nachrichten beim Ein- und Aussschalten
-MQTT-Schaltaktor mit Rückmeldung | 2.0.31     | Zusätzlich wird der Status des Schaltaktors durch empfangene MQTT-Nachrichten aktualisiert.
-MQTT-Analogwertempfänger         | 2.0.31     | Ein Zahlenwert wird aus der MQTT-Nachricht extrahiert und als Analogwert zur Verfügung gestellt.
+MQTT Sendetaster                 | 2.0.31     | Taster zum Senden von beliebigen MQTT-Nachrichten
+MQTT Empfangstaster              | 2.0.31     | Taster zum Empfangen von beliebigen MQTT-Nachrichten
+MQTT Schaltaktor                 | 2.0.31     | Schaltaktor zum Senden von MQTT-Nachrichten beim Ein- und Aussschalten
+MQTT Schaltaktor mit Rückmeldung | 2.0.31     | Zusätzlich wird der Status des Schaltaktors durch empfangene MQTT-Nachrichten aktualisiert.
+MQTT Analogwertempfänger         | 2.0.31     | Ein Zahlenwert wird aus der MQTT-Nachricht extrahiert und als Analogwert zur Verfügung gestellt.
+MQTT Fenster-/Türkontakt         | 2.0.47     | Fenster-/Türkontakt zum Empfangen von MQTT-Nachrichten
 
 ### MQTT Sendetaster
 
