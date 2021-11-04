@@ -66,7 +66,7 @@ Distributionen für die verschiedenen Zielsysteme sind auf der Seite [Releases](
 
 _Hinweis: Generell sollte vor der Installation von Add-Ons auf der CCU ein System-Backup erstellt werden._
 
-Der CCU-Jack sollte als Add-On auf der CCU installiert werden. **Nur bei einer Add-On-Installation können auch virtuelle Geräte genutzt werden.** Dies erfolgt über die Web-UI der CCU unter _Einstellungen_ → _Systemsteuerung_ → _Zusatzsoftware_. In diesem Dialog kann auch ein Neustart des CCU-Jacks durchgeführt werden. (Ein Neustart dauert 15-20 Sekunden.)
+Der CCU-Jack sollte als Add-On auf der CCU installiert werden. **Nur bei einer Add-On-Installation können auch virtuelle Geräte genutzt werden.** Dies erfolgt über die Web-UI der CCU unter _Einstellungen_ → _Systemsteuerung_ → _Zusatzsoftware_. In diesem Dialog kann auch ein Neustart des CCU-Jacks durchgeführt werden. (Ein Neustart des CCU-Jacks dauert 15-20 Sekunden.)
 
 Bei einer Installation als Add-On auf der CCU können die Startparameter in der Datei `/usr/local/etc/config/rc.d/ccu-jack` angepasst werden. In der Regel ist dies nicht notwendig. Log-Meldungen werden in die Datei `/var/log/ccu-jack.log` geschrieben.
 
@@ -276,6 +276,8 @@ Ab Version 2 des CCU-Jacks werden virtuelle Geräte in der CCU unterstützt. Die
 **Achtung:** Virtuelle Geräte funktionieren nur dann, wenn der CCU-Jack als Add-On auf der CCU installiert wurde. Eine neue Geräteschnittstelle wird zur Projektierung der CCU hinzugefügt. Der Hersteller der CCU kann unter Umständen Support-Leistungen ablehnen. Dies betrifft generell jede zusätzlich installierte Software auf der CCU.
 
 Virtuelle Geräte müssen als erstes in der Konfiguration des CCU-Jacks aktiviert werden. Danach ist ein Neustart der CCU erforderlich. Virtuelle Geräte werden dann über die Web-UI des CCU-Jacks angelegt und auch die gewünschten Kanäle hinzugefügt. Neu angelegte Geräte erscheinen direkt im Geräte-Posteingang der CCU. Spezifische Einstellungen der Geräte können dann in der CCU vorgenommen werden (_Einstellungen_ → _Geräte_ → Gerät auswählen → _Einstellen_).
+
+**Achtung:** Wenn noch virtuelle Geräte auf der CCU angelegt sind, und der CCU-Jack deinstalliert und erneut installiert wird, so werden die vorhandenen virtuellen Geräte gelöscht. Die vorhandene Konfigurationsdatei `ccu-jack.cfg` mit den virtuellen Geräten wird in diesem Fall durch eine leere ersetzt. Um den CCU-Jack zu aktualisieren, die neue Version einfach über die bereits vorhandene Version installieren. Dadurch wird die vorhandene Konfigurationsdatei übernommen.
 
 Der CCU-Jack bietet die Möglichkeit virtuelle Geräte aus bis zu 32 beliebigen Kanalfunktionen zusammenzustellen. Dadurch können alle Funktionen und Messwerte eines Fremdgerätes in einem Gerät auf der CCU nachgebildet werden.
 
