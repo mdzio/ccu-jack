@@ -80,6 +80,14 @@ Der CCU-Jack kann auch in einer Docker-Umgebung ausgeführt werden. Das Erstelle
 
 Virtuelle Geräte werden in der Docker-Umgebung nicht unterstützt.
 
+### Update einer vorhandenen Installation
+
+Für ein Update darf die vorhandene Installation nicht deinstalliert werden, da ansonsten die Konfigurationsdatei (mit eventuell eingerichteten virtuellen Geräten) gelöscht wird. Die neue Version muss einfach darüber installiert werden, dann wird die vorhandene Konfiguration übernommen.
+
+### Deinstallation
+
+Vor einer Deinstallation sind alle eventuell eingerichteten virtuellen Geräte über die Web-UI des CCU-Jacks oder der CCU zu löschen.
+
 ## Bauen aus den Quellen
 
 Der CCU-Jack ist in der [Programmiersprache Go](https://golang.org/) (min. Version 1.15) geschrieben. Alle Distributionen des CCU-Jacks können sehr einfach und schnell auf allen möglichen Plattformen (u.a. Windows, Linux, MacOS) gebaut werden. Dafür in einem beliebigen Verzeichnis das Git-Repository klonen, oder die Quellen hinein kopieren. Danach in diesem Verzeichnis eine Kommandozeile öffnen, und folgende Befehle eingeben:
