@@ -646,7 +646,7 @@ func newExtractorKindParameter(id string) *vdevices.IntParameter {
 	// align with extractorKind constants
 	p.Description().ValueList = []string{"AFTER", "BEFORE", "REGEXP", "ALL"}
 	p.Description().Min = 0
-	p.Description().Max = 2
+	p.Description().Max = len(p.Description().ValueList) - 1
 	p.Description().Default = 0
 	return p
 }
