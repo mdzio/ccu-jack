@@ -165,6 +165,9 @@ func (vd *VirtualDevices) createDevice(devcfg *rtcfg.Device) error {
 		case rtcfg.ChannelDoorSensor:
 			ch := vdevices.NewDoorSensorChannel(dev)
 			log.Debugf("Created static door sensor channel: %s", ch.Description().Address)
+		case rtcfg.ChannelDimmer:
+			ch := vd.addStaticDimmer(dev)
+			log.Debugf("Created static dimmer channel: %s", ch.Description().Address)
 
 		case rtcfg.ChannelMQTTKeySender:
 			ch := vd.addMQTTKeySender(dev)

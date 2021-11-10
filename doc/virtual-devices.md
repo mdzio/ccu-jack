@@ -115,7 +115,7 @@ Name              | Bedeutung
 ------------------|-------------------------------------------------------------------------------
 TOPIC             | MQTT-Topic für die zu empfangenden Nachrichten. Die Platzhalter + und # werden unterstützt.
 PATTERN           | Suchmuster für den Zahlenwert in der MQTT-Payload (abhängig von EXTRACTOR)
-EXTRACTOR         | (AFTER: Der nächstliegende Zahlenwert hinter dem Suchmuster wird verwendet; BEFORE: Der nächstliegende Zahlenwert vor dem Suchmuster wird verwendet; REGEXP: Das Suchmuster ist ein regulärer Ausdruck. Der Zahlenwert befindet sich in der Gruppe mit der Nummer REGEXP_GROUP.)
+EXTRACTOR         | (AFTER: Der nächstliegende Zahlenwert hinter dem Suchmuster wird verwendet; BEFORE: Der nächstliegende Zahlenwert vor dem Suchmuster wird verwendet; REGEXP: Das Suchmuster ist ein regulärer Ausdruck. Der Zahlenwert befindet sich in der Gruppe mit der Nummer REGEXP_GROUP; ALL: Die ganze MQTT-Payload wird als Zahlenwert interpretiert.)
 REGEXP_GROUP      | Nummer der zu verwendenden Gruppe des regulären Ausdrucks, wenn EXTRACTOR auf REGEXP gesetzt ist. 
 
 Beispiele:
@@ -126,6 +126,7 @@ BEFORE    | cm                | 0            | 100 l 52 cm                    | 
 AFTER     | Vcc               | 0            | { "Vcc": 3.3, "Version": 2.2 } | 3,3                     | REGEXP_GROUP ist egal. 
 REGEXP    | (\S+) (\S+) (\S+) | 1            | 123 543.31 21.3                | 123,0                   | 1. Zahl wird extrahiert.
 REGEXP    | (\S+) (\S+) (\S+) | 2            | 123 543.31 21.3                | 543,31                  | 2. Zahl wird extrahiert.
+ALL       |                   | 0            |      -7.                       | -7,0                    | REGEXP_GROUP und PATTERN sind egal. 
 
 Für reguläre Ausdrücke werden die üblichen Operatoren und Zeichenklassen unterstützt. Weitere Informationen sind in der [Spezifikation](https://github.com/google/re2/wiki/Syntax) zu finden.
 

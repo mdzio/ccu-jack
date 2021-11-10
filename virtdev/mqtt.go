@@ -118,7 +118,10 @@ func (c *mqttKeyReceiver) start() {
 					c.Description().Index, msg.Topic(), msg.Payload())
 				if matcher.Match(msg.Payload()) {
 					log.Debugf("Triggering short keypress on %s:%d", c.Description().Parent, c.Description().Index)
+					// lock channel while modifying parameters
+					c.Lock()
 					c.keyChannel.PressShort()
+					c.Unlock()
 				}
 				return nil
 			}
@@ -141,7 +144,10 @@ func (c *mqttKeyReceiver) start() {
 					c.Description().Index, msg.Topic(), msg.Payload())
 				if matcher.Match(msg.Payload()) {
 					log.Debugf("Triggering long keypress on %s:%d", c.Description().Parent, c.Description().Index)
+					// lock channel while modifying parameters
+					c.Lock()
 					c.keyChannel.PressLong()
+					c.Unlock()
 				}
 				return nil
 			}
@@ -316,10 +322,16 @@ func (c *mqttSwitchFeedback) start() {
 				c.Description().Index, msg.Topic(), msg.Payload())
 			if onMatcher.Match(msg.Payload()) {
 				log.Debugf("Turning on switch %s:%d", c.Description().Parent, c.Description().Index)
+				// lock channel while modifying parameters
+				c.Lock()
 				c.digitalChannel.SetState(true)
+				c.Unlock()
 			} else if offMatcher.Match(msg.Payload()) {
 				log.Debugf("Turning off switch %s:%d", c.Description().Parent, c.Description().Index)
+				// lock channel while modifying parameters
+				c.Lock()
 				c.digitalChannel.SetState(false)
+				c.Unlock()
 			} else {
 				log.Warningf("Invalid message for switch %s:%d received: %s", c.Description().Parent,
 					c.Description().Index, msg.Payload())
@@ -452,10 +464,16 @@ func (c *mqttDigitalInput) start() {
 				c.Description().Index, msg.Topic(), msg.Payload())
 			if onMatcher.Match(msg.Payload()) {
 				log.Debugf("Turning on digital input %s:%d", c.Description().Parent, c.Description().Index)
+				// lock channel while modifying parameters
+				c.Lock()
 				c.digitalChannel.SetState(true)
+				c.Unlock()
 			} else if offMatcher.Match(msg.Payload()) {
 				log.Debugf("Turning off digital input %s:%d", c.Description().Parent, c.Description().Index)
+				// lock channel while modifying parameters
+				c.Lock()
 				c.digitalChannel.SetState(false)
+				c.Unlock()
 			} else {
 				log.Warningf("Invalid message for digital input %s:%d received: %s", c.Description().Parent,
 					c.Description().Index, msg.Payload())
@@ -547,6 +565,9 @@ func (c *mqttAnalogReceiver) start() {
 		c.onPublish = func(msg *message.PublishMessage) error {
 			log.Debugf("Message for analog receiver %s:%d received: %s, %s", c.Description().Parent,
 				c.Description().Index, msg.Topic(), msg.Payload())
+			// lock channel while modifying parameters
+			c.Lock()
+			defer c.Unlock()
 			value, err := extractor.Extract(msg.Payload())
 			if err != nil {
 				log.Warningf("Extraction of value for analog receiver %s:%d failed: %v", c.Description().Parent,
@@ -623,7 +644,7 @@ func newExtractorKindParameter(id string) *vdevices.IntParameter {
 	p := vdevices.NewIntParameter(id)
 	p.Description().Type = itf.ParameterTypeEnum
 	// align with extractorKind constants
-	p.Description().ValueList = []string{"AFTER", "BEFORE", "REGEXP"}
+	p.Description().ValueList = []string{"AFTER", "BEFORE", "REGEXP", "ALL"}
 	p.Description().Min = 0
 	p.Description().Max = 2
 	p.Description().Default = 0
@@ -637,6 +658,7 @@ const (
 	ExtractorAfter extractorKind = iota
 	ExtractorBefore
 	ExtractorRegexp
+	ExtractorAll
 )
 
 type extractor struct {
@@ -660,8 +682,10 @@ func (e *extractor) Extract(payload []byte) (float64, error) {
 }
 
 const (
-	numberPattern = `([+-]?(\d+(\.\d*)?|\.\d+))`
-	skipPattern   = `[^\d.+-]*`
+	numberPattern  = `([+-]?(\d+(\.\d*)?|\.\d+))`
+	skipPattern    = `[^\d.+-]*`
+	startWSPattern = `^\s*`
+	endWSPattern   = `\s*$`
 )
 
 func newExtractor(kindParam *vdevices.IntParameter, patternParam *vdevices.StringParameter,
@@ -677,7 +701,10 @@ func newExtractor(kindParam *vdevices.IntParameter, patternParam *vdevices.Strin
 		pattern = numberPattern + skipPattern + regexp.QuoteMeta(pattern)
 		groupIdx = 1
 	case ExtractorRegexp:
-		// nothing change
+		// change nothing
+	case ExtractorAll:
+		pattern = startWSPattern + numberPattern + endWSPattern
+		groupIdx = 1
 	default:
 		return nil, fmt.Errorf("Invalid extractor kind: %d", kind)
 	}

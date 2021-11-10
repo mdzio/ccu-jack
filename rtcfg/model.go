@@ -227,6 +227,7 @@ const (
 	ChannelSwitch
 	ChannelAnalog
 	ChannelDoorSensor
+	ChannelDimmer
 
 	ChannelMQTTKeySender
 	ChannelMQTTKeyReceiver
@@ -242,6 +243,7 @@ var (
 		ChannelSwitch:     "STATIC_SWITCH",
 		ChannelAnalog:     "STATIC_ANALOG",
 		ChannelDoorSensor: "STATIC_DOOR_SENSOR",
+		ChannelDimmer:     "STATIC_DIMMER",
 
 		ChannelMQTTKeySender:      "MQTT_KEY_SENDER",
 		ChannelMQTTKeyReceiver:    "MQTT_KEY_RECEIVER",
