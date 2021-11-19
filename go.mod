@@ -4,12 +4,10 @@ go 1.15
 
 require (
 	github.com/gorilla/handlers v1.5.1
-	github.com/mdzio/go-hmccu v0.4.6
+	github.com/mdzio/go-hmccu v0.4.7
 	github.com/mdzio/go-lib v0.1.7
 	github.com/mdzio/go-logging v1.0.0
 	github.com/mdzio/go-mqtt v0.1.2
 	github.com/mdzio/go-veap v0.2.0
-	golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa
+	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
 )
-
-replace github.com/mdzio/go-hmccu => ../go-hmccu
