@@ -187,6 +187,9 @@ func (vd *VirtualDevices) createDevice(devcfg *rtcfg.Device) error {
 		case rtcfg.ChannelMQTTDoorSensor:
 			ch := vd.addMQTTDoorSensor(dev)
 			log.Debugf("Created MQTT door sensor channel: %s", ch.Description().Address)
+		case rtcfg.ChannelMQTTDimmer:
+			ch := vd.addMQTTDimmer(dev)
+			log.Debugf("Created MQTT dimmer channel: %s", ch.Description().Address)
 
 		default:
 			return fmt.Errorf("Unsupported kind of channel in device %s: %v", devcfg.Address, chcfg.Kind)

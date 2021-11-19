@@ -1,10 +1,14 @@
 package virtdev
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
+	"text/template"
 
 	"github.com/mdzio/ccu-jack/mqtt"
 	"github.com/mdzio/go-hmccu/itf"
@@ -559,7 +563,8 @@ func (c *mqttAnalogReceiver) start() {
 	if c.subscribedTopic != "" {
 		extractor, err := newExtractor(c.paramExtractorKind, c.paramPattern, c.paramRegexpGroup)
 		if err != nil {
-			log.Errorf("Creation of extractor for analog receiver %s:%d failed: %v", err)
+			log.Errorf("Creation of value extractor for analog receiver %s:%d failed: %v", c.Description().Parent,
+				c.Description().Index, err)
 			return
 		}
 		c.onPublish = func(msg *message.PublishMessage) error {
@@ -640,11 +645,215 @@ func (vd *VirtualDevices) addMQTTAnalogReceiver(dev *vdevices.Device) vdevices.G
 	return ch
 }
 
+type mqttDimmer struct {
+	baseChannel
+	dimmerChannel   *vdevices.DimmerChannel
+	mqttServer      *mqtt.Server
+	subscribedTopic string
+	onPublish       service.OnPublishFunc
+	oldLevel        float64
+	template        *template.Template
+
+	// range parameters
+	paramRangeMin *vdevices.FloatParameter
+	paramRangeMax *vdevices.FloatParameter
+
+	// command parameters
+	paramCommandTopic *vdevices.StringParameter
+	paramRetain       *vdevices.BoolParameter
+	paramTemplate     *vdevices.StringParameter
+
+	// feedback parameters
+	paramFBTopic       *vdevices.StringParameter
+	paramPattern       *vdevices.StringParameter
+	paramExtractorKind *vdevices.IntParameter
+	paramRegexpGroup   *vdevices.IntParameter
+}
+
+func (c *mqttDimmer) start() {
+	tmplText := c.paramTemplate.Value().(string)
+	tmpl, err := template.New("mqttdimmer").Funcs(tmplFuncs).Parse(tmplText)
+	if err != nil {
+		log.Errorf("Invalid template '%s': %v", tmplText, err)
+		tmpl = nil
+	}
+	c.template = tmpl
+
+	c.subscribedTopic = c.paramFBTopic.Value().(string)
+	if c.subscribedTopic != "" {
+		extractor, err := newExtractor(c.paramExtractorKind, c.paramPattern, c.paramRegexpGroup)
+		if err != nil {
+			log.Errorf("Creation of value extractor for MQTT dimmer %s:%d failed: %v", c.Description().Parent,
+				c.Description().Index, err)
+			return
+		}
+		c.onPublish = func(msg *message.PublishMessage) error {
+			log.Debugf("Message for MQTT dimmer %s:%d received: %s, %s", c.Description().Parent,
+				c.Description().Index, msg.Topic(), msg.Payload())
+			// lock channel while modifying parameters
+			c.Lock()
+			defer c.Unlock()
+			value, err := extractor.Extract(msg.Payload())
+			if err != nil {
+				log.Warningf("Extraction of value for MQTT dimmer %s:%d failed: %v", c.Description().Parent,
+					c.Description().Index, err)
+				// nothing can be done
+				return nil
+			}
+			mappedValue := c.mapFromRange(value)
+			c.dimmerChannel.SetLevel(mappedValue)
+			return nil
+		}
+		c.mqttServer.Subscribe(c.subscribedTopic, message.QosExactlyOnce, &c.onPublish)
+	}
+}
+
+func (c *mqttDimmer) stop() {
+	if c.subscribedTopic != "" {
+		c.mqttServer.Unsubscribe(c.subscribedTopic, &c.onPublish)
+		c.subscribedTopic = ""
+	}
+}
+
+func (c *mqttDimmer) mapToRange(value float64) float64 {
+	min := c.paramRangeMin.Value().(float64)
+	max := c.paramRangeMax.Value().(float64)
+	return value*(max-min) + min
+}
+
+func (c *mqttDimmer) mapFromRange(value float64) float64 {
+	min := c.paramRangeMin.Value().(float64)
+	max := c.paramRangeMax.Value().(float64)
+	if min == max {
+		return 0.0
+	}
+	out := (value - min) / (max - min)
+	if out < 0.0 {
+		out = 0.0
+	}
+	if out > 1.0 {
+		out = 1.0
+	}
+	return out
+}
+
+func (c *mqttDimmer) publishToMQTT(value float64) {
+	if c.template == nil {
+		log.Warningf("Invalid template: %s", c.paramTemplate.Value().(string))
+		return
+	}
+	mappedValue := c.mapToRange(value)
+	var buf bytes.Buffer
+	err := c.template.Execute(&buf, mappedValue)
+	if err != nil {
+		log.Errorf("Execution of template '%s' failed for value %g: %v", c.paramTemplate.Value().(string), mappedValue, err)
+		return
+	}
+	c.mqttServer.Publish(
+		c.paramCommandTopic.Value().(string),
+		buf.Bytes(),
+		message.QosExactlyOnce,
+		c.paramRetain.Value().(bool),
+	)
+}
+
+func (vd *VirtualDevices) addMQTTDimmer(dev *vdevices.Device) vdevices.GenericChannel {
+	ch := new(mqttDimmer)
+
+	// inititalize baseChannel
+	ch.dimmerChannel = vdevices.NewDimmerChannel(dev)
+	ch.GenericChannel = ch.dimmerChannel
+	ch.store = vd.Store
+	ch.mqttServer = vd.MQTTServer
+
+	// RANGE_MIN
+	ch.paramRangeMin = vdevices.NewFloatParameter("RANGE_MIN")
+	ch.paramRangeMin.Description().Default = 0.0
+	ch.paramRangeMin.InternalSetValue(0.0)
+	ch.AddMasterParam(ch.paramRangeMin)
+
+	// RANGE_MAX
+	ch.paramRangeMax = vdevices.NewFloatParameter("RANGE_MAX")
+	ch.paramRangeMax.Description().Default = 1.0
+	ch.paramRangeMax.InternalSetValue(1.0)
+	ch.AddMasterParam(ch.paramRangeMax)
+
+	// COMMAND_TOPIC
+	ch.paramCommandTopic = vdevices.NewStringParameter("COMMAND_TOPIC")
+	ch.AddMasterParam(ch.paramCommandTopic)
+
+	// RETAIN
+	ch.paramRetain = vdevices.NewBoolParameter("RETAIN")
+	ch.AddMasterParam(ch.paramRetain)
+
+	// TEMPLATE
+	ch.paramTemplate = vdevices.NewStringParameter("TEMPLATE")
+	ch.paramTemplate.Description().Default = "{{ . }}"
+	ch.paramTemplate.InternalSetValue("{{ . }}")
+	ch.AddMasterParam(ch.paramTemplate)
+
+	// FEEDBACK_TOPIC
+	ch.paramFBTopic = vdevices.NewStringParameter("FEEDBACK_TOPIC")
+	ch.AddMasterParam(ch.paramFBTopic)
+
+	// PATTERN
+	ch.paramPattern = vdevices.NewStringParameter("PATTERN")
+	ch.AddMasterParam(ch.paramPattern)
+
+	// EXTRACTOR
+	ch.paramExtractorKind = newExtractorKindParameter("EXTRACTOR")
+	ch.AddMasterParam(ch.paramExtractorKind)
+
+	// REGEXP_GROUP
+	ch.paramRegexpGroup = vdevices.NewIntParameter("REGEXP_GROUP")
+	ch.paramRegexpGroup.Description().Min = 0
+	ch.paramRegexpGroup.Description().Max = 100
+	ch.paramRegexpGroup.Description().Default = 0
+	ch.AddMasterParam(ch.paramRegexpGroup)
+
+	// level change
+	ch.dimmerChannel.OnSetLevel = func(value float64) bool {
+		if value != 0.0 {
+			// remember previous dimmer level
+			ch.oldLevel = value
+		}
+		ch.publishToMQTT(value)
+		return true
+	}
+
+	// set old level
+	ch.dimmerChannel.OnSetOldLevel = func() bool {
+		// restore previous dimmer level
+		ch.dimmerChannel.SetLevel(ch.oldLevel)
+		ch.publishToMQTT(ch.oldLevel)
+		return true
+	}
+
+	// clean up
+	ch.dimmerChannel.OnDispose = ch.stop
+
+	// store master param on PutParamset, reregister topics
+	ch.MasterParamset().HandlePutParamset(func() {
+		ch.stop()
+		ch.storeMasterParamset()
+		ch.start()
+	})
+
+	// load master parameters from config
+	ch.loadMasterParamset()
+
+	// register topics
+	ch.Lock()
+	defer ch.Unlock()
+	ch.start()
+	return ch
+}
+
 func newExtractorKindParameter(id string) *vdevices.IntParameter {
 	p := vdevices.NewIntParameter(id)
 	p.Description().Type = itf.ParameterTypeEnum
 	// align with extractorKind constants
-	p.Description().ValueList = []string{"AFTER", "BEFORE", "REGEXP", "ALL"}
+	p.Description().ValueList = []string{"AFTER", "BEFORE", "REGEXP", "ALL", "TEMPLATE"}
 	p.Description().Min = 0
 	p.Description().Max = len(p.Description().ValueList) - 1
 	p.Description().Default = 0
@@ -659,14 +868,19 @@ const (
 	ExtractorBefore
 	ExtractorRegexp
 	ExtractorAll
+	ExtractorTemplate
 )
 
-type extractor struct {
+type extractor interface {
+	Extract(payload []byte) (float64, error)
+}
+
+type extractorRegexp struct {
 	regexp   *regexp.Regexp
 	groupIdx int
 }
 
-func (e *extractor) Extract(payload []byte) (float64, error) {
+func (e *extractorRegexp) Extract(payload []byte) (float64, error) {
 	groups := e.regexp.FindStringSubmatch(string(payload))
 	if groups == nil {
 		return 0.0, fmt.Errorf("Regexp does not match: %s", payload)
@@ -676,9 +890,55 @@ func (e *extractor) Extract(payload []byte) (float64, error) {
 	}
 	fval, err := strconv.ParseFloat(groups[e.groupIdx], 64)
 	if err != nil {
-		return 0.0, fmt.Errorf("Not a valid number literal: %s", groups[e.groupIdx])
+		return 0.0, fmt.Errorf("Regexp returned invalid number literal: %s", groups[e.groupIdx])
 	}
 	return fval, nil
+}
+
+func newExtractorRegexp(pattern string, groupIdx int) (extractor, error) {
+	log.Tracef("Creating extractor with regular expression %s and group %d", pattern, groupIdx)
+	regexp, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, fmt.Errorf("Invalid regular expression: %s", pattern)
+	}
+	return &extractorRegexp{regexp: regexp, groupIdx: groupIdx}, nil
+}
+
+type extractorTmpl struct {
+	tmpl *template.Template
+}
+
+var tmplFuncs = template.FuncMap{
+	"round": math.Round,
+	"parseJSON": func(str string) (interface{}, error) {
+		var obj interface{}
+		err := json.Unmarshal([]byte(str), &obj)
+		if err != nil {
+			return nil, err
+		}
+		return obj, nil
+	},
+}
+
+func (e *extractorTmpl) Extract(payload []byte) (float64, error) {
+	var sb strings.Builder
+	err := e.tmpl.Execute(&sb, string(payload))
+	if err != nil {
+		return 0.0, fmt.Errorf("Template execution failed for payload '%s': %v", string(payload), err)
+	}
+	fval, err := strconv.ParseFloat(sb.String(), 64)
+	if err != nil {
+		return 0.0, fmt.Errorf("Template returned invalid number literal: %s", sb.String())
+	}
+	return fval, nil
+}
+
+func newExtractorTmpl(pattern string) (extractor, error) {
+	tmpl, err := template.New("").Funcs(tmplFuncs).Parse(pattern)
+	if err != nil {
+		return nil, fmt.Errorf("Invalid template '%s': %v", pattern, err)
+	}
+	return &extractorTmpl{tmpl: tmpl}, nil
 }
 
 const (
@@ -689,31 +949,24 @@ const (
 )
 
 func newExtractor(kindParam *vdevices.IntParameter, patternParam *vdevices.StringParameter,
-	groupParam *vdevices.IntParameter) (*extractor, error) {
+	groupParam *vdevices.IntParameter) (extractor, error) {
 	kind := extractorKind(kindParam.Value().(int))
 	pattern := patternParam.Value().(string)
 	groupIdx := groupParam.Value().(int)
 	switch kind {
 	case ExtractorAfter:
-		pattern = regexp.QuoteMeta(pattern) + skipPattern + numberPattern
-		groupIdx = 1
+		return newExtractorRegexp(regexp.QuoteMeta(pattern)+skipPattern+numberPattern, 1)
 	case ExtractorBefore:
-		pattern = numberPattern + skipPattern + regexp.QuoteMeta(pattern)
-		groupIdx = 1
+		return newExtractorRegexp(numberPattern+skipPattern+regexp.QuoteMeta(pattern), 1)
 	case ExtractorRegexp:
-		// change nothing
+		return newExtractorRegexp(pattern, groupIdx)
 	case ExtractorAll:
-		pattern = startWSPattern + numberPattern + endWSPattern
-		groupIdx = 1
+		return newExtractorRegexp(startWSPattern+numberPattern+endWSPattern, 1)
+	case ExtractorTemplate:
+		return newExtractorTmpl(pattern)
 	default:
 		return nil, fmt.Errorf("Invalid extractor kind: %d", kind)
 	}
-	log.Tracef("Creating extractor with regular expression %s and group %d", pattern, groupIdx)
-	regexp, err := regexp.Compile(pattern)
-	if err != nil {
-		return nil, fmt.Errorf("Invalid regular expression: %s", pattern)
-	}
-	return &extractor{regexp: regexp, groupIdx: groupIdx}, nil
 }
 
 func newMatcherKindParameter(id string) *vdevices.IntParameter {

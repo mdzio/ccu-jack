@@ -235,6 +235,7 @@ const (
 	ChannelMQTTSwitchFeedback
 	ChannelMQTTAnalogReceiver
 	ChannelMQTTDoorSensor
+	ChannelMQTTDimmer
 )
 
 var (
@@ -251,6 +252,7 @@ var (
 		ChannelMQTTSwitchFeedback: "MQTT_SWITCH_FEEDBACK",
 		ChannelMQTTAnalogReceiver: "MQTT_ANALOG_RECEIVER",
 		ChannelMQTTDoorSensor:     "MQTT_DOOR_SENSOR",
+		ChannelMQTTDimmer:         "MQTT_DIMMER",
 	}
 	errChannelKind = errors.New("invalid channel kind identifier")
 )

@@ -19,6 +19,7 @@ function ChannelKindSelect() {
                 m("option[value=MQTT_SWITCH_FEEDBACK]", { selected: channel.Kind === "MQTT_SWITCH_FEEDBACK" }, "MQTT Schaltaktor mit Rückmeldung"),
                 m("option[value=MQTT_ANALOG_RECEIVER]", { selected: channel.Kind === "MQTT_ANALOG_RECEIVER" }, "MQTT Analogwertempfänger"),
                 m("option[value=MQTT_DOOR_SENSOR]", { selected: channel.Kind === "MQTT_DOOR_SENSOR" }, "MQTT Fenster-/Türkontakt"),
+                m("option[value=MQTT_DIMMER]", { selected: channel.Kind === "MQTT_DIMMER" }, "MQTT Dimmer"),
             )
         }
     }
