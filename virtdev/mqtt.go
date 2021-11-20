@@ -309,8 +309,13 @@ type mqttSwitchFeedback struct {
 }
 
 func (c *mqttSwitchFeedback) start() {
-	topic := c.paramFBTopic.Value().(string)
-	if topic != "" {
+	fbTopic := c.paramFBTopic.Value().(string)
+	if fbTopic != "" {
+		cmdTopic := c.paramCommandTopic.Value().(string)
+		if matchTopic(fbTopic, cmdTopic) {
+			log.Errorf("Feedback topic '%s' must not overlap with command topic '%s'", fbTopic, cmdTopic)
+			return
+		}
 		onMatcher, err := newMatcher(c.paramMatcherKind, c.paramOnPattern)
 		if err != nil {
 			log.Errorf("Creation of matcher for 'on' failed: %v", err)
@@ -342,10 +347,10 @@ func (c *mqttSwitchFeedback) start() {
 			}
 			return nil
 		}
-		if err := c.mqttServer.Subscribe(topic, message.QosExactlyOnce, &c.onPublish); err != nil {
-			log.Errorf("Subscribe failed on topic %s: %v", topic, err)
+		if err := c.mqttServer.Subscribe(fbTopic, message.QosExactlyOnce, &c.onPublish); err != nil {
+			log.Errorf("Subscribe failed on topic %s: %v", fbTopic, err)
 		} else {
-			c.subscribedTopic = topic
+			c.subscribedTopic = fbTopic
 		}
 	}
 }
@@ -679,8 +684,13 @@ func (c *mqttDimmer) start() {
 	}
 	c.template = tmpl
 
-	c.subscribedTopic = c.paramFBTopic.Value().(string)
-	if c.subscribedTopic != "" {
+	fbTopic := c.paramFBTopic.Value().(string)
+	if fbTopic != "" {
+		cmdTopic := c.paramCommandTopic.Value().(string)
+		if matchTopic(fbTopic, cmdTopic) {
+			log.Errorf("Feedback topic '%s' must not overlap with command topic '%s'", fbTopic, cmdTopic)
+			return
+		}
 		extractor, err := newExtractor(c.paramExtractorKind, c.paramPattern, c.paramRegexpGroup)
 		if err != nil {
 			log.Errorf("Creation of value extractor for MQTT dimmer %s:%d failed: %v", c.Description().Parent,
@@ -704,7 +714,12 @@ func (c *mqttDimmer) start() {
 			c.dimmerChannel.SetLevel(mappedValue)
 			return nil
 		}
-		c.mqttServer.Subscribe(c.subscribedTopic, message.QosExactlyOnce, &c.onPublish)
+		if err := c.mqttServer.Subscribe(fbTopic, message.QosExactlyOnce, &c.onPublish); err != nil {
+			log.Errorf("Subscribe failed on topic %s: %v", fbTopic, err)
+		} else {
+			c.subscribedTopic = fbTopic
+		}
+
 	}
 }
 
@@ -1033,4 +1048,24 @@ type matcherRegexp struct {
 
 func (m *matcherRegexp) Match(payload []byte) bool {
 	return m.regexp.Match(payload)
+}
+
+func matchLevels(pattern []string, topic []string) bool {
+	if len(pattern) == 0 {
+		return len(topic) == 0
+	}
+	if len(topic) == 0 {
+		return pattern[0] == "#"
+	}
+	if pattern[0] == "#" {
+		return true
+	}
+	if (pattern[0] == topic[0]) || (pattern[0] == "+") {
+		return matchLevels(pattern[1:], topic[1:])
+	}
+	return false
+}
+
+func matchTopic(pattern, topic string) bool {
+	return matchLevels(strings.Split(pattern, "/"), strings.Split(topic, "/"))
 }
