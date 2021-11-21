@@ -16,6 +16,7 @@ Taster              | 2.0.11     | Taster (wie die virtuellen Taster in der CCU)
 Schaltaktor         | 2.0.11     | Schaltaktor (wie HM-LC-Sw1-Pl)
 Analogeingang       | 2.0.11     | Analogeingang (wie HmIP-MIO16-PCB Kanal 1, aber der Eingang kann zusätzlich von der CCU oder von extern _gesetzt_ werden)
 Tür-/Fensterkontakt | 2.0.47     | Tür-/Fensterkontakt (wie HM-Sec-SC-2)
+Dimmer              | demnächst  | Dimmer (wie HM-LC-Dim1TPBU-FM)
 
 ## MQTT-Geräte (Senden und Empfangen von MQTT-Nachrichten)
 
@@ -40,6 +41,7 @@ MQTT Schaltaktor                 | 2.0.31     | Schaltaktor zum Senden von MQTT-
 MQTT Schaltaktor mit Rückmeldung | 2.0.31     | Zusätzlich wird der Status des Schaltaktors durch empfangene MQTT-Nachrichten aktualisiert.
 MQTT Analogwertempfänger         | 2.0.31     | Ein Zahlenwert wird aus der MQTT-Nachricht extrahiert und als Analogwert zur Verfügung gestellt.
 MQTT Fenster-/Türkontakt         | 2.0.47     | Fenster-/Türkontakt zum Empfangen von MQTT-Nachrichten
+MQTT Dimmer                      | demnächst  | Dimmer zum Senden und Empfangen von MQTT-Nachrichten mit einem Dimmwert (wie HM-LC-Dim1TPBU-FM)
 
 ### MQTT Sendetaster
 
@@ -115,20 +117,23 @@ Name              | Bedeutung
 ------------------|-------------------------------------------------------------------------------
 TOPIC             | MQTT-Topic für die zu empfangenden Nachrichten. Die Platzhalter + und # werden unterstützt.
 PATTERN           | Suchmuster für den Zahlenwert in der MQTT-Payload (abhängig von EXTRACTOR)
-EXTRACTOR         | (AFTER: Der nächstliegende Zahlenwert hinter dem Suchmuster wird verwendet; BEFORE: Der nächstliegende Zahlenwert vor dem Suchmuster wird verwendet; REGEXP: Das Suchmuster ist ein regulärer Ausdruck. Der Zahlenwert befindet sich in der Gruppe mit der Nummer REGEXP_GROUP; ALL: Die ganze MQTT-Payload wird als Zahlenwert interpretiert.)
+EXTRACTOR         | Methode für die Extraktion des Zahlenwertes (AFTER: Der nächstliegende Zahlenwert hinter dem Suchmuster wird verwendet; BEFORE: Der nächstliegende Zahlenwert vor dem Suchmuster wird verwendet; REGEXP: Das Suchmuster ist ein regulärer Ausdruck. Der Zahlenwert befindet sich in der Gruppe mit der Nummer REGEXP_GROUP; ALL: Die ganze MQTT-Payload wird als Zahlenwert interpretiert; TEMPLATE: Eine Vorlage im Parameter PATTERN dient zur Abbildung der MQTT-Payload auf einen Zahlenwert.)
 REGEXP_GROUP      | Nummer der zu verwendenden Gruppe des regulären Ausdrucks, wenn EXTRACTOR auf REGEXP gesetzt ist. 
 
 Beispiele:
 
-EXTRACTOR | PATTERN           | REGEXP_GROUP | MQTT-Payload                   | Extrahierter Zahlenwert | Bemerkungen
-----------|-------------------|--------------|--------------------------------|-------------------------|--------------------
-BEFORE    | cm                | 0            | 100 l 52 cm                    | 52,0                    | REGEXP_GROUP ist egal.
-AFTER     | Vcc               | 0            | { "Vcc": 3.3, "Version": 2.2 } | 3,3                     | REGEXP_GROUP ist egal. 
-REGEXP    | (\S+) (\S+) (\S+) | 1            | 123 543.31 21.3                | 123,0                   | 1. Zahl wird extrahiert.
-REGEXP    | (\S+) (\S+) (\S+) | 2            | 123 543.31 21.3                | 543,31                  | 2. Zahl wird extrahiert.
-ALL       |                   | 0            |      -7.                       | -7,0                    | REGEXP_GROUP und PATTERN sind egal. 
+EXTRACTOR | PATTERN             | REGEXP_GROUP  | MQTT-Payload                   | Extrahierter Zahlenwert | Bemerkungen
+----------|---------------------|---------------|--------------------------------|-------------------------|--------------------
+BEFORE    | `cm`                | 0             | 100 l 52 cm                    | 52,0                    | REGEXP_GROUP ist egal.
+AFTER     | `Vcc`               | 0             | { "Vcc": 3.3, "Version": 2.2 } | 3,3                     | REGEXP_GROUP ist egal. 
+REGEXP    | `(\S+) (\S+) (\S+)` | 1             | 123 543.31 21.3                | 123,0                   | 1. Zahl wird extrahiert.
+REGEXP    | `(\S+) (\S+) (\S+)` | 2             | 123 543.31 21.3                | 543,31                  | 2. Zahl wird extrahiert.
+ALL       |                     | 0             |      -7.                       | -7,0                    | REGEXP_GROUP und PATTERN sind egal. 
+TEMPLATE  | `{{$:=parseJSON .}}{{$.a.b.c}}` | 0 | {"a":{"b":{"c":55.5}}}         | 55,5                    | REGEXP_GROUP ist egal.
 
 Für reguläre Ausdrücke werden die üblichen Operatoren und Zeichenklassen unterstützt. Weitere Informationen sind in der [Spezifikation](https://github.com/google/re2/wiki/Syntax) zu finden.
+
+Informationen zur Methode `TEMPLATE` sind zurzeit nur in der zugehörigen [Entwicklerdokumentation](https://pkg.go.dev/text/template) zu finden. Folgende zusätzliche Funktionen stehen zur Verfügung: `parseJSON`, `round`.
 
 ### MQTT Fenster-/Türkontakt (ab v2.0.47)
 
@@ -142,3 +147,33 @@ TOPIC             | MQTT-Topic für die Statusmeldungen. Die Platzhalter + und #
 MATCHER           | Vergleichsfunktion für die Überprüfung der Payload mit dem Prüfmuster (EXACT: Die Payload muss dem Prüfmuster entsprechen; CONTAINS: In der Payload muss das Prüfmuster enthalten sein; REGEXP: Das Prüfmuster ist ein regulärer Ausdruck, der zutreffen muss.)
 OPEN_PATTERN      | Prüfmuster für die MQTT-Payload für den geöffneten Zustand (abhängig von MATCHER)
 CLOSED_PATTERN    | Prüfmuster für die MQTT-Payload für den geschossenen Zustand (abhängig von MATCHER)
+
+### MQTT Dimmer (demnächst)
+
+(In Arbeit)
+
+Liste der Einstellungsparameter:
+
+Name              | Bedeutung
+------------------|-------------------------------------------------------------------------------
+RANGE_MIN         | Gerätewert für Dimmwert 0%
+RANGE_MAX         | Gerätewert für Dimmwert 100%
+COMMAND_TOPIC     | MQTT-Topic für das Setzen des Dimmwertes
+RETAIN            | Der MQTT-Server soll die zuletzt gesendete Nachricht speichern.
+TEMPLATE          | Vorlage für die Erstellung der MQTT-Payload
+FEEDBACK_TOPIC    | MQTT-Topic für die Rückmeldung des tatsächlichen Dimmwerts. Die Platzhalter + und # werden unterstützt. (Optional)
+PATTERN           | siehe MQTT Analogwertempfänger
+EXTRACTOR         | siehe MQTT Analogwertempfänger
+REGEXP_GROUP      | siehe MQTT Analogwertempfänger
+
+#### Vorlage für die Erstellung der MQTT-Payload
+
+Im Einstellungsparameter `TEMPLATE` wird die Vorlage für die Erstellung der MQTT-Payload angegeben. In den folgenden Beispielen wird der zu sendende Dimmwert 55,5% und RANGE_MIN=0 und RANGE_MAX=100,0 angenommen.
+
+TEMPLATE                | Ausgabe
+------------------------|------------------------------------------------
+`{{.}}`                 | 55.5
+`{{.\|round}}`          | 56
+`{"brightness":{{.}}}`  | {"brightness":55.5}
+
+Weitere Informationen sind zurzeit nur in der zugehörigen [Entwicklerdokumentation](https://pkg.go.dev/text/template) zu finden. Folgende zusätzliche Funktionen stehen zur Verfügung: `parseJSON`, `round`.
