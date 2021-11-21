@@ -176,4 +176,4 @@ TEMPLATE                | Ausgabe
 `{{.\|round}}`          | 56
 `{"brightness":{{.}}}`  | {"brightness":55.5}
 
-Weitere Informationen sind zurzeit nur in der zugehörigen [Entwicklerdokumentation](https://pkg.go.dev/text/template) zu finden. Folgende zusätzliche Funktionen stehen zur Verfügung: `parseJSON`, `round`.
+Weitere Informationen sind zurzeit nur in der zugehörigen [Entwicklerdokumentation](https://pkg.go.dev/text/template) zu finden. Folgende zusätzliche Funktionen stehen zur Verfügung: `parseJSON` (hier nicht sinnvoll), `round`.
