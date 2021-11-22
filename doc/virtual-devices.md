@@ -129,7 +129,7 @@ AFTER     | `Vcc`               | 0             | { "Vcc": 3.3, "Version": 2.2 }
 REGEXP    | `(\S+) (\S+) (\S+)` | 1             | 123 543.31 21.3                | 123,0                   | 1. Zahl wird extrahiert.
 REGEXP    | `(\S+) (\S+) (\S+)` | 2             | 123 543.31 21.3                | 543,31                  | 2. Zahl wird extrahiert.
 ALL       |                     | 0             |      -7.                       | -7,0                    | REGEXP_GROUP und PATTERN sind egal. 
-TEMPLATE  | `{{$:=parseJSON .}}{{$.a.b.c}}` | 0 | {"a":{"b":{"c":55.5}}}         | 55,5                    | REGEXP_GROUP ist egal.
+TEMPLATE  | `{{(parseJSON .).a.b.c}}` | 0       | {"a":{"b":{"c":55.5}}}         | 55,5                    | REGEXP_GROUP ist egal.
 
 Für reguläre Ausdrücke werden die üblichen Operatoren und Zeichenklassen unterstützt. Weitere Informationen sind in der [Spezifikation](https://github.com/google/re2/wiki/Syntax) zu finden.
 
