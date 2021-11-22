@@ -43,7 +43,7 @@ MQTT Analogwertempfänger         | 2.0.31     | Ein Zahlenwert wird aus der MQT
 MQTT Fenster-/Türkontakt         | 2.0.47     | Fenster-/Türkontakt zum Empfangen von MQTT-Nachrichten
 MQTT Dimmer                      | demnächst  | Dimmer zum Senden und Empfangen von MQTT-Nachrichten mit einem Dimmwert (wie HM-LC-Dim1TPBU-FM)
 
-### MQTT Sendetaster
+### MQTT-Sendetaster
 
 Der MQTT-Sendetaster sendet konfigurierbare MQTT-Nachrichten.
 
@@ -58,7 +58,7 @@ LONG_TOPIC        | s.o., für langen Tastendruck
 LONG_PAYLOAD      | s.o., für langen Tastendruck
 LONG_RETAIN       | s.o., für langen Tastendruck
 
-### MQTT Empfangstaster
+### MQTT-Empfangstaster
 
 Der MQTT-Empfangstaster löst einen Tastendruck beim Empfang einer MQTT-Nachricht aus.
 
@@ -75,7 +75,7 @@ LONG_MATCHER      | s.o., für langen Tastendruck
 
 Für reguläre Ausdrücke werden die üblichen Operatoren und Zeichenklassen unterstützt. Weitere Informationen sind in der [Spezifikation](https://github.com/google/re2/wiki/Syntax) zu finden.
 
-### MQTT Schaltaktor                
+### MQTT-Schaltaktor                
 
 MQTT-Schaltaktor sendet beim Ein- oder Ausschalten jeweils eine MQTT-Nachricht.
 
@@ -88,7 +88,7 @@ RETAIN            | Der MQTT-Server soll die zuletzt gesendete Nachricht speiche
 ON_PAYLOAD        | MQTT-Payload für das Einschalten
 OFF_PAYLOAD       | MQTT-Payload für das Ausschalten
 
-### MQTT Schaltaktor mit Rückmeldung
+### MQTT-Schaltaktor mit Rückmeldung
 
 MQTT-Schaltaktor sendet ebenfalls beim Ein- oder Ausschalten jeweils eine MQTT-Nachricht. Der Zustand wird aber erst aktualisiert, wenn eine Rückmeldung vom MQTT-Gerät eingeht.
 
@@ -107,7 +107,7 @@ OFF_PATTERN       | Prüfmuster für die MQTT-Payload für den ausgeschalteten Z
 
 Für reguläre Ausdrücke werden die üblichen Operatoren und Zeichenklassen unterstützt. Weitere Informationen sind in der [Spezifikation](https://github.com/google/re2/wiki/Syntax) zu finden.
 
-### MQTT Analogwertempfänger        
+### MQTT-Analogwertempfänger        
 
 Der MQTT-Analogwertempfänger extrahiert aus der MQTT-Payload eine als Text übertragene Zahl und stellt sie als Analogwert der CCU zur Verfügung. Diese kann optional ein . (Punkt) als Dezimaltrennzeichen enthalten. Falls die Zahl nicht extrahiert werden kann, so wird der Status vom Analogwert auf _Überlauf_ gesetzt.
 
@@ -135,7 +135,7 @@ Für reguläre Ausdrücke werden die üblichen Operatoren und Zeichenklassen unt
 
 Informationen zur Methode `TEMPLATE` sind zurzeit nur in der zugehörigen [Entwicklerdokumentation](https://pkg.go.dev/text/template) zu finden. Folgende zusätzliche Funktionen stehen zur Verfügung: `parseJSON`, `round`.
 
-### MQTT Fenster-/Türkontakt (ab v2.0.47)
+### MQTT-Fenster-/Türkontakt (ab v2.0.47)
 
 Der Zustand des virtuellen Fenster-/Türkontakts wird aktualisiert, wenn eine Nachricht vom MQTT-Gerät empfangen wird.
 
@@ -148,9 +148,9 @@ MATCHER           | Vergleichsfunktion für die Überprüfung der Payload mit de
 OPEN_PATTERN      | Prüfmuster für die MQTT-Payload für den geöffneten Zustand (abhängig von MATCHER)
 CLOSED_PATTERN    | Prüfmuster für die MQTT-Payload für den geschossenen Zustand (abhängig von MATCHER)
 
-### MQTT Dimmer (demnächst)
+### MQTT-Dimmer (demnächst)
 
-(In Arbeit)
+Mit dem MQTT-Dimmer kann ein Analogwert/Zahlenwert per MQTT gesendet werden. Der Wertebereich kann mit den Einstellungsparametern `RANGE_MIN` und `RANGE_MAX` angepasst werden. Die Parameter `COMMAND_TOPIC`, `RETAIN` und `TEMPLATE` enthalten die nötigen Informationen zum Senden der MQTT-Nachricht. Durch die (optionale) Angabe der Parameter `FEEDBACK_TOPIC`, `PATTERN`, `EXTRACTOR` und `REGEXP_GROUP` kann der gespeicherte Wert in der CCU durch das MQTT-Gerät auch aktualisiert werden.
 
 Liste der Einstellungsparameter:
 
@@ -162,13 +162,13 @@ COMMAND_TOPIC     | MQTT-Topic für das Setzen des Dimmwertes
 RETAIN            | Der MQTT-Server soll die zuletzt gesendete Nachricht speichern.
 TEMPLATE          | Vorlage für die Erstellung der MQTT-Payload
 FEEDBACK_TOPIC    | MQTT-Topic für die Rückmeldung des tatsächlichen Dimmwerts. Die Platzhalter + und # werden unterstützt. (Optional)
-PATTERN           | siehe MQTT Analogwertempfänger
-EXTRACTOR         | siehe MQTT Analogwertempfänger
-REGEXP_GROUP      | siehe MQTT Analogwertempfänger
+PATTERN           | siehe MQTT Analogwertempfänger (Optional)
+EXTRACTOR         | siehe MQTT Analogwertempfänger (Optional)
+REGEXP_GROUP      | siehe MQTT Analogwertempfänger (Optional)
 
 #### Vorlage für die Erstellung der MQTT-Payload
 
-Im Einstellungsparameter `TEMPLATE` wird die Vorlage für die Erstellung der MQTT-Payload angegeben. In den folgenden Beispielen wird der zu sendende Dimmwert 55,5% und RANGE_MIN=0 und RANGE_MAX=100,0 angenommen.
+Im Einstellungsparameter `TEMPLATE` wird die Vorlage für die Erstellung der MQTT-Payload angegeben. In den folgenden Beispielen wird ein zu sendender Dimmwert von 55,5% und RANGE_MIN=0 und RANGE_MAX=100,0 angenommen.
 
 TEMPLATE                | Ausgabe
 ------------------------|------------------------------------------------
@@ -176,4 +176,4 @@ TEMPLATE                | Ausgabe
 `{{.\|round}}`          | 56
 `{"brightness":{{.}}}`  | {"brightness":55.5}
 
-Weitere Informationen sind zurzeit nur in der zugehörigen [Entwicklerdokumentation](https://pkg.go.dev/text/template) zu finden. Folgende zusätzliche Funktionen stehen zur Verfügung: `parseJSON` (hier nicht sinnvoll), `round`.
+Weitere Informationen sind zurzeit nur in der zugehörigen [Entwicklerdokumentation](https://pkg.go.dev/text/template) zu finden. Folgende zusätzliche Funktionen stehen zur Verfügung: `parseJSON` (nur für den Empfang sinnvoll), `round`.
