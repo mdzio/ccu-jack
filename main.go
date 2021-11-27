@@ -253,13 +253,14 @@ func runBase() error {
 
 	// CORS handler for VEAP
 	allowedMethods := handlers.AllowedMethods([]string{http.MethodGet, http.MethodPut})
+	allowedHeaders := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
 	if len(cfg.HTTP.CORSOrigins) == 0 {
-		handler = handlers.CORS(allowedMethods)(handler)
+		handler = handlers.CORS(allowedMethods, allowedHeaders)(handler)
 	} else {
 		allowedOrigins := handlers.AllowedOrigins(cfg.HTTP.CORSOrigins)
 		// only if origin is specified, credentials are allowed (CORS spec)
 		allowCredentials := handlers.AllowCredentials()
-		handler = handlers.CORS(allowedMethods, allowedOrigins, allowCredentials)(handler)
+		handler = handlers.CORS(allowedMethods, allowedOrigins, allowCredentials, allowedHeaders)(handler)
 	}
 
 	// register VEAP handler
