@@ -245,13 +245,14 @@ function Config() {
     }
 
     function viewUsers() {
-        var users = Object.values(config.Users).sort(function (a, b) {
+        const users = Object.values(config.Users).sort(function (a, b) {
             return a.Identifier.toLowerCase().localeCompare(b.Identifier.toLowerCase())
         })
+        const allowAll = !users.some(u => u.Active)
         return [
-            users.length == 0 &&
+            allowAll &&
             m(".toast.toast-warning",
-                m("p", "Da keine Zugriffsberechtigungen gesetzt sind, besteht Vollzugriff für unangemeldete Benutzer!")
+                m("p", "Da keine aktiven Benutzer existieren, besteht Vollzugriff für unangemeldete Benutzer!")
             ),
             users.length > 0 &&
             m("table.table",

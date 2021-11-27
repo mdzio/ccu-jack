@@ -29,14 +29,21 @@ func (h *HTTPAuthHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	var allowAll bool
 	var user *rtcfg.User
 	h.Store.View(func(c *rtcfg.Config) error {
-		allowAll = len(c.Users) == 0
+		allowAll = true
+		// search an active user
+		for _, u := range c.Users {
+			if u.Active {
+				allowAll = false
+				break
+			}
+		}
 		if !allowAll {
 			user = c.Authenticate(rtcfg.EndpointVEAP, name, passwd)
 		}
 		return nil
 	})
 
-	// if no user is configured, allow everything for every user
+	// if no activve user is configured, allow everything for every user
 	if allowAll {
 		h.Handler.ServeHTTP(rw, req)
 		return
