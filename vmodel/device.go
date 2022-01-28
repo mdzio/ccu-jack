@@ -15,7 +15,7 @@ import (
 
 const (
 	// A buffer is needed for buffering events while exploring.
-	notifBufferSize = 1000
+	notifBufferSize = 2000
 
 	// delay between XMLRPC requests while exploring
 	xmlRPCDelay = 50 * time.Millisecond
@@ -317,7 +317,7 @@ func (d *DeviceCol) sendNotification(n *deviceNotif) {
 		// send ok
 	default:
 		// channel full
-		deviceLog.Errorf("Notification lost, buffer size is too small: %d", notifBufferSize)
+		deviceLog.Debugf("Notification lost, buffer size is too small: %d", notifBufferSize)
 	}
 }
 
