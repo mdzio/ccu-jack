@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	// A buffer is needed for buffering events while exploring.
-	notifBufferSize = 2000
+	// A buffer is needed for buffering events while exploring. Estimation: An
+	// installation with 400 (!) HM-IP devices requires a size of approx. 1600.
+	notifBufferSize = 3000
 
 	// delay between XMLRPC requests while exploring
 	xmlRPCDelay = 50 * time.Millisecond
