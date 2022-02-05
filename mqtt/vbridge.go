@@ -36,8 +36,8 @@ const (
 	virtDevVeapPath = "/virtdev"
 )
 
-// Bridge connects MQTT and VEAP.
-type Bridge struct {
+// VEAPBridge connects MQTT and VEAP.
+type VEAPBridge struct {
 	// MQTT server
 	Server *Server
 
@@ -51,7 +51,7 @@ type Bridge struct {
 }
 
 // Start starts the MQTT/VEAP-Bridge.
-func (b *Bridge) Start() {
+func (b *VEAPBridge) Start() {
 	// subscribe set device topics
 	b.onSetDevice = func(msg *message.PublishMessage) error {
 		log.Tracef("Set device message received: %s, %s", msg.Topic(), msg.Payload())
@@ -103,7 +103,7 @@ func (b *Bridge) Start() {
 }
 
 // Stop stops the MQTT/VEAP-Bridge.
-func (b *Bridge) Stop() {
+func (b *VEAPBridge) Stop() {
 	// stop adapter
 	b.prgAdapter.stop()
 	b.sysVarAdapter.stop()

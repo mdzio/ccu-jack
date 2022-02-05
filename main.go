@@ -59,6 +59,7 @@ var (
 	configVar    *vmodel.Config
 	modelService *model.Service
 	mqttServer   *mqtt.Server
+	mqttBridge   *mqtt.Bridge
 
 	// application services
 	virtualDevices   *virtdev.VirtualDevices
@@ -134,6 +135,10 @@ func message() {
 	log.Info("  MQTT port: ", cfg.MQTT.Port)
 	log.Info("  Secure MQTT port: ", cfg.MQTT.PortTLS)
 	log.Info("  MQTT web socket path: ", cfg.MQTT.WebSocketPath)
+	if cfg.MQTT.Bridge.Enable {
+		log.Info("  MQTT bridge address: ", cfg.MQTT.Bridge.Address)
+		log.Info("  MQTT bridge port: ", cfg.MQTT.Bridge.Port)
+	}
 	log.Info("  Generate certificates: ", cfg.Certificates.AutoGenerate)
 	log.Infof("  Certificate files: %s, %s, %s, %s", cfg.Certificates.CACertFile, cfg.Certificates.CAKeyFile,
 		cfg.Certificates.ServerCertFile, cfg.Certificates.ServerKeyFile)
@@ -289,6 +294,13 @@ func runBase() error {
 	}
 	http.Handle(cfg.MQTT.WebSocketPath, mqttWs)
 
+	// start MQTT bridge
+	mqttBridge = &mqtt.Bridge{
+		EmbeddedServer: mqttServer,
+	}
+	mqttBridge.Start(&cfg.MQTT.Bridge)
+	defer mqttBridge.Stop()
+
 	// release config before going to next run level
 	store.RUnlock()
 
@@ -386,7 +398,7 @@ func runApp() error {
 	defer prgCol.Stop()
 
 	// setup and start MQTT/VEAP bridge
-	mqttVeapBridge := &mqtt.Bridge{
+	mqttVeapBridge := &mqtt.VEAPBridge{
 		Server:  mqttServer,
 		Service: modelService,
 	}

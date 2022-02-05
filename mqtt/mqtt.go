@@ -97,8 +97,8 @@ func (b *Server) Start() {
 
 // Stop stops the MQTT server.
 func (b *Server) Stop() {
-	// stop broker
-	log.Debugf("Stopping MQTT broker")
+	// stop server
+	log.Debugf("Stopping MQTT server")
 	_ = b.server.Close()
 
 	// wait for stop

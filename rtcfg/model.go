@@ -103,6 +103,28 @@ type MQTT struct {
 	Port          int
 	PortTLS       int
 	WebSocketPath string
+	Bridge        MQTTBridge
+}
+
+// MQTTBridge configuration
+type MQTTBridge struct {
+	Enable       bool
+	Address      string
+	Port         int
+	Username     string
+	Password     string
+	ClientID     string
+	CleanSession bool
+	Incoming     []MQTTSharedTopic
+	Outgoing     []MQTTSharedTopic
+}
+
+// MQTTSharedTopic configuration
+type MQTTSharedTopic struct {
+	Pattern      string
+	LocalPrefix  string
+	RemotePrefix string
+	QoS          byte
 }
 
 // BINRPC configuration for CUxD support
