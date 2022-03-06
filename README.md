@@ -2,9 +2,13 @@
 
 CCU-Jack bietet einen einfachen und sicheren **REST**- und **MQTT**-basierten Zugriff auf die Datenpunkte der Zentrale (CCU) des [Hausautomations-Systems](http://de.wikipedia.org/wiki/Hausautomation) HomeMatic der Firma [eQ-3](http://www.eq-3.de/). Er implementiert dafür das [Very Easy Automation Protocol](https://github.com/mdzio/veap), welches von vielen Programmiersprachen leicht verwendet werden kann, und das [MQTT-Protokoll](https://de.wikipedia.org/wiki/MQTT), welches im Internet-of-Things weit verbreitet ist. Zudem können mit den genannten Protokollen auch Fremdgeräte an die CCU angebungen werden.
 
-**Erstes Ziel vom CCU-Jack ist es, für andere Applikationen einen möglichst einfachen Zugriff auf die Datenpunkte der CCU zu ermöglichen.** Beispielsweise werden für den Zugriff auf eine CCU mit HM-, HM-Wired- und HM-IP-Geräten insgesamt 9 Netzwerkverbindung, teilweise als Rückkanal und mit unterschiedlichen Protokollen, benötigt. Zudem sind die Netzwerkschnittstellen der CCU unverschlüsselt, wodurch sie nicht in der Firewall der CCU freigeschaltet werden sollten. Der CCU-Jack standardisiert den Zugriff auf alle Geräte und Systemvariablen mit einem einheitlichen Protokoll und über eine verschlüsselte Verbindung.
+Folgende Ziele verfolgt der CCU-Jack:
 
-**Das zweite Ziel ist, möglichst einfach Fremdgeräte (z.B. WLAN-Steckdosen) an die CCU anzubinden und mit dieser zu automatisieren.** Angebundenen Fremdgeräte werden auf der CCU wie originale HM-Geräte dargestellt. Sie können über die Web-UI der CCU genauso bedient und beobachtet werden. Zudem können sie ohne Einschränkungen in CCU-Programmen verwendet werden.
+**Der CCU-Jack soll anderen Applikationen einen einfachen Zugriff auf die Datenpunkte der CCU ermöglichen.** Beispielsweise werden für den Zugriff auf eine CCU mit HM-, HM-Wired- und HM-IP-Geräten insgesamt 9 Netzwerkverbindung, teilweise als Rückkanal und mit unterschiedlichen Protokollen, benötigt. Zudem sind die Netzwerkschnittstellen der CCU unverschlüsselt, wodurch sie nicht in der Firewall der CCU freigeschaltet werden sollten. Der CCU-Jack standardisiert den Zugriff auf alle Geräte und Systemvariablen mit einem einheitlichen Protokoll und über eine verschlüsselte Verbindung.
+
+**Zudem sollen möglichst einfach Fremdgeräte (z.B. WLAN-Steckdosen) an die CCU angebunden und mit dieser automatisiert werden.** Angebundenen Fremdgeräte werden auf der CCU wie originale HM-Geräte dargestellt. Sie können über die Web-UI der CCU genauso bedient und beobachtet werden. Zudem können sie ohne Einschränkungen in CCU-Programmen verwendet werden.
+
+**Mehrere CCUs und andere Automatisierungsgeräte mit MQTT-Server können über den CCU-Jack untereinander vernetzt werden und Wertänderungen austauschen.** Dafür stellt der CCU-Jack eine MQTT-Bridge zur Verfügung. CCUs können auch mit einem MQTT-Server in der Cloud verbunden werden.
 
 Funktional ist der CCU-Jack eine Alternative zum [XML-API Add-On](https://github.com/jens-maus/XML-API). Das XML-API Add-On wird seit längerer Zeit nicht mehr weiter entwickelt und enthält nicht behobene Fehler und Sicherheitslücken. Zudem kann der CCU-Jack die Kombination der zwei Add-Ons [hm2mqtt](https://github.com/owagner/hm2mqtt) und [Mosquitto](https://github.com/hobbyquaker/ccu-addon-mosquitto) ersetzen. Das Add-On hm2mqtt wird ebenfalls seit längerer Zeit nicht mehr weiter entwickelt.
 
@@ -25,6 +29,7 @@ Folgende Merkmale zeichnen CCU-Jack aus:
 * Alle Datenpunkte können über die REST-API baumartig erkundet werden.
 * Umfangreiche Zusatzinformationen zu jedem Datenpunkt, z.B. Anzeigenamen, Räume, Gewerke, aber auch viele technische Informationen aus den XMLRPC-Schnittstellen und der ReGaHss stehen über die REST-API zur Verfügung.
 * Im eingebetten MQTT-Server stehen alle Gerätedatenpunkte und konfigurierte Systemvariablen zur Verfügung.
+* Über die eingebaute MQTT-Brücke können mehrere CCUs und andere MQTT-Server miteinander verbunden werden.
 * Integration von Fremdgeräten über virtuelle Geräte in der CCU (z.B. [Tasmota](https://www.tasmota.info/), [ESPEasy](https://github.com/letscontrolit/ESPEasy), [Shelly](https://shelly.cloud/))
 * Hohe Performance und minimale Belastung der CCU-Prozesse (XMLRPC-Schnittstellen, ReGaHss, CCU Web-Server).
 * Unterstützung von HTTP/2 und Verbindungssicherheit auf dem Stand der Technik. Zertifikate werden bei Bedarf automatisch generiert.
@@ -275,7 +280,13 @@ Die Retain-Eigenschaft wird bei allen Datenpunkten gesetzt, außer der Parameter
 
 _Hinweis:_ Homematic **IP** Sender (z.B. Taster) senden erst Benachrichtigungen an die CCU und damit an den CCU-Jack, wenn sie in einem CCU-Programm verwendet werden. Gegebenenfalls müssen sie also in einem funktionslosen CCU-Programm als Auslöser angegeben werden. (Stichwort: reportValueUsage)
 
-Die Abbildung der CCU-Datentypen auf JSON ist im nächsten Abschnitt zu finden.
+Die Abbildung der CCU-Datentypen auf JSON ist im [Abschnitt unten](#abbildung-der-ccu-datentypen) zu finden.
+
+### MQTT-Brücke (MQTT-Bridge)
+
+Der CCU-Jack kann eine Verbindung zu anderen MQTT-Servern bzw. anderen CCUs mit installiertem CCU-Jack aufbauen. Dies ermöglicht vielfältige Anwendungsmöglichkeiten.
+
+[Die Beschreibung ist in einem eigenen Abschnitt zu finden.](https://github.com/mdzio/ccu-jack/wiki/MQTT-Bridge)
 
 ## Virtuelle Geräte
 
