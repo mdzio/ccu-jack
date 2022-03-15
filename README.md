@@ -141,7 +141,18 @@ Beispielkonfigurationsdatei:
   },
   "MQTT": {
     "Port": 1883,
-    "PortTLS": 8883
+    "PortTLS": 8883,
+    "Bridge": {
+      "Enable": false,
+      "Address": "",
+      "Port": 1883,
+      "Username": "",
+      "Password": "",
+      "ClientID": "",
+      "CleanSession": true,
+      "Incoming": [],
+      "Outgoing": []
+    }
   },
   "BINRPC": {
     "Port": 2123
