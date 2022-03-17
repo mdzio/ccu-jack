@@ -21,6 +21,7 @@ Bezügliche der Anbindung von Fremdgeräten ersetzt der CCU-Jack viele komplizie
 * [Beschreibung MQTT-API](#beschreibung-der-mqtt-schnittstelle)
 * [Beschreibung der virtuellen Geräte](#virtuelle-geräte)
 * [Anbindung einer WLAN-Steckdose mit Tasmota-Firmware](https://github.com/mdzio/ccu-jack/blob/master/doc/tasmota.md)
+* [Geräte-Surrogate für physische Geräte anderer CCUs](https://github.com/mdzio/ccu-jack/wiki/Geräte-Surrogate)
 
 ## Hauptmerkmale
 
@@ -298,6 +299,8 @@ Die Abbildung der CCU-Datentypen auf JSON ist im [Abschnitt unten](#abbildung-de
 Der CCU-Jack kann eine Verbindung zu anderen MQTT-Servern bzw. anderen CCUs mit installiertem CCU-Jack aufbauen. Dies ermöglicht vielfältige Anwendungsmöglichkeiten.
 
 [Die Beschreibung ist in einem eigenen Abschnitt zu finden.](https://github.com/mdzio/ccu-jack/wiki/MQTT-Bridge)
+
+Eine Anwendung der MQTT-Brücke zusammen mit den virtuellen MQTT-Geräten sind [Geräte-Surrogate für physische Geräte anderer CCUs](https://github.com/mdzio/ccu-jack/wiki/Geräte-Surrogate).
 
 ## Virtuelle Geräte
 
