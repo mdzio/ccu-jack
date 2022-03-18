@@ -22,6 +22,7 @@ Bezügliche der Anbindung von Fremdgeräten ersetzt der CCU-Jack viele komplizie
 * [Beschreibung der virtuellen Geräte](#virtuelle-geräte)
 * [Anbindung einer WLAN-Steckdose mit Tasmota-Firmware](https://github.com/mdzio/ccu-jack/blob/master/doc/tasmota.md)
 * [Geräte-Surrogate für physische Geräte anderer CCUs](https://github.com/mdzio/ccu-jack/wiki/Geräte-Surrogate)
+* [Handbuch (im Aufbau)](https://github.com/mdzio/ccu-jack/wiki)
 
 ## Hauptmerkmale
 
@@ -351,104 +352,6 @@ FLOAT              | number (Fließkommazahl, z.B. 0.123)
 STRING             | string (z.B. "abc")
 
 Bei den Datentypen INTEGER, ENUM oder FLOAT sollte der zu setzende Wert größer oder gleich der `minimum`-Eigenschaft sein und kleiner oder gleich der `maximum`-Eigenschaft.
-
-## Anwendungsbeispiele
-
-### Android App _MQTT Dash_
-
-Mit der kostenlosen Android App [MQTT Dash (IoT, Smart Home)](https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=de_DE) können Dashboards erstellt und über den CCU-Jack an die CCU angebunden werden.
-
-### Android App _HTTP Request Shortcuts_
-
-CCU-Jack ermöglicht der ebenfalls kostenlosen Android App [HTTP Request Shortcuts](https://play.google.com/store/apps/details?id=ch.rmy.android.http_shortcuts&hl=de_DE) einfachen Zugriff auf die Datenpunkte der CCU. So können beispielsweise Geräte direkt vom Home-Screen geschaltet werden. Beispiele sind auf einer [eigenen Seite](https://github.com/mdzio/ccu-jack/blob/master/doc/httpshortcuts.md) zu finden.
-
-## Sicherheit
-
-### Cross-origin resource sharing (CORS)
-
-Um fremden Web-Applikationen den Zugriff auf die VEAP-API des CCU-Jacks zu ermöglichen, wird CORS vollständig unterstützt. In der Standardkonfiguration werden alle anfragenden Quellen zugelassen (`Access-Control-Allow-Origin: *`). Falls die Authentifizierung eingeschaltet ist (s.a. Kommandozeilenoptionen `-user` und `-password`) muss die Anfragequelle explizit zugelassen werden. Dies erfolgt mit der Kommandozeilenoption `-cors`.
-
-Beispiel: Die Web-Applikation auf dem Host `https://example.com` soll mit Authentifizierung auf die VEAP-API zugreifen können. Dafür muss die Kommandozeilenoption `-cors https://example.com` gesetzt werden.
-
-### Sicherer Zugriff über TLS
-
-CCU-Jack ermöglicht einen verschlüsselten Zugriff über HTTPS, sodass auch über unsichere Netzwerke (z.B. Internet) Daten sicher ausgetauscht werden könnan. Über den Port 2122 (änderbar mit der Konfigurationsoption `HTTP.PortTLS`) kann eine HTTPS-Verbindung aufgebaut werden. Analog gilt dies auch für MQTT-Verbindungen. Die dafür benötigten Zertifikate können vorgegeben werden oder werden beim ersten Start vom CCU-Jack automatisch generiert. Dies kann mit der Konfigurationsoption `Certificates.AutoGenerate` eingestellt werden.
-
-Benötigte Zertifikatsdateien für den Server (vorhanden oder auto-generiert):
-
-Dateiname   | Konfigurationsoption          | Funktion
-------------|-------------------------------|-------------------------
-svrcert.pem | `Certificates.ServerCertFile` | Zertifikat des Servers
-svrcert.key | `Certificates.ServerKeyFile`  | Privater Schlüssel des Servers (Dieser ist geheim zu halten.)
-
-Falls die Zertifikatsdateien automatisch generiert werden sollen, so sind folgende Konfigurationsoptionen zu setzen. Die Gültigkeit ist auf 10 Jahre eingestellt:
-
-Dateiname   | Konfigurationsoption          | Funktion
-------------|-------------------------------|-------------------------
-cacert.pem  | `Certificates.CACertFile`     | Zertifikat der Zertifizierungsstelle (CA)
-cacert.key  | `Certificates.CACertFile`     | Privater Schlüssel der Zertifizierungsstelle (Dieser ist geheim zu halten.)
-svrcert.pem | `Certificates.ServerCertFile` | Zertifikat des Servers
-svrcert.key | `Certificates.ServerKeyFile`  | Privater Schlüssel des Servers (Dieser geheim zu halten.)
-
-Für den sicheren Zugriff muss lediglich das generierte Zertifikat der Zertifizierungsstelle (`cacert.pem`) den HTTPS-Clients *über einen sicheren Kanal* bekannt gemacht werden. Das Zertifikat kann z.B. im Betriebssystem oder im Web-Browser installiert werden. Die privaten Schlüssel dürfen nie verteilt werden.
-
-Über verschiedene Programmiersprachen kann dann verschlüsselt zugegriffen werden.
-
-### Curl
-
-```bash
-curl --cacert path/to/cacert.pem https://hostname:2122
-```
-
-### Python
-
-```python
-import requests
-r = requests.get("https://hostname:2122", verify='path/to/cacert.pem')
-print(r.status_code)
-```
-
-### Go
-
-```go
-caCert, err := ioutil.ReadFile("path/to/cacert.pem")
-if err != nil {
-    log.Fatal(err)
-}
-caCerts := x509.NewCertPool()
-ok := caCerts.AppendCertsFromPEM(caCert)
-if !ok {
-    log.Fatal("Failed to parse certificate")
-}
-con, err := tls.Dial("tcp", "hostname:2122", &tls.Config{RootCAs: caCerts})
-if err != nil {
-    log.Fatal(err)
-}
-defer con.Close()
-```
-
-
-### Javascript
-
-```javascript
-var fs = require('fs');
-var https = require('https');
-
-var get = https.request({
-  path: '/', hostname: 'hostname', port: 2122,
-  ca: fs.readFileSync('path/to/cacert.pem'),
-  agent: false,
-  rejectUnauthorized: true,
-}, function(response) {
-  response.on('data', (d) => {
-    process.stdout.write(d);
-  });
-});
-get.on('error', function(e) {
-  console.error(e)
-});
-get.end();
-```
 
 ## Autoren
 
