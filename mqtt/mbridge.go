@@ -1,6 +1,7 @@
 package mqtt
 
 import (
+	"crypto/tls"
 	"fmt"
 	"strconv"
 	"strings"
@@ -25,11 +26,17 @@ const (
 type Bridge struct {
 	EmbeddedServer *Server
 
-	addr    string
+	address    string
+	port       int
+	useTLS     bool
+	caCertFile string
+	insecure   bool
+
 	connMsg *message.ConnectMessage
-	cancel  func()
-	in      []rtcfg.MQTTSharedTopic
-	out     []rtcfg.MQTTSharedTopic
+
+	cancel func()
+	in     []rtcfg.MQTTSharedTopic
+	out    []rtcfg.MQTTSharedTopic
 }
 
 // Start starts the bridge with the specified configuration. The configuration
@@ -41,7 +48,13 @@ func (b *Bridge) Start(cfg *rtcfg.MQTTBridge) {
 	}
 
 	// setup connection parameters
-	b.addr = "tcp://" + cfg.Address + ":" + strconv.Itoa(cfg.Port)
+	b.address = cfg.Address
+	b.port = cfg.Port
+	b.useTLS = cfg.UseTLS
+	b.caCertFile = cfg.CACertFile
+	b.insecure = cfg.Insecure
+
+	// setup connection message
 	b.connMsg = message.NewConnectMessage()
 	b.connMsg.SetCleanSession(cfg.CleanSession)
 	b.connMsg.SetClientID([]byte(cfg.ClientID))
@@ -86,10 +99,25 @@ func (b *Bridge) run(ctx conc.Context) {
 
 func (b *Bridge) runClient(ctx conc.Context) error {
 	// create client and connect
-	logBridge.Debugf("Connecting to MQTT server on %s with client ID %s", b.addr, string(b.connMsg.ClientID()))
 	client := &service.Client{}
-	if err := client.Connect(b.addr, b.connMsg); err != nil {
-		return fmt.Errorf("Connecting to MQTT server on address %s failed: %w", b.addr, err)
+	addr := "tcp://" + b.address + ":" + strconv.Itoa(b.port)
+	if b.useTLS {
+		logBridge.Debugf("Connecting to secure MQTT server on %s with client ID %s", addr, string(b.connMsg.ClientID()))
+		tls := &tls.Config{}
+		// allow insecure connections?
+		if b.insecure {
+			tls.InsecureSkipVerify = true
+		}
+		// TODO: cacerts
+
+		if err := client.ConnectTLS(addr, b.connMsg, tls); err != nil {
+			return fmt.Errorf("Connecting to secure MQTT server on address %s failed: %w", addr, err)
+		}
+	} else {
+		logBridge.Debugf("Connecting to MQTT server on %s with client ID %s", addr, string(b.connMsg.ClientID()))
+		if err := client.Connect(addr, b.connMsg); err != nil {
+			return fmt.Errorf("Connecting to MQTT server on address %s failed: %w", addr, err)
+		}
 	}
 	defer client.Disconnect()
 
