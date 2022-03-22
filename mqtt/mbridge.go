@@ -2,7 +2,9 @@ package mqtt
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"strconv"
 	"strings"
 	"time"
@@ -103,13 +105,26 @@ func (b *Bridge) runClient(ctx conc.Context) error {
 	addr := "tcp://" + b.address + ":" + strconv.Itoa(b.port)
 	if b.useTLS {
 		logBridge.Debugf("Connecting to secure MQTT server on %s with client ID %s", addr, string(b.connMsg.ClientID()))
-		tls := &tls.Config{}
+		tls := &tls.Config{
+			ServerName: b.address,
+		}
 		// allow insecure connections?
 		if b.insecure {
 			tls.InsecureSkipVerify = true
 		}
-		// TODO: cacerts
-
+		// CA certificates provided?
+		if b.caCertFile != "" {
+			caCerts := x509.NewCertPool()
+			data, err := ioutil.ReadFile(b.caCertFile)
+			if err != nil {
+				return fmt.Errorf("Loading of CA certificates from file %s failed: %w", b.caCertFile, err)
+			}
+			ok := caCerts.AppendCertsFromPEM(data)
+			if !ok {
+				return fmt.Errorf("Loading of CA certificates from file %s failed: Invalid file format", b.caCertFile)
+			}
+			tls.RootCAs = caCerts
+		}
 		if err := client.ConnectTLS(addr, b.connMsg, tls); err != nil {
 			return fmt.Errorf("Connecting to secure MQTT server on address %s failed: %w", addr, err)
 		}
