@@ -138,6 +138,9 @@ func message() {
 	if cfg.MQTT.Bridge.Enable {
 		log.Info("  MQTT bridge address: ", cfg.MQTT.Bridge.Address)
 		log.Info("  MQTT bridge port: ", cfg.MQTT.Bridge.Port)
+		log.Info("  MQTT bridge TLS: ", cfg.MQTT.Bridge.UseTLS)
+		log.Info("  MQTT bridge user name: ", cfg.MQTT.Bridge.Username)
+		log.Info("  MQTT bridge client ID: ", cfg.MQTT.Bridge.ClientID)
 	}
 	log.Info("  Generate certificates: ", cfg.Certificates.AutoGenerate)
 	log.Infof("  Certificate files: %s, %s, %s, %s", cfg.Certificates.CACertFile, cfg.Certificates.CAKeyFile,

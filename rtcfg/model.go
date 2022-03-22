@@ -111,6 +111,9 @@ type MQTTBridge struct {
 	Enable       bool
 	Address      string
 	Port         int
+	UseTLS       bool
+	CACertFile   string
+	Insecure     bool
 	Username     string
 	Password     string
 	ClientID     string
