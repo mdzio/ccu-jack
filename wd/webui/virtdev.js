@@ -25,6 +25,41 @@ function ChannelKindSelect() {
     }
 }
 
+// HMTypeSelect component
+// Attributes:
+//     Object device: Device
+function HMTypeSelect() {
+    const hmTypes = [
+        ["HmIP-MIO16-PCB", "Multi IO Modulplatine - 4x4"],
+        ["HM-LC-Dim1T-FM", "Dimmaktor 1-fach, Phasenab., UP"],
+        ["HM-LC-Dim1T-DR", "Dimmaktor 1-fach, Phasenab., Huts."],
+        ["HM-LC-Dim1TPBU-FM", "Dimmaktor 1-fach für Markens."],
+        ["HM-LC-Sw1-FM", "Schaltaktor 1-fach, UP"],
+        ["HM-LC-Sw2-FM", "Schaltaktor 2-fach, UP"],
+        ["HM-LC-Sw1-DR", "Schaltaktor 1-fach, Huts."],
+        ["HM-LC-Sw4-DR", "Schaltaktor 4-fach, Huts."],
+        ["HM-LC-Sw1PBU-FM", "Schaltaktor 1-fach für Markens."],
+        ["HM-RC-4", "Handsender 4 Tasten"],
+        ["HM-RC-8", "Handsender 8 Tasten"],
+        ["HM-RC-12", "Handsender 12 Tasten"],
+        ["HM-RC-19", "Handsender 19 Tasten"],
+        ["HM-Sec-SC-2", "Tür-/ Fensterkontakt"],
+        ["HM-SCI-3-FM", "Schließerkontaktschnittstelle 3-fach, UP"],
+    ]
+
+    // mithril component
+    return {
+        view: function (vnode) {
+            const device = vnode.attrs.device
+            return m("select.form-select", { onchange: function (e) { device.HMType = e.target.value } },
+                hmTypes.map(hmType =>
+                    m("option", { value: hmType[0], selected: device.HMType === hmType[0] }, hmType[0] + " " + hmType[1])
+                )
+            )
+        }
+    }
+}
+
 // VirtualDeviceModal is a modal dialog for creating a new virtual device.
 // Attributes:
 //     Object config: Current configuration
@@ -101,6 +136,10 @@ function VirtualDeviceModal() {
                     ),
                     m(".modal-body",
                         m(".content",
+                            m(".input-group",
+                                m("span.input-group-addon", "Gerätesymbol"),
+                                m(HMTypeSelect, { device: device }),
+                            ),
                             m("table.table",
                                 m("thead",
                                     m("tr",
