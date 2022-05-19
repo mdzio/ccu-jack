@@ -249,7 +249,7 @@ func runBase() error {
 	veapHandler := &veap.Handler{}
 	modelRoot = newRoot(&veapHandler.Stats)
 	modelService = &model.Service{Root: modelRoot}
-	veapHandler.Service = modelService
+	veapHandler.Service = &veap.BasicMetaService{Service: modelService}
 
 	// authentication for VEAP
 	var handler http.Handler
