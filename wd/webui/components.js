@@ -1,4 +1,37 @@
 // The ProcessValue component shows a VEAP process value. The component renders
+// to 3 table cells (value, timestamp, state). Attributes: pv=process value
+// object (or null on error), changed=value has changed (bool), error=error
+// message (string or null)
+function StaticProcessValue() {
+    return {
+        view: function (vnode) {
+            const pv = vnode.attrs.pv;
+            const changed = vnode.attrs.changed;
+            const error = vnode.attrs.error;
+            if (pv) {
+                return [
+                    m(
+                        "td",
+                        { class: changed ? "bg-warning" : null },
+                        m("strong", toPrettyString(pv.v))
+                    ),
+                    m("td", toPrettyString(pv.ts)),
+                    m("td", stateToString(pv.s)),
+                ];
+            } else if (error) {
+                return m("td.bg-error[colspan=3]", "Fehler: " + error);
+            } else {
+                return [
+                    m("td", "?"),
+                    m("td", "?"),
+                    m("td", "?"),
+                ];
+            }
+        },
+    };
+}
+
+// The ProcessValue component shows a VEAP process value. The component renders
 // to 3 table cells (value, timestamp, state). The process value is updated
 // cyclically. The component must be recreated, if the address is changed.
 // Attributes: addr=VEAP variable address, cycle=update cycle time [ms]
@@ -61,20 +94,7 @@ function ProcessValue() {
             }
         },
         view: function () {
-            if (pv) {
-                return [
-                    m("td",
-                        { class: changed ? "bg-warning" : null },
-                        m("strong", toPrettyString(pv.v))
-                    ),
-                    m("td", toPrettyString(pv.ts)),
-                    m("td", stateToString(pv.s)),
-                ]
-            } else if (error) {
-                return m("td.bg-error[colspan=3]", "Fehler: " + error)
-            } else {
-                return null
-            }
+            return m(StaticProcessValue, { pv, changed, error })
         }
     }
 }
