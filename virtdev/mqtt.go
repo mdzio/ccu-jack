@@ -933,6 +933,12 @@ var tmplFuncs = template.FuncMap{
 		}
 		return obj, nil
 	},
+	"contains":  strings.Contains,
+	"fields":    strings.Fields,
+	"split":     strings.Split,
+	"toLower":   strings.ToLower,
+	"toUpper":   strings.ToUpper,
+	"trimSpace": strings.TrimSpace,
 }
 
 func (e *extractorTmpl) Extract(payload []byte) (float64, error) {
