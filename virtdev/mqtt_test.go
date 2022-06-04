@@ -74,6 +74,14 @@ func TestExtractorTmpl(t *testing.T) {
 				{"", 0.0, "index out of range"},
 			},
 		},
+		{
+			`{{with (parseJSON .).timestamp }}{{ slice . 0 4 }}{{ slice . 5 7 }}{{ slice . 8 10 }}` +
+				`{{ slice . 11 13 }}{{ slice . 14 16 }}{{ slice . 17 19 }}{{end}}`,
+			[]SubCase{
+				{`{"total_m3":6.388,"target_m3":6.377,"max_flow_m3h":0.000,"flow_temperature":8,"external_temperature":23,` +
+					`"current_status":"DRY","timestamp":"2018-02-08T09:07:22Z"}`, 20180208090722.0, ""},
+			},
+		},
 	}
 	for _, testCase := range testCases {
 		extr, err := newExtractorTmpl(testCase.tmpl)
@@ -100,7 +108,8 @@ func TestExtractorTmpl(t *testing.T) {
 				continue
 			}
 			if v != subCase.out {
-				t.Errorf("expected value %g for input %q and template %q", subCase.out, subCase.in, testCase.tmpl)
+				t.Errorf("expected value %f for input %q and template %q, but got %f",
+					subCase.out, subCase.in, testCase.tmpl, v)
 			}
 		}
 	}
