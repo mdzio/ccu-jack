@@ -7,14 +7,14 @@ require (
 	github.com/mdzio/go-hmccu v0.4.7
 	github.com/mdzio/go-lib v0.1.8
 	github.com/mdzio/go-logging v1.0.0
-	github.com/mdzio/go-mqtt v0.1.5
+	github.com/mdzio/go-mqtt v0.2.0
 	github.com/mdzio/go-veap v0.3.0
-	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
+	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 )
 
 require (
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
-	golang.org/x/net v0.0.0-20220531201128-c960675eff93 // indirect
+	golang.org/x/net v0.0.0-20220630215102-69896b714898 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )

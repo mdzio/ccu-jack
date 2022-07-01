@@ -102,6 +102,7 @@ type HTTP struct {
 type MQTT struct {
 	Port          int
 	PortTLS       int
+	BufferSize    int64
 	WebSocketPath string
 	Bridge        MQTTBridge
 }
@@ -111,6 +112,7 @@ type MQTTBridge struct {
 	Enable       bool
 	Address      string
 	Port         int
+	BufferSize   int64
 	UseTLS       bool
 	CACertFile   string
 	Insecure     bool

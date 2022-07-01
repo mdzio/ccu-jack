@@ -285,6 +285,7 @@ func runBase() error {
 		CertFile:      cfg.Certificates.ServerCertFile,
 		KeyFile:       cfg.Certificates.ServerKeyFile,
 		Authenticator: mqttAuth,
+		BufferSize:    cfg.MQTT.BufferSize,
 		ServeErr:      serveErr,
 	}
 	mqttServer.Start()

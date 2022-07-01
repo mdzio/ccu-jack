@@ -33,6 +33,7 @@ type Bridge struct {
 	useTLS     bool
 	caCertFile string
 	insecure   bool
+	bufferSize int64
 
 	connMsg *message.ConnectMessage
 
@@ -55,6 +56,7 @@ func (b *Bridge) Start(cfg *rtcfg.MQTTBridge) {
 	b.useTLS = cfg.UseTLS
 	b.caCertFile = cfg.CACertFile
 	b.insecure = cfg.Insecure
+	b.bufferSize = cfg.BufferSize
 
 	// setup connection message
 	b.connMsg = message.NewConnectMessage()
@@ -101,7 +103,9 @@ func (b *Bridge) run(ctx conc.Context) {
 
 func (b *Bridge) runClient(ctx conc.Context) error {
 	// create client and connect
-	client := &service.Client{}
+	client := &service.Client{
+		BufferSize: b.bufferSize,
+	}
 	addr := "tcp://" + b.address + ":" + strconv.Itoa(b.port)
 	if b.useTLS {
 		logBridge.Debugf("Connecting to secure MQTT server on %s with client ID %s", addr, string(b.connMsg.ClientID()))

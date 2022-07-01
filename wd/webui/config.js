@@ -187,7 +187,7 @@ function Config() {
     }
 
     function viewCCU() {
-        const itfs = config.CCU.Interfaces
+        const itfs = config.CCU.Interfaces || []
         const wiredName = "BidCosWired"
         const cuxdName = "CUxD"
         return m(".form-group",

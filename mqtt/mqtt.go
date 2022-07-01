@@ -31,6 +31,9 @@ type Server struct {
 	KeyFile string
 	// Authenticator specifies the authenticator. Default is "mockSuccess".
 	Authenticator string
+	// Size of the in and out buffers. This affects the maximum payload size. If
+	// not set, the defaultBufferSize (1024*256) is used.
+	BufferSize int64
 	// When an error happens while serving (e.g. binding of port fails), this
 	// error is sent to the channel ServeErr.
 	ServeErr chan<- error
@@ -43,6 +46,7 @@ type Server struct {
 func (b *Server) Start() {
 	b.server = &service.Server{
 		Authenticator: b.Authenticator,
+		BufferSize:    b.BufferSize,
 	}
 
 	// start MQTT listener
