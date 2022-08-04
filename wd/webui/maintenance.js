@@ -40,8 +40,7 @@ function Maintenance() {
                 successMessage != null && viewSuccess(),
                 m("button.btn", { onclick: refresh }, "Auffrischen"),
                 m("p", "Die Geräte-/Kanalnamen, Räume, Gewerke, Systemvariablen und " +
-                    "Programme werden neu aus der CCU ausgelesen. Je nach größe des " +
-                    "CCU-Projektes kann dies einige Minuten  (Hinweis: Dies erfolgt " +
+                    "Programme werden neu aus der CCU ausgelesen. (Hinweis: Dies erfolgt " +
                     "automatisch beim Start des CCU-Jacks und dann regelmäßig alle 30 Minuten.)"),
             ]
         }
