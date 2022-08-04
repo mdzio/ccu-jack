@@ -25,6 +25,7 @@ type ProgramCol struct {
 
 	stopRequest chan struct{}
 	stopped     sync.WaitGroup
+	refresh     chan struct{}
 }
 
 // NewProgramCol creates a new ProgramCol.
@@ -37,6 +38,7 @@ func NewProgramCol(col model.ChangeableCollection) *ProgramCol {
 	d.CollectionRole = "root"
 	d.ItemRole = "program"
 	d.stopRequest = make(chan struct{})
+	d.refresh = make(chan struct{}, 1)
 	col.PutItem(d)
 	return d
 }
@@ -64,6 +66,8 @@ func (pc *ProgramCol) Start() {
 				return
 			case <-time.After(prgExploreCycle):
 				pc.explore()
+			case <-pc.refresh:
+				pc.explore()
 			}
 		}
 	}()
@@ -74,6 +78,14 @@ func (pc *ProgramCol) Stop() {
 	// stop program explorer
 	close(pc.stopRequest)
 	pc.stopped.Wait()
+}
+
+// Refresh triggers a reexploration of the CCU programs.
+func (pc *ProgramCol) Refresh() {
+	select {
+	case pc.refresh <- struct{}{}:
+	default:
+	}
 }
 
 func (pc *ProgramCol) explore() {

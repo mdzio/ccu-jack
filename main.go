@@ -57,6 +57,7 @@ var (
 	httpServer   *httputil.Server
 	modelRoot    *model.Root
 	configVar    *vmodel.Config
+	vendorCol    model.ChangeableCollection
 	modelService *model.Service
 	mqttServer   *mqtt.Server
 	mqttBridge   *mqtt.Bridge
@@ -212,16 +213,16 @@ func newRoot(handlerStats *veap.HandlerStats) *model.Root {
 	r.ItemRole = "domain"
 
 	// vendor domain
-	vendor := model.NewVendor(&model.VendorCfg{
+	vendorCol = model.NewVendor(&model.VendorCfg{
 		ServerName:        appDisplayName,
 		ServerVersion:     appVersion,
 		ServerDescription: appDescription,
 		VendorName:        appVendor,
 		Collection:        r,
 	})
-	configVar = vmodel.NewConfig(vendor, &store)
-	NewDiagnostics(vendor)
-	model.NewHandlerStats(vendor, handlerStats)
+	configVar = vmodel.NewConfig(vendorCol, &store)
+	NewDiagnostics(vendorCol)
+	model.NewHandlerStats(vendorCol, handlerStats)
 	return r
 }
 
@@ -371,7 +372,7 @@ func runApp() error {
 		virtualDevices.Start()
 		defer virtualDevices.Stop()
 		// listen for configuration changes
-		configVar.SetChangeListener(func(cfg *rtcfg.Config) {
+		configVar.SetChangeListener(func(_ *rtcfg.Config) {
 			virtualDevices.SynchronizeDevices()
 		})
 		defer configVar.SetChangeListener(nil)
@@ -442,6 +443,16 @@ func runApp() error {
 	reGaDOM = script.NewReGaDOM(scriptClient)
 	reGaDOM.Start()
 	defer reGaDOM.Stop()
+
+	// add variable for rereading meta info from CCU
+	vmodel.NewRefreshVar(
+		vendorCol,
+		func() {
+			sysVarCol.Refresh()
+			prgCol.Refresh()
+			reGaDOM.Refresh()
+		},
+	)
 
 	// create room and function collections
 	vmodel.NewRoomCol(modelRoot, reGaDOM, modelService)

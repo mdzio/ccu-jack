@@ -24,6 +24,7 @@ type SysVarCol struct {
 
 	stopRequest chan struct{}
 	stopped     chan struct{}
+	refresh     chan struct{}
 }
 
 // NewSysVarCol creates a new SysVarCol.
@@ -37,6 +38,7 @@ func NewSysVarCol(col model.ChangeableCollection) *SysVarCol {
 	d.ItemRole = "sysvar"
 	d.stopRequest = make(chan struct{})
 	d.stopped = make(chan struct{})
+	d.refresh = make(chan struct{}, 1)
 	col.PutItem(d)
 	return d
 }
@@ -63,6 +65,8 @@ func (d *SysVarCol) Start() {
 				return
 			case <-time.After(sysVarExploreCycle):
 				d.explore()
+			case <-d.refresh:
+				d.explore()
 			}
 		}
 	}()
@@ -73,6 +77,14 @@ func (d *SysVarCol) Stop() {
 	// stop sysvar explorer
 	d.stopRequest <- struct{}{}
 	<-d.stopped
+}
+
+// Refresh triggers a reexploration of the CCU system variables.
+func (d *SysVarCol) Refresh() {
+	select {
+	case d.refresh <- struct{}{}:
+	default:
+	}
 }
 
 func (d *SysVarCol) explore() {

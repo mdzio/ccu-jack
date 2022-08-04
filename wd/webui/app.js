@@ -46,6 +46,9 @@ function Layout() {
                             onclick: function () { m.route.set("/config") }
                         }, "Konfiguration"),
                         m("button.btn.btn-block.my-2", {
+                            onclick: function () { m.route.set("/maintenance") }
+                        }, "Wartung"),
+                        m("button.btn.btn-block.my-2", {
                             onclick: function () { m.route.set("/diagnostics") }
                         }, "Diagnose"),
                         m(Version)
@@ -84,6 +87,11 @@ m.route(document.body, "/navigator", {
     "/config": {
         render: function () {
             return m(Layout, m(Config))
+        }
+    },
+    "/maintenance": {
+        render: function () {
+            return m(Layout, m(Maintenance))
         }
     },
     "/diagnostics": {
