@@ -17,8 +17,8 @@ github.com/mdzio/go-logging v1.0.0 h1:5ykv9QZfEEn3G8Xt2Kcq7FIXDUpXyvp9PUiqWtLDaP
 github.com/mdzio/go-logging v1.0.0/go.mod h1:PAR0NsQwdZiUSy/yykXTWm+kZsbYCLTkBnKgJ6O50rw=
 github.com/mdzio/go-mqtt v0.2.0 h1:CUU/+onAvVfsrt2T2UzIWKf96mpKMVV0RgN+RWl7tzo=
 github.com/mdzio/go-mqtt v0.2.0/go.mod h1:y5NpqJ5Nlvh2mZPU0Svqtu6Q/1pgyNvG8y1r8FeKdUg=
-github.com/mdzio/go-veap v0.3.0 h1:IadtwBUDuja89qEdNO+me3lA3KG+jQgp+rh2uUbNvdg=
-github.com/mdzio/go-veap v0.3.0/go.mod h1:X+/SRJfLgHiPFBACy/ICAQ5kJyhVW4VV/gPeNwpAdAQ=
+github.com/mdzio/go-veap v0.4.0 h1:8V+Ufb+hJtPqmFhgoEup0uQPMCzHB4nFVmjlCWciveo=
+github.com/mdzio/go-veap v0.4.0/go.mod h1:X+/SRJfLgHiPFBACy/ICAQ5kJyhVW4VV/gPeNwpAdAQ=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
@@ -29,8 +29,8 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa h1:zuSxTR4o9y82ebqCUJYNGJbGPo6sKVl54f/TVDObg1c=
 golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
 golang.org/x/net v0.0.0-20210913180222-943fd674d43e/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
-golang.org/x/net v0.0.0-20220802222814-0bcc04d9c69b h1:3ogNYyK4oIQdIKzTu68hQrr4iuVxF3AxKl9Aj/eDrw0=
-golang.org/x/net v0.0.0-20220802222814-0bcc04d9c69b/go.mod h1:YDH+HFinaLZZlnHAfSS6ZXJJ9M9t4Dl22yv3iI2vPwk=
+golang.org/x/net v0.0.0-20220812174116-3211cb980234 h1:RDqmgfe7SvlMWoqC3xwQ2blLO3fcWcxMa3eBLRdRW7E=
+golang.org/x/net v0.0.0-20220812174116-3211cb980234/go.mod h1:YDH+HFinaLZZlnHAfSS6ZXJJ9M9t4Dl22yv3iI2vPwk=
 golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210423082822-04245dca01da/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=

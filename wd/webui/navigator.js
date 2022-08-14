@@ -114,7 +114,8 @@ function Navigator() {
         // filter links
         links = links.filter(function (l) {
             // remove service links
-            return !l.href.endsWith("~pv") && !l.href.endsWith("~hist") && !l.href.endsWith("~exgdata")
+            return !l.href.endsWith("~pv") && !l.href.endsWith("~hist")
+                && !l.href.endsWith("~exgdata") && !l.href.endsWith("~query")
         })
 
         // sort links

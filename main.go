@@ -25,6 +25,7 @@ import (
 	"github.com/mdzio/go-mqtt/service"
 	"github.com/mdzio/go-veap"
 	"github.com/mdzio/go-veap/model"
+	veapsvr "github.com/mdzio/go-veap/server"
 )
 
 const (
@@ -204,7 +205,7 @@ func certificates() error {
 	return nil
 }
 
-func newRoot(handlerStats *veap.HandlerStats) *model.Root {
+func newRoot(handlerStats *veapsvr.HandlerStats) *model.Root {
 	// root domain
 	r := new(model.Root)
 	r.Identifier = "root"
@@ -247,7 +248,7 @@ func runBase() error {
 	defer httpServer.Shutdown()
 
 	// veap handler and model
-	veapHandler := &veap.Handler{}
+	veapHandler := &veapsvr.Handler{}
 	modelRoot = newRoot(&veapHandler.Stats)
 	modelService = &model.Service{Root: modelRoot}
 	veapHandler.Service = &veap.BasicMetaService{Service: modelService}
