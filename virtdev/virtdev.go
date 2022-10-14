@@ -168,6 +168,9 @@ func (vd *VirtualDevices) createDevice(devcfg *rtcfg.Device) error {
 		case rtcfg.ChannelDimmer:
 			ch := vd.addStaticDimmer(dev)
 			log.Debugf("Created static dimmer channel: %s", ch.Description().Address)
+		case rtcfg.ChannelTemperature:
+			ch := vdevices.NewTemperatureChannel(dev)
+			log.Debugf("Created static temperature channel: %s", ch.Description().Address)
 
 		case rtcfg.ChannelMQTTKeySender:
 			ch := vd.addMQTTKeySender(dev)
@@ -190,6 +193,9 @@ func (vd *VirtualDevices) createDevice(devcfg *rtcfg.Device) error {
 		case rtcfg.ChannelMQTTDimmer:
 			ch := vd.addMQTTDimmer(dev)
 			log.Debugf("Created MQTT dimmer channel: %s", ch.Description().Address)
+		case rtcfg.ChannelMQTTTemperature:
+			ch := vd.addMQTTTemperature(dev)
+			log.Debugf("Created MQTT temperature channel: %s", ch.Description().Address)
 
 		default:
 			return fmt.Errorf("Unsupported kind of channel in device %s: %v", devcfg.Address, chcfg.Kind)

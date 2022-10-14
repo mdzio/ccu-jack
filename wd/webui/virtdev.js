@@ -13,6 +13,7 @@ function ChannelKindSelect() {
                 m("option[value=STATIC_ANALOG]", { selected: channel.Kind === "STATIC_ANALOG" }, "Statischer Analogwerteingang"),
                 m("option[value=STATIC_DOOR_SENSOR]", { selected: channel.Kind === "STATIC_DOOR_SENSOR" }, "Statischer Fenster-/Türkontakt"),
                 m("option[value=STATIC_DIMMER]", { selected: channel.Kind === "STATIC_DIMMER" }, "Statischer Dimmer"),
+                m("option[value=STATIC_TEMPERATURE]", { selected: channel.Kind === "STATIC_TEMPERATURE" }, "Statischer Temperatursensor"),
                 m("option[value=MQTT_KEY_SENDER]", { selected: channel.Kind === "MQTT_KEY_SENDER" }, "MQTT Sendetaster"),
                 m("option[value=MQTT_KEY_RECEIVER]", { selected: channel.Kind === "MQTT_KEY_RECEIVER" }, "MQTT Empfangstaster"),
                 m("option[value=MQTT_SWITCH]", { selected: channel.Kind === "MQTT_SWITCH" }, "MQTT Schaltaktor"),
@@ -20,6 +21,7 @@ function ChannelKindSelect() {
                 m("option[value=MQTT_ANALOG_RECEIVER]", { selected: channel.Kind === "MQTT_ANALOG_RECEIVER" }, "MQTT Analogwertempfänger"),
                 m("option[value=MQTT_DOOR_SENSOR]", { selected: channel.Kind === "MQTT_DOOR_SENSOR" }, "MQTT Fenster-/Türkontakt"),
                 m("option[value=MQTT_DIMMER]", { selected: channel.Kind === "MQTT_DIMMER" }, "MQTT Dimmer"),
+                m("option[value=MQTT_TEMPERATURE]", { selected: channel.Kind === "MQTT_TEMPERATURE" }, "MQTT Temperatursensor"),
             )
         }
     }
@@ -45,6 +47,7 @@ function HMTypeSelect() {
         ["HM-RC-19", "Handsender 19 Tasten"],
         ["HM-Sec-SC-2", "Tür-/ Fensterkontakt"],
         ["HM-SCI-3-FM", "Schließerkontaktschnittstelle 3-fach, UP"],
+        ["HmIP-STHO", "Temperatur- und Luftfeuchtigkeitssensor außen"],
     ]
 
     // mithril component

@@ -255,6 +255,7 @@ const (
 	ChannelAnalog
 	ChannelDoorSensor
 	ChannelDimmer
+	ChannelTemperature
 
 	ChannelMQTTKeySender
 	ChannelMQTTKeyReceiver
@@ -263,15 +264,17 @@ const (
 	ChannelMQTTAnalogReceiver
 	ChannelMQTTDoorSensor
 	ChannelMQTTDimmer
+	ChannelMQTTTemperature
 )
 
 var (
 	channelKindStr = []string{
-		ChannelKey:        "STATIC_KEY",
-		ChannelSwitch:     "STATIC_SWITCH",
-		ChannelAnalog:     "STATIC_ANALOG",
-		ChannelDoorSensor: "STATIC_DOOR_SENSOR",
-		ChannelDimmer:     "STATIC_DIMMER",
+		ChannelKey:         "STATIC_KEY",
+		ChannelSwitch:      "STATIC_SWITCH",
+		ChannelAnalog:      "STATIC_ANALOG",
+		ChannelDoorSensor:  "STATIC_DOOR_SENSOR",
+		ChannelDimmer:      "STATIC_DIMMER",
+		ChannelTemperature: "STATIC_TEMPERATURE",
 
 		ChannelMQTTKeySender:      "MQTT_KEY_SENDER",
 		ChannelMQTTKeyReceiver:    "MQTT_KEY_RECEIVER",
@@ -280,6 +283,7 @@ var (
 		ChannelMQTTAnalogReceiver: "MQTT_ANALOG_RECEIVER",
 		ChannelMQTTDoorSensor:     "MQTT_DOOR_SENSOR",
 		ChannelMQTTDimmer:         "MQTT_DIMMER",
+		ChannelMQTTTemperature:    "MQTT_TEMPERATURE",
 	}
 	errChannelKind = errors.New("invalid channel kind identifier")
 )
