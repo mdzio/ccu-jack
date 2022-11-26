@@ -93,7 +93,7 @@ function VirtualDeviceModal() {
 
     function addChannel() {
         // limit number of channels
-        if (device.Channels.length >= 32) {
+        if (device.Channels.length >= 64) {
             return
         }
         // add a new channel to the edited device
