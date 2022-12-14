@@ -171,6 +171,9 @@ func (vd *VirtualDevices) createDevice(devcfg *rtcfg.Device) error {
 		case rtcfg.ChannelTemperature:
 			ch := vdevices.NewTemperatureChannel(dev)
 			log.Debugf("Created static temperature channel: %s", ch.Description().Address)
+		case rtcfg.ChannelPowerMeter:
+			ch := vdevices.NewPowerMeterChannel(dev)
+			log.Debugf("Created static power meter channel: %s", ch.Description().Address)
 
 		case rtcfg.ChannelMQTTKeySender:
 			ch := vd.addMQTTKeySender(dev)

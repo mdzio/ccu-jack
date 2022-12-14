@@ -256,6 +256,7 @@ const (
 	ChannelDoorSensor
 	ChannelDimmer
 	ChannelTemperature
+	ChannelPowerMeter
 
 	ChannelMQTTKeySender
 	ChannelMQTTKeyReceiver
@@ -275,6 +276,7 @@ var (
 		ChannelDoorSensor:  "STATIC_DOOR_SENSOR",
 		ChannelDimmer:      "STATIC_DIMMER",
 		ChannelTemperature: "STATIC_TEMPERATURE",
+		ChannelPowerMeter:  "STATIC_POWER_METER",
 
 		ChannelMQTTKeySender:      "MQTT_KEY_SENDER",
 		ChannelMQTTKeyReceiver:    "MQTT_KEY_RECEIVER",
