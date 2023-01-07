@@ -22,7 +22,7 @@ Alle Informationen für Anwender (z.B. Installation, Konfiguration) sind im [**A
 
 ## Bauen aus den Quellen
 
-Der CCU-Jack ist in der [Programmiersprache Go](https://golang.org/) (min. Version 1.17) geschrieben. Alle Distributionen des CCU-Jacks können sehr einfach und schnell auf allen möglichen Plattformen (u.a. Windows, Linux, MacOS) gebaut werden. Dafür in einem beliebigen Verzeichnis das Git-Repository klonen, oder die Quellen hinein kopieren. Danach in diesem Verzeichnis eine Kommandozeile öffnen, und folgende Befehle eingeben:
+Der CCU-Jack ist in der [Programmiersprache Go](https://golang.org/) geschrieben. Alle Distributionen des CCU-Jacks können sehr einfach und schnell auf allen möglichen Plattformen (u.a. Windows, Linux, MacOS) gebaut werden. Dafür in einem beliebigen Verzeichnis das Git-Repository klonen, oder die Quellen hinein kopieren. Danach in diesem Verzeichnis eine Kommandozeile öffnen, und folgende Befehle eingeben:
 ```
 cd build
 go run .
