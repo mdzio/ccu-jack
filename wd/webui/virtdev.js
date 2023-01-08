@@ -23,6 +23,7 @@ function ChannelKindSelect() {
                 m("option[value=MQTT_DOOR_SENSOR]", { selected: channel.Kind === "MQTT_DOOR_SENSOR" }, "MQTT Fenster-/Türkontakt"),
                 m("option[value=MQTT_DIMMER]", { selected: channel.Kind === "MQTT_DIMMER" }, "MQTT Dimmer"),
                 m("option[value=MQTT_TEMPERATURE]", { selected: channel.Kind === "MQTT_TEMPERATURE" }, "MQTT Temperatursensor"),
+                m("option[value=MQTT_POWER_METER]", { selected: channel.Kind === "MQTT_POWER_METER" }, "MQTT Energiemessung"),
             )
         }
     }
@@ -174,7 +175,7 @@ function VirtualDeviceModal() {
                     ),
                     m(".modal-footer",
                         m("button.btn.input-group-btn.float-left",
-                            { class: device.Channels.length < 32 ? "" : "disabled", onclick: addChannel },
+                            { class: device.Channels.length < 64 ? "" : "disabled", onclick: addChannel },
                             "Kanal hinzufügen"
                         ),
                         m(".btn-group",
