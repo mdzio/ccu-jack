@@ -1,6 +1,7 @@
 package virtdev
 
 import (
+	"math"
 	"strings"
 	"testing"
 )
@@ -80,6 +81,43 @@ func TestExtractorTmpl(t *testing.T) {
 			[]SubCase{
 				{`{"total_m3":6.388,"target_m3":6.377,"max_flow_m3h":0.000,"flow_temperature":8,"external_temperature":23,` +
 					`"current_status":"DRY","timestamp":"2018-02-08T09:07:22Z"}`, 20180208090722.0, ""},
+			},
+		},
+		{
+			`{{ . | round }}`,
+			[]SubCase{
+				{"4.5", 5.0, ""},
+			},
+		},
+		{
+			`{{ . | round }}`,
+			[]SubCase{
+				{"4.5 ", 0.0, `unable to cast "4.5 " of type string to float64`},
+			},
+		},
+		{
+			`{{ . | add 2.5}}`,
+			[]SubCase{
+				{"4.5", 7.0, ""},
+			},
+		},
+		{
+			`{{ div 10 0 }}`,
+			[]SubCase{
+				{"", math.Inf(1), ""},
+			},
+		},
+		{
+			`{{ . | mapRange -10  10 0 100 }}`,
+			[]SubCase{
+				{"5", 75.0, ""},
+				{"-11", 0.0, "mapRange: value -11 is out of range"},
+			},
+		},
+		{
+			`{{ . | mapRange 0 0 0 10 }}`,
+			[]SubCase{
+				{"0", 0.0, "mapRange: invalid minimum/maximum"},
 			},
 		},
 	}

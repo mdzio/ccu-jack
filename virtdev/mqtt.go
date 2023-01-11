@@ -2,6 +2,7 @@ package virtdev
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"regexp"
@@ -12,6 +13,7 @@ import (
 	"github.com/mdzio/ccu-jack/mqtt"
 	"github.com/mdzio/go-hmccu/itf"
 	"github.com/mdzio/go-hmccu/itf/vdevices"
+	"github.com/mdzio/go-lib/any"
 	"github.com/mdzio/go-mqtt/message"
 	"github.com/mdzio/go-mqtt/service"
 )
@@ -155,22 +157,104 @@ type extractorTmpl struct {
 	tmpl *template.Template
 }
 
-var tmplFuncs = template.FuncMap{
-	"round": math.Round,
-	"parseJSON": func(str string) (interface{}, error) {
-		var obj interface{}
-		err := json.Unmarshal([]byte(str), &obj)
-		if err != nil {
-			return nil, err
+func parseJSON(str string) (interface{}, error) {
+	var obj interface{}
+	err := json.Unmarshal([]byte(str), &obj)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+func wrapUnaryFunc(f func(a float64) (float64, error)) func(a interface{}) (float64, error) {
+	return func(a interface{}) (float64, error) {
+		q := any.Q(a)
+		fa := q.ToFloat64()
+		if q.Err() != nil {
+			return 0, q.Err()
 		}
-		return obj, nil
-	},
+		fr, err := f(fa)
+		if err != nil {
+			return 0, err
+		}
+		return fr, nil
+	}
+}
+
+func wrapBinaryFunc(f func(a, b float64) (float64, error)) func(a, b interface{}) (float64, error) {
+	return func(a, b interface{}) (float64, error) {
+		q := any.Q(a)
+		fa := q.ToFloat64()
+		if q.Err() != nil {
+			return 0, q.Err()
+		}
+		q = any.Q(b)
+		fb := q.ToFloat64()
+		if q.Err() != nil {
+			return 0, q.Err()
+		}
+		fr, err := f(fa, fb)
+		if err != nil {
+			return 0, err
+		}
+		return fr, nil
+	}
+}
+
+func mapRange(inMin, inMax, outMin, outMax, value interface{}) (float64, error) {
+	// convert arguments
+	q := any.Q(inMin)
+	inMinf := q.ToFloat64()
+	if q.Err() != nil {
+		return 0, q.Err()
+	}
+	q = any.Q(inMax)
+	inMaxf := q.ToFloat64()
+	if q.Err() != nil {
+		return 0, q.Err()
+	}
+	q = any.Q(outMin)
+	outMinf := q.ToFloat64()
+	if q.Err() != nil {
+		return 0, q.Err()
+	}
+	q = any.Q(outMax)
+	outMaxf := q.ToFloat64()
+	if q.Err() != nil {
+		return 0, q.Err()
+	}
+	q = any.Q(value)
+	valuef := q.ToFloat64()
+	if q.Err() != nil {
+		return 0, q.Err()
+	}
+	// validate arguments
+	if inMinf == inMaxf || outMinf == outMaxf {
+		return 0, errors.New("mapRange: invalid minimum/maximum")
+	}
+	// validate range
+	if valuef < inMinf || valuef > inMaxf {
+		return 0, fmt.Errorf("mapRange: value %g is out of range", valuef)
+	}
+	// map range
+	u := (valuef - inMinf) / (inMaxf - inMinf)
+	return outMinf + u*(outMaxf-outMinf), nil
+}
+
+var tmplFuncs = template.FuncMap{
 	"contains":  strings.Contains,
 	"fields":    strings.Fields,
 	"split":     strings.Split,
 	"toLower":   strings.ToLower,
 	"toUpper":   strings.ToUpper,
 	"trimSpace": strings.TrimSpace,
+	"parseJSON": parseJSON,
+	"round":     wrapUnaryFunc(func(a float64) (float64, error) { return math.Round(a), nil }),
+	"add":       wrapBinaryFunc(func(a, b float64) (float64, error) { return a + b, nil }),
+	"sub":       wrapBinaryFunc(func(a, b float64) (float64, error) { return a - b, nil }),
+	"mul":       wrapBinaryFunc(func(a, b float64) (float64, error) { return a * b, nil }),
+	"div":       wrapBinaryFunc(func(a, b float64) (float64, error) { return a / b, nil }),
+	"mapRange":  mapRange,
 }
 
 func (e *extractorTmpl) Extract(payload []byte) (float64, error) {
