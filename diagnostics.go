@@ -13,9 +13,9 @@ import (
 
 const (
 	// number of log messages to buffer for diagnostics
-	logBufferSize = 400
+	logBufferSize = 500
 	// limit the size of buffered log messages
-	logBufferMaxMsgSize = 200
+	logBufferMaxMsgSize = 250
 )
 
 type Diagnostics struct {
