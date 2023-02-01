@@ -1,6 +1,8 @@
 package vmodel
 
 import (
+	"time"
+
 	"github.com/mdzio/go-veap"
 	"github.com/mdzio/go-veap/model"
 )
@@ -14,7 +16,7 @@ func NewRefreshVar(col model.ChangeableCollection, refresh func()) {
 		Description: "Refreshes the meta information from the CCU.",
 		Collection:  col,
 		ReadPVFunc: func() (veap.PV, veap.Error) {
-			return veap.PV{Value: false}, nil
+			return veap.PV{Time: time.Now(), Value: false, State: veap.StateGood}, nil
 		},
 		WritePVFunc: func(pv veap.PV) veap.Error {
 			if pv.State.Bad() {
