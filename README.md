@@ -18,6 +18,11 @@ Bezügliche der Anbindung von Fremdgeräten ersetzt der CCU-Jack viele komplizie
 
 Alle Informationen für Anwender (z.B. Installation, Konfiguration) sind im [**Anwenderhandbuch**](https://github.com/mdzio/ccu-jack/wiki) zu finden. Dies sollte vor der Installation gelesen werden!
 
+# Umfeld vom CCU-Jack
+
+Im Zusammenhang mit dem CCU-Jack sind weitere Projekt von anderen entstanden:
+* [CCU-Jack to HomeAssistant](https://github.com/kaistraube/ccujack_homeassistant) (Anbindung der HomeMatic CCU an HomeAssistant über den CCU-Jack)
+
 # Entwicklung
 
 ## Bauen aus den Quellen
