@@ -22,6 +22,8 @@ Alle Informationen für Anwender (z.B. Installation, Konfiguration) sind im [**A
 
 Im Zusammenhang mit dem CCU-Jack sind weitere Projekt von anderen entstanden:
 * [CCU-Jack to HomeAssistant](https://github.com/kaistraube/ccujack_homeassistant) (Anbindung der HomeMatic CCU an HomeAssistant über den CCU-Jack)
+* [node-red-contrib-ccu-jack](https://github.com/ptweety/node-red-contrib-ccu-jack) (Anbindung der HomeMatic CCU an Node-RED über den CCU-Jack)
+* [ngx-ccu-jack-client](https://github.com/pottio/ngx-ccu-jack-client) (Integration des CCU-Jacks in Angular-Anwendung)
 
 # Entwicklung
 
