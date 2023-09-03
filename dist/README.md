@@ -1,5 +1,7 @@
 # Information about the target platforms
 
+[Environment variables of the Go compiler for cross compiling to ARM.](https://github.com/golang/go/wiki/GoArm)
+
 ## CCU2
 
 * Tcl version 8.2

@@ -68,7 +68,6 @@ var (
 	scriptClient     *script.Client
 	sysVarCol        *vmodel.SysVarCol
 	prgCol           *vmodel.ProgramCol
-	sysVarReader     *mqtt.SysVarReader
 	reGaDOM          *script.ReGaDOM
 	virtualDeviceCol *vmodel.VirtualDeviceCol
 	deviceCol        *vmodel.DeviceCol
@@ -419,7 +418,7 @@ func runApp() error {
 	}
 
 	// system variable reader for MQTT
-	sysVarReader = &mqtt.SysVarReader{
+	sysVarReader := &mqtt.SysVarReader{
 		Service:      modelService,
 		ScriptClient: scriptClient,
 		Server:       mqttServer,

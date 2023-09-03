@@ -62,7 +62,7 @@ var (
 		{Inc: "LICENSE.txt", DstDir: "addon"},
 		{Inc: "dist/ccu/addon/ccu-jack-default.cfg", DstDir: "addon"},
 		{Inc: "build/tmp/VERSION", DstDir: "addon"},
-		{Inc: "dist/ccu/addon/update_hm_addons.tcl", DstDir: "addon", Exe: true},
+		{Inc: "dist/update_hm_addons.tcl", DstDir: "addon", Exe: true},
 		{Inc: "third-party-licenses/*", DstDir: "addon/third-party-licenses"},
 		{Inc: "wd/webui/*", DstDir: "addon/webui"},
 		{Inc: "wd/webui/ext/*", DstDir: "addon/webui/ext"},
