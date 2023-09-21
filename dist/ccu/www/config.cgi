@@ -4,7 +4,7 @@ puts {<!doctype html>
 <html><head>
     <script>
         document.write('<meta http-equiv="refresh" content="0; url=')
-        document.write('http://' + window.location.hostname + ':2121/ui')
+        document.write('https://' + window.location.hostname + ':2122/ui')
         document.write('">')
     </script>
 </head></html>
