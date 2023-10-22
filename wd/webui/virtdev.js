@@ -50,7 +50,9 @@ function HMTypeSelect() {
         ["HM-RC-19", "Handsender 19 Tasten"],
         ["HM-Sec-SC-2", "Tür-/ Fensterkontakt"],
         ["HM-SCI-3-FM", "Schließerkontaktschnittstelle 3-fach, UP"],
-        ["HmIP-STHO", "Temperatur- und Luftfeuchtigkeitssensor außen"],
+        ["HmIP-STHO", "Temp.- und Luftf.-sensor außen"],
+        ["HmIP-STHD", "Temp.- und Luftf.-sensor innen mit Display"],
+        ["HM-ES-TX-WM", "Energiezähler-Sensor"],
     ]
 
     // mithril component
