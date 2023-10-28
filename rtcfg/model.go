@@ -257,6 +257,8 @@ const (
 	ChannelDimmer
 	ChannelTemperature
 	ChannelPowerMeter
+	ChannelEnergyCounter
+	ChannelGasCounter
 
 	ChannelMQTTKeySender
 	ChannelMQTTKeyReceiver
@@ -271,13 +273,15 @@ const (
 
 var (
 	channelKindStr = []string{
-		ChannelKey:         "STATIC_KEY",
-		ChannelSwitch:      "STATIC_SWITCH",
-		ChannelAnalog:      "STATIC_ANALOG",
-		ChannelDoorSensor:  "STATIC_DOOR_SENSOR",
-		ChannelDimmer:      "STATIC_DIMMER",
-		ChannelTemperature: "STATIC_TEMPERATURE",
-		ChannelPowerMeter:  "STATIC_POWER_METER",
+		ChannelKey:           "STATIC_KEY",
+		ChannelSwitch:        "STATIC_SWITCH",
+		ChannelAnalog:        "STATIC_ANALOG",
+		ChannelDoorSensor:    "STATIC_DOOR_SENSOR",
+		ChannelDimmer:        "STATIC_DIMMER",
+		ChannelTemperature:   "STATIC_TEMPERATURE",
+		ChannelPowerMeter:    "STATIC_POWER_METER",
+		ChannelEnergyCounter: "STATIC_ENERGY_COUNTER",
+		ChannelGasCounter:    "STATIC_GAS_COUNTER",
 
 		ChannelMQTTKeySender:      "MQTT_KEY_SENDER",
 		ChannelMQTTKeyReceiver:    "MQTT_KEY_RECEIVER",

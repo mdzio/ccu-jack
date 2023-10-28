@@ -15,6 +15,8 @@ function ChannelKindSelect() {
                 m("option[value=STATIC_DIMMER]", { selected: channel.Kind === "STATIC_DIMMER" }, "Statischer Dimmer"),
                 m("option[value=STATIC_TEMPERATURE]", { selected: channel.Kind === "STATIC_TEMPERATURE" }, "Statischer Temperatursensor"),
                 m("option[value=STATIC_POWER_METER]", { selected: channel.Kind === "STATIC_POWER_METER" }, "Statische Energiemessung"),
+                m("option[value=STATIC_ENERGY_COUNTER]", { selected: channel.Kind === "STATIC_ENERGY_COUNTER" }, "Statischer Energiezähler"),
+                m("option[value=STATIC_GAS_COUNTER]", { selected: channel.Kind === "STATIC_GAS_COUNTER" }, "Statischer Gaszähler"),
                 m("option[value=MQTT_KEY_SENDER]", { selected: channel.Kind === "MQTT_KEY_SENDER" }, "MQTT Sendetaster"),
                 m("option[value=MQTT_KEY_RECEIVER]", { selected: channel.Kind === "MQTT_KEY_RECEIVER" }, "MQTT Empfangstaster"),
                 m("option[value=MQTT_SWITCH]", { selected: channel.Kind === "MQTT_SWITCH" }, "MQTT Schaltaktor"),
@@ -52,7 +54,7 @@ function HMTypeSelect() {
         ["HM-SCI-3-FM", "Schließerkontaktschnittstelle 3-fach, UP"],
         ["HmIP-STHO", "Temp.- und Luftf.-sensor außen"],
         ["HmIP-STHD", "Temp.- und Luftf.-sensor innen mit Display"],
-        ["HM-ES-TX-WM", "Energiezähler-Sensor"],
+        ["HM-ES-TX-WM", "Zähler-Sensor"],
     ]
 
     // mithril component
