@@ -68,7 +68,7 @@ func (vd *VirtualDevices) Start() {
 	vd.Devices = vdevices.NewContainer()
 
 	// virtual devices handler
-	vd.deviceHandler = vdevices.NewHandler(cfg.Host.Address, vd.Devices, func(address string) {
+	vd.deviceHandler = vdevices.NewHandler(cfg.CCU.Address, vd.Devices, func(address string) {
 		// a device is deleted by the CCU. delete it also in the configuration.
 		vd.Store.Lock()
 		defer vd.Store.Unlock()
