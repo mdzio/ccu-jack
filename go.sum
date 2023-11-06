@@ -8,8 +8,8 @@ github.com/gorilla/handlers v1.5.1 h1:9lRY6j8DEeeBT10CvO9hGW0gmky0BprnvDI5vfhUHH
 github.com/gorilla/handlers v1.5.1/go.mod h1:t8XrUpc4KVXb7HGyJ4/cEnwQiaxrX/hz1Zv/4g96P1Q=
 github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
 github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
-github.com/mdzio/go-hmccu v1.1.1 h1:mhtKBZE1dxwEC0awcE5L1xjGQK5gYec9TItp/qAIw18=
-github.com/mdzio/go-hmccu v1.1.1/go.mod h1:zIdyLP553xDTkRch7A+KWLPeUOTkP9cM+RZcsycked0=
+github.com/mdzio/go-hmccu v1.1.2 h1:WGcZqeEMmrxex4tUR11VsA1VR2UXbYgdwQJBm3WC4Ig=
+github.com/mdzio/go-hmccu v1.1.2/go.mod h1:zIdyLP553xDTkRch7A+KWLPeUOTkP9cM+RZcsycked0=
 github.com/mdzio/go-lib v0.2.0 h1:aBlIhm/FVlL7IyCLksP/BEttkSY5ukmMFow5Z2lG21k=
 github.com/mdzio/go-lib v0.2.0/go.mod h1:iT5EGniJ9KN32ynSFImmjSTOxscncRL6h6OagK/G1PY=
 github.com/mdzio/go-logging v1.0.0 h1:5ykv9QZfEEn3G8Xt2Kcq7FIXDUpXyvp9PUiqWtLDaP0=
