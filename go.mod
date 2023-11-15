@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/gorilla/handlers v1.5.2
-	github.com/mdzio/go-hmccu v1.2.0
+	github.com/mdzio/go-hmccu v1.2.1
 	github.com/mdzio/go-lib v0.2.0
 	github.com/mdzio/go-logging v1.0.0
 	github.com/mdzio/go-mqtt v0.2.1
