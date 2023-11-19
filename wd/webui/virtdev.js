@@ -26,6 +26,8 @@ function ChannelKindSelect() {
                 m("option[value=MQTT_DIMMER]", { selected: channel.Kind === "MQTT_DIMMER" }, "MQTT Dimmer"),
                 m("option[value=MQTT_TEMPERATURE]", { selected: channel.Kind === "MQTT_TEMPERATURE" }, "MQTT Temperatursensor"),
                 m("option[value=MQTT_POWER_METER]", { selected: channel.Kind === "MQTT_POWER_METER" }, "MQTT Energiemessung"),
+                m("option[value=MQTT_ENERGY_COUNTER]", { selected: channel.Kind === "MQTT_ENERGY_COUNTER" }, "MQTT Energiezähler"),
+                m("option[value=MQTT_GAS_COUNTER]", { selected: channel.Kind === "MQTT_GAS_COUNTER" }, "MQTT Gaszähler"),
             )
         }
     }

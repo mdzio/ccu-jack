@@ -269,6 +269,8 @@ const (
 	ChannelMQTTDimmer
 	ChannelMQTTTemperature
 	ChannelMQTTPowerMeter
+	ChannelMQTTEnergyCounter
+	ChannelMQTTGasCounter
 )
 
 var (
@@ -292,6 +294,8 @@ var (
 		ChannelMQTTDimmer:         "MQTT_DIMMER",
 		ChannelMQTTTemperature:    "MQTT_TEMPERATURE",
 		ChannelMQTTPowerMeter:     "MQTT_POWER_METER",
+		ChannelMQTTEnergyCounter:  "MQTT_ENERGY_COUNTER",
+		ChannelMQTTGasCounter:     "MQTT_GAS_COUNTER",
 	}
 	errChannelKind = errors.New("invalid channel kind identifier")
 )
