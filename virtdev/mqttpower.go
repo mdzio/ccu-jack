@@ -6,7 +6,6 @@ import (
 
 type mqttPowerMeter struct {
 	baseChannel
-	powerMeterChannel *vdevices.PowerMeterChannel
 
 	energyCounter mqttAnalogInHandler
 	power         mqttAnalogInHandler
@@ -35,48 +34,48 @@ func (vd *VirtualDevices) addMQTTPowerMeter(dev *vdevices.Device) vdevices.Gener
 	ch := new(mqttPowerMeter)
 
 	// inititalize baseChannel
-	ch.powerMeterChannel = vdevices.NewPowerMeterChannel(dev)
-	ch.GenericChannel = ch.powerMeterChannel
+	specificCh := vdevices.NewPowerMeterChannel(dev)
+	ch.GenericChannel = specificCh
 	ch.store = vd.Store
 
 	// setup handlers
 	ch.energyCounter.channel = ch
 	ch.energyCounter.targetParam = "ENERGY_COUNTER"
 	ch.energyCounter.mqttServer = vd.MQTTServer
-	ch.energyCounter.valueHandler = ch.powerMeterChannel.SetEnergyCounter
+	ch.energyCounter.valueHandler = specificCh.SetEnergyCounter
 	ch.energyCounter.statusHandler = func(_ int) {}
 	ch.energyCounter.init()
 
 	ch.power.channel = ch
 	ch.power.targetParam = "POWER"
 	ch.power.mqttServer = vd.MQTTServer
-	ch.power.valueHandler = ch.powerMeterChannel.SetPower
+	ch.power.valueHandler = specificCh.SetPower
 	ch.power.statusHandler = func(_ int) {}
 	ch.power.init()
 
 	ch.current.channel = ch
 	ch.current.targetParam = "CURRENT"
 	ch.current.mqttServer = vd.MQTTServer
-	ch.current.valueHandler = ch.powerMeterChannel.SetCurrent
+	ch.current.valueHandler = specificCh.SetCurrent
 	ch.current.statusHandler = func(_ int) {}
 	ch.current.init()
 
 	ch.voltage.channel = ch
 	ch.voltage.targetParam = "VOLTAGE"
 	ch.voltage.mqttServer = vd.MQTTServer
-	ch.voltage.valueHandler = ch.powerMeterChannel.SetVoltage
+	ch.voltage.valueHandler = specificCh.SetVoltage
 	ch.voltage.statusHandler = func(_ int) {}
 	ch.voltage.init()
 
 	ch.frequency.channel = ch
 	ch.frequency.targetParam = "FREQUENCY"
 	ch.frequency.mqttServer = vd.MQTTServer
-	ch.frequency.valueHandler = ch.powerMeterChannel.SetFrequency
+	ch.frequency.valueHandler = specificCh.SetFrequency
 	ch.frequency.statusHandler = func(_ int) {}
 	ch.frequency.init()
 
 	// clean up
-	ch.powerMeterChannel.OnDispose = ch.stop
+	specificCh.OnDispose = ch.stop
 
 	// store master param on PutParamset, reregister topics
 	ch.MasterParamset().HandlePutParamset(func() {
