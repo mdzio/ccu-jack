@@ -31,3 +31,5 @@ jobs:
         path: |
           ccu-jack-*.tar.gz
           ccu-jack-*.zip
+        name: ccu-jack-${{ github.sha }}
+        retention-days: 30
