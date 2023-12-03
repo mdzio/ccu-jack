@@ -29,5 +29,5 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         path: |
-          build/tmp/*.tar.gz
-          build/tmp/*.zip
+          ccu-jack-*.tar.gz
+          ccu-jack-*.zip
