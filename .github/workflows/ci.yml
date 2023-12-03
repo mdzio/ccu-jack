@@ -24,3 +24,10 @@ jobs:
       run: |
         cd build
         go run .
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        path: |
+          build/tmp/*.tar.gz
+          build/tmp/*.zip
