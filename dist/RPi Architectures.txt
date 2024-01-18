@@ -1,0 +1,26 @@
+Raspberry Pi OS
+---------------
+https://www.raspberrypi.com/software/operating-systems/
+
+32-Bit: all
+64-Bit: 3B, 3B+, 3A+, 4B, 400, 5, CM3, CM3+, CM4, CM4S, Zero 2 W
+
+Raspberry Pi CPUs
+-----------------
+https://de.wikipedia.org/wiki/Raspberry_Pi
+
+ARMv6: Zero, Zero W/WH, 1A to 1B+, CM1
+ARMv7: 2B up to V1.1
+ARMv8 (64-Bit): Zero 2 W, 2B from V1.2, 3B, 3B+, 3A+, 4B, 5, CM3, CM4
+
+uname -m
+--------
+RM, Raspberry Pi 2 Model B Rev 1.1: armv7l
+CCU3, Raspberry Pi 3 Model B Rev 1.2: armv7l
+
+Additional:
+armv6l         -> GOARCH=arm, GOARM=6
+armv7l         -> GOARCH=arm, GOARM=7
+arm64, aarch64 -> GOARCH=arm64
+i386, i686     -> GOARCH=386
+x86_64, amd64  -> GOARCH=amd64
