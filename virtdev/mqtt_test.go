@@ -120,6 +120,18 @@ func TestExtractorTmpl(t *testing.T) {
 				{"0", 0.0, "mapRange: invalid minimum/maximum"},
 			},
 		},
+		{
+			`{{range $k,$v:=(parseJSON .).sn}}{{if contains $k "DS18B20"}}` +
+				`{{if eq $v.Id "0822112C8A94"}}{{$v.Temperature}}{{end}}{{end}}{{end}}`,
+			[]SubCase{
+				{
+					`{"sn":{"Time":"2024-01-24T10:05:35","DS18B20-1":{"Id":"082211090FEB","Temperature":39.3},` +
+						`"DS18B20-2":{"Id":"0822112C8A94","Temperature":41.3}},"ver":1}`,
+					41.30,
+					"",
+				},
+			},
+		},
 	}
 	for _, testCase := range testCases {
 		extr, err := newExtractorTmpl(testCase.tmpl)
