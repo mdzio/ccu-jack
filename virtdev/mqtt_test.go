@@ -132,6 +132,16 @@ func TestExtractorTmpl(t *testing.T) {
 				},
 			},
 		},
+		{
+			`{{ div (index (parseJSON .) "1.8.0") 1000 }}`,
+			[]SubCase{
+				{
+					`{"1.8.0":60625026,"2.8.0":2195717}`,
+					60625.026,
+					"",
+				},
+			},
+		},
 	}
 	for _, testCase := range testCases {
 		extr, err := newExtractorTmpl(testCase.tmpl)
