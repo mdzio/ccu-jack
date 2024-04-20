@@ -67,7 +67,7 @@ func (h *HTTPAuthHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	h.Handler.ServeHTTP(rw, req)
 }
 
-func (h *HTTPAuthHandler) sendAuth(rw http.ResponseWriter, req *http.Request) {
+func (h *HTTPAuthHandler) sendAuth(rw http.ResponseWriter, _ *http.Request) {
 	rw.Header().Set("WWW-Authenticate", "Basic realm=\""+h.Realm+"\", charset=\"UTF-8\"")
 	http.Error(rw, "Unauthorized", http.StatusUnauthorized)
 }
