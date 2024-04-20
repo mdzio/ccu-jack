@@ -32,7 +32,7 @@ const (
 	appDisplayName = "CCU-Jack"
 	appName        = "ccu-jack"
 	appDescription = "REST/MQTT-Interface for the HomeMatic CCU"
-	appCopyright   = "(C)2019-2023"
+	appCopyright   = "(C)2019-2024"
 	appVendor      = "info@ccu-historian.de"
 
 	// wait time for ReGaHss before signaling an error

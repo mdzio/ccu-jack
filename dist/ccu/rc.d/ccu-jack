@@ -3,7 +3,7 @@
 # add-on information
 ADDON_ID=ccu-jack
 ADDON_NAME="CCU-Jack"
-ADDON_COPYRIGHT="(c) 2019-2023 info@ccu-historian.de"
+ADDON_COPYRIGHT="(c) 2019-2024 info@ccu-historian.de"
 ADDON_WWW='<a href="https://github.com/mdzio/ccu-jack" target="_blank">https://github.com/mdzio/ccu-jack</a>'
 
 # directories
