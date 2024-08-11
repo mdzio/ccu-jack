@@ -267,7 +267,7 @@ func (e *extractorTmpl) Extract(payload []byte) (float64, error) {
 	sval := strings.TrimSpace(sb.String())
 	fval, err := strconv.ParseFloat(sval, 64)
 	if err != nil {
-		return 0.0, fmt.Errorf("Template returned invalid number literal: %s", sb.String())
+		return 0.0, fmt.Errorf("Template returned invalid number literal '%s'", sb.String())
 	}
 	return fval, nil
 }
