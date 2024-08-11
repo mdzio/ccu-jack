@@ -263,7 +263,9 @@ func (e *extractorTmpl) Extract(payload []byte) (float64, error) {
 	if err != nil {
 		return 0.0, fmt.Errorf("Template execution failed for payload '%s': %v", string(payload), err)
 	}
-	fval, err := strconv.ParseFloat(sb.String(), 64)
+	// erase white space
+	sval := strings.TrimSpace(sb.String())
+	fval, err := strconv.ParseFloat(sval, 64)
 	if err != nil {
 		return 0.0, fmt.Errorf("Template returned invalid number literal: %s", sb.String())
 	}
