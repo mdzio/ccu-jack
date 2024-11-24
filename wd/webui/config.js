@@ -188,40 +188,29 @@ function Config() {
 
     function viewCCU() {
         const itfs = config.CCU.Interfaces || []
-        const wiredName = "BidCosWired"
-        const cuxdName = "CUxD"
+        const itfTypes = [
+            { id: "BidCosWired", text: "BidCos-Wired Geräte (HMW-...) anbinden" },
+            { id: "CUxD", text: "CUxD Geräte anbinden" },
+            { id: "HausBusDe", text: "Haus-Bus.de Geräte anbinden" }
+        ]
         return m(".form-group",
-            m("label.form-switch",
-                m("input[type=checkbox]", {
-                    checked: itfs.includes(wiredName),
-                    onchange: function (e) {
-                        if (e.target.checked) {
-                            itfs.push(wiredName)
-                        } else {
-                            const idx = itfs.indexOf(wiredName)
-                            itfs.splice(idx, 1)
+            itfTypes.map( itfType =>
+                m("label.form-switch",
+                    m("input[type=checkbox]", {
+                        checked: itfs.includes(itfType.id),
+                        onchange: function (e) {
+                            if (e.target.checked) {
+                                itfs.push(itfType.id)
+                            } else {
+                                const idx = itfs.indexOf(itfType.id)
+                                itfs.splice(idx, 1)
+                            }
+                            modified = true
                         }
-                        modified = true
-                    }
-                }),
-                m("i.form-icon"), "BidCos-Wired Geräte (HMW-...) anbinden", m("br"),
-                "Achtung: Neustart vom CCU-Jack ist erforderlich! Falls virtuelle Geräte ebenfalls aktiviert sind, ist ein Neustart der CCU notwendig!"
-            ),
-            m("label.form-switch",
-                m("input[type=checkbox]", {
-                    checked: itfs.includes(cuxdName),
-                    onchange: function (e) {
-                        if (e.target.checked) {
-                            itfs.push(cuxdName)
-                        } else {
-                            const idx = itfs.indexOf(cuxdName)
-                            itfs.splice(idx, 1)
-                        }
-                        modified = true
-                    }
-                }),
-                m("i.form-icon"), "CUxD Geräte anbinden", m("br"),
-                "Achtung: Neustart vom CCU-Jack ist erforderlich! Falls virtuelle Geräte ebenfalls aktiviert sind, ist ein Neustart der CCU notwendig!"
+                    }),
+                    m("i.form-icon"), itfType.text, m("br"),
+                    "Achtung: Neustart vom CCU-Jack ist erforderlich! Falls virtuelle Geräte ebenfalls aktiviert sind, ist ein Neustart der CCU notwendig!"
+                )
             ),
             m("label.form-switch",
                 m("input[type=checkbox]", {
