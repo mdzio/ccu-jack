@@ -60,7 +60,7 @@ func (r *EventReceiver) ReaddedDevice(interfaceID string, deletedAddresses []str
 	return r.Next.ReaddedDevice(interfaceID, deletedAddresses)
 }
 
-func (r *EventReceiver) publishEvent(interfaceID, address, valueKey string, value interface{}) error {
+func (r *EventReceiver) publishEvent(_, address, valueKey string, value interface{}) error {
 	// separate device and channel
 	var dev, ch string
 	var p int
