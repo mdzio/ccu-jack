@@ -36,7 +36,7 @@ const (
 	appVendor      = "info@ccu-historian.de"
 
 	// wait time for ReGaHss before signaling an error
-	reGaHssStartupTimeout = 2 * time.Minute
+	reGaHssStartupTimeout = 3 * time.Minute
 )
 
 var (
