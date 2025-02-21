@@ -18,6 +18,12 @@ Bezügliche der Anbindung von Fremdgeräten ersetzt der CCU-Jack viele komplizie
 
 Alle Informationen für Anwender (z.B. Installation, Konfiguration) sind im [**Anwenderhandbuch**](https://github.com/mdzio/ccu-jack/wiki) zu finden. Dies sollte vor der Installation gelesen werden!
 
+# Download
+
+Die offiziell herausgegeben Versionen vom CCU-Jack sind rechts unter [Releases](https://github.com/mdzio/ccu-jack/releases) zu finden.
+
+Vorabversionen, die dem letzten Entwicklungsstand entsprechen, sind unter [Actions](https://github.com/mdzio/ccu-jack/actions) zu finden. Dort einen _Workflow_ auswählen, und dann ist der Download für alle Plattformen unter _Artifacts_ zu finden. Diese Versionen enthalten schon früh neue Funktionalitäten oder Fehlerbehebungen. Allerdings sind sie nicht getestet!
+
 # Umfeld vom CCU-Jack
 
 Im Zusammenhang mit dem CCU-Jack sind weitere Projekt von anderen entstanden:
