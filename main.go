@@ -430,7 +430,7 @@ func runApp() error {
 	intercon = &itf.Interconnector{
 		CCUAddr:          cfg.CCU.Address,
 		Types:            cfg.CCU.Interfaces,
-		UseInternalPorts: cfg.CCU.UseInternalPorts,
+		UseInternalPorts: false, // don't use, this feature causes problems
 		IDPrefix:         cfg.CCU.InitID + "-",
 		LogicLayer:       mqttReceiver,
 		ServeErr:         serveErr,

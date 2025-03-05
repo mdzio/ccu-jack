@@ -73,10 +73,9 @@ func (c *Config) AddUser(u *User) {
 
 // CCU configuration
 type CCU struct {
-	Address          string
-	Interfaces       itf.Types
-	UseInternalPorts bool
-	InitID           string
+	Address    string
+	Interfaces itf.Types
+	InitID     string
 }
 
 // Host configuration
