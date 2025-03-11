@@ -28,7 +28,7 @@ func (c *baseChannel) channelConfig() (*rtcfg.Channel, error) {
 }
 
 // loadMasterParamset sets the master parameters based on the config. The config
-// store must be locked! The channel will be locked!
+// store must be locked!
 func (c *baseChannel) loadMasterParamset() {
 	// config store is already locked
 	chcfg, err := c.channelConfig()
@@ -36,9 +36,6 @@ func (c *baseChannel) loadMasterParamset() {
 		log.Error(err)
 		return
 	}
-	// lock channel for setting parameters
-	c.Lock()
-	defer c.Unlock()
 	for id, v := range chcfg.MasterParamset {
 		p, err := c.MasterParamset().Parameter(id)
 		if err != nil {
@@ -58,7 +55,7 @@ func (c *baseChannel) loadMasterParamset() {
 }
 
 // storeMasterParamset updates the value of the master parameters in the config.
-// The channel must be locked! The config store will be locked!
+// The config store will be locked!
 func (c *baseChannel) storeMasterParamset() {
 	// lock config store
 	c.store.Lock()
@@ -68,7 +65,6 @@ func (c *baseChannel) storeMasterParamset() {
 		log.Error(err)
 		return
 	}
-	// channel is already locked for reading parameters
 	for _, p := range c.MasterParamset().Parameters() {
 		log.Debugf("Storing master parameter %s:%d.%s in config: %v", c.Description().Parent, c.Description().Index,
 			p.Description().ID, p.Value())

@@ -39,9 +39,6 @@ func (c *mqttTemperature) start() {
 		c.temperatureOnPublish = func(msg *message.PublishMessage) error {
 			log.Debugf("Message for temperature %s:%d received: %s, %s", c.Description().Parent,
 				c.Description().Index, msg.Topic(), msg.Payload())
-			// lock channel while modifying parameters
-			c.Lock()
-			defer c.Unlock()
 			value, err := extractor.Extract(msg.Payload())
 			if err != nil {
 				log.Warningf("Extraction of value for temperature %s:%d failed: %v", c.Description().Parent,
@@ -73,9 +70,6 @@ func (c *mqttTemperature) start() {
 		c.humidityOnPublish = func(msg *message.PublishMessage) error {
 			log.Debugf("Message for humidity %s:%d received: %s, %s", c.Description().Parent,
 				c.Description().Index, msg.Topic(), msg.Payload())
-			// lock channel while modifying parameters
-			c.Lock()
-			defer c.Unlock()
 			value, err := extractor.Extract(msg.Payload())
 			if err != nil {
 				log.Warningf("Extraction of value for humidity %s:%d failed: %v", c.Description().Parent,
@@ -170,8 +164,6 @@ func (vd *VirtualDevices) addMQTTTemperature(dev *vdevices.Device) vdevices.Gene
 	ch.loadMasterParamset()
 
 	// register topics
-	ch.Lock()
-	defer ch.Unlock()
 	ch.start()
 	return ch
 }

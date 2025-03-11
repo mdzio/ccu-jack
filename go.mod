@@ -15,6 +15,8 @@ require (
 require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
-	golang.org/x/net v0.36.0 // indirect
+	golang.org/x/net v0.37.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 )
+
+replace github.com/mdzio/go-hmccu => ../go-hmccu

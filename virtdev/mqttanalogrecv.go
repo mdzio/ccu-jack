@@ -33,9 +33,6 @@ func (c *mqttAnalogReceiver) start() {
 		c.onPublish = func(msg *message.PublishMessage) error {
 			log.Debugf("Message for analog receiver %s:%d received: %s, %s", c.Description().Parent,
 				c.Description().Index, msg.Topic(), msg.Payload())
-			// lock channel while modifying parameters
-			c.Lock()
-			defer c.Unlock()
 			value, err := extractor.Extract(msg.Payload())
 			if err != nil {
 				log.Warningf("Extraction of value for analog receiver %s:%d failed: %v", c.Description().Parent,
@@ -106,8 +103,6 @@ func (vd *VirtualDevices) addMQTTAnalogReceiver(dev *vdevices.Device) vdevices.G
 	ch.loadMasterParamset()
 
 	// register topics
-	ch.Lock()
-	defer ch.Unlock()
 	ch.start()
 	return ch
 }

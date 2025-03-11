@@ -37,10 +37,7 @@ func (c *mqttKeyReceiver) start() {
 					c.Description().Index, msg.Topic(), msg.Payload())
 				if matcher.Match(msg.Payload()) {
 					log.Debugf("Triggering short keypress on %s:%d", c.Description().Parent, c.Description().Index)
-					// lock channel while modifying parameters
-					c.Lock()
 					c.keyChannel.PressShort()
-					c.Unlock()
 				}
 				return nil
 			}
@@ -63,10 +60,7 @@ func (c *mqttKeyReceiver) start() {
 					c.Description().Index, msg.Topic(), msg.Payload())
 				if matcher.Match(msg.Payload()) {
 					log.Debugf("Triggering long keypress on %s:%d", c.Description().Parent, c.Description().Index)
-					// lock channel while modifying parameters
-					c.Lock()
 					c.keyChannel.PressLong()
-					c.Unlock()
 				}
 				return nil
 			}
@@ -137,8 +131,6 @@ func (vd *VirtualDevices) addMQTTKeyReceiver(dev *vdevices.Device) vdevices.Gene
 	ch.loadMasterParamset()
 
 	// register topics
-	ch.Lock()
-	defer ch.Unlock()
 	ch.start()
 	return ch
 }

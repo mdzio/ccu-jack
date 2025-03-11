@@ -67,9 +67,6 @@ func (h *mqttAnalogInHandler) start() {
 		h.onPublish = func(msg *message.PublishMessage) error {
 			log.Debugf("Message for %s:%d.%s received: %s, %s", h.channel.Description().Parent,
 				h.channel.Description().Index, h.targetParam, msg.Topic(), msg.Payload())
-			// lock channel while modifying parameters
-			h.channel.Lock()
-			defer h.channel.Unlock()
 			value, err := extractor.Extract(msg.Payload())
 			if err != nil {
 				log.Warningf("Extraction of value for analog receiver %s:%d.%s failed: %v", h.channel.Description().Parent,

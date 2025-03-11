@@ -51,16 +51,10 @@ func (c *mqttSwitchFeedback) start() {
 				c.Description().Index, msg.Topic(), msg.Payload())
 			if onMatcher.Match(msg.Payload()) {
 				log.Debugf("Turning on switch %s:%d", c.Description().Parent, c.Description().Index)
-				// lock channel while modifying parameters
-				c.Lock()
 				c.digitalChannel.SetState(true)
-				c.Unlock()
 			} else if offMatcher.Match(msg.Payload()) {
 				log.Debugf("Turning off switch %s:%d", c.Description().Parent, c.Description().Index)
-				// lock channel while modifying parameters
-				c.Lock()
 				c.digitalChannel.SetState(false)
-				c.Unlock()
 			} else {
 				log.Warningf("Invalid message for switch %s:%d received: %s", c.Description().Parent,
 					c.Description().Index, msg.Payload())
@@ -155,8 +149,6 @@ func (vd *VirtualDevices) addMQTTSwitchFeedback(dev *vdevices.Device) vdevices.G
 	ch.loadMasterParamset()
 
 	// register topics
-	ch.Lock()
-	defer ch.Unlock()
 	ch.start()
 	return ch
 }

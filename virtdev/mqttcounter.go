@@ -80,8 +80,6 @@ func (vd *VirtualDevices) addMQTTCounter(dev *vdevices.Device, chType counterCha
 	ch.loadMasterParamset()
 
 	// register topics
-	ch.Lock()
-	defer ch.Unlock()
 	ch.start()
 	return ch
 }
