@@ -350,8 +350,10 @@ func runApp() error {
 	cfg := store.Config
 
 	// configure HM script client
+	useInternalPorts := cfg.CCU.Address == "127.0.0.1" || cfg.CCU.Address == "localhost"
 	scriptClient = &script.Client{
-		Addr: cfg.CCU.Address,
+		Addr:            cfg.CCU.Address,
+		UseInternalPort: useInternalPorts,
 	}
 
 	// remember for later
@@ -363,7 +365,8 @@ func runApp() error {
 	// start virtual devices (store must be unlocked)
 	if enableVirtualDevices {
 		virtualDevices = &virtdev.VirtualDevices{
-			Store: &store,
+			Store:            &store,
+			UseInternalPorts: useInternalPorts,
 			EventPublisher: &mqtt.VirtDevEventReceiver{
 				Server: mqttServer,
 			},
@@ -430,7 +433,7 @@ func runApp() error {
 	intercon = &itf.Interconnector{
 		CCUAddr:          cfg.CCU.Address,
 		Types:            cfg.CCU.Interfaces,
-		UseInternalPorts: false, // don't use, this feature causes problems
+		UseInternalPorts: useInternalPorts,
 		IDPrefix:         cfg.CCU.InitID + "-",
 		LogicLayer:       mqttReceiver,
 		ServeErr:         serveErr,

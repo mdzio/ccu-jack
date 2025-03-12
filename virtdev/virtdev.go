@@ -30,6 +30,8 @@ var log = logging.Get("virt-dev")
 type VirtualDevices struct {
 	// Store with the configuration must be set before calling Start.
 	Store *rtcfg.Store
+	// Use internal ports
+	UseInternalPorts bool
 	// EventPublisher for receiving value change events, must be set before
 	// calling Start.
 	EventPublisher vdevices.EventPublisher
@@ -68,7 +70,7 @@ func (vd *VirtualDevices) Start() {
 	vd.Devices = vdevices.NewContainer()
 
 	// virtual devices handler
-	vd.deviceHandler = vdevices.NewHandler(cfg.CCU.Address, vd.Devices, func(address string) {
+	vd.deviceHandler = vdevices.NewHandler(cfg.CCU.Address, vd.UseInternalPorts, vd.Devices, func(address string) {
 		// a device is deleted by the CCU. delete it also in the configuration.
 		vd.Store.Lock()
 		defer vd.Store.Unlock()
