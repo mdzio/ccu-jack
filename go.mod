@@ -4,7 +4,7 @@ go 1.23.1
 
 require (
 	github.com/gorilla/handlers v1.5.2
-	github.com/mdzio/go-hmccu v1.4.0
+	github.com/mdzio/go-hmccu v1.5.0
 	github.com/mdzio/go-lib v0.2.2
 	github.com/mdzio/go-logging v1.0.0
 	github.com/mdzio/go-mqtt v1.0.3
@@ -18,5 +18,3 @@ require (
 	golang.org/x/net v0.37.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 )
-
-replace github.com/mdzio/go-hmccu => ../go-hmccu

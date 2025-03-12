@@ -9,6 +9,8 @@ github.com/gorilla/handlers v1.5.2/go.mod h1:dX+xVpaxdSw+q0Qek8SSsl3dfMk3jNddUkM
 github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg=
 github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
+github.com/mdzio/go-hmccu v1.5.0 h1:d4Uw8Go8Nt5g1cDkb9B8IXu3SvbBT+O7G0LkLAjX2VE=
+github.com/mdzio/go-hmccu v1.5.0/go.mod h1:yBSCgraWwlu3mpCESWILMFIQIMdZUYgco89TnQycZR0=
 github.com/mdzio/go-lib v0.2.0/go.mod h1:iT5EGniJ9KN32ynSFImmjSTOxscncRL6h6OagK/G1PY=
 github.com/mdzio/go-lib v0.2.2 h1:3/59L//wOTDLQnbdt/rYPIXsXsoBFM/eC2tffWV7gto=
 github.com/mdzio/go-lib v0.2.2/go.mod h1:iT5EGniJ9KN32ynSFImmjSTOxscncRL6h6OagK/G1PY=

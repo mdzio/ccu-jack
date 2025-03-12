@@ -350,7 +350,7 @@ func runApp() error {
 	cfg := store.Config
 
 	// configure HM script client
-	useInternalPorts := cfg.CCU.Address == "127.0.0.1" || cfg.CCU.Address == "localhost"
+	useInternalPorts := false // Some internal ports are still causing problems.
 	scriptClient = &script.Client{
 		Addr:            cfg.CCU.Address,
 		UseInternalPort: useInternalPorts,
