@@ -35,6 +35,8 @@ func (c *mqttCounter) stop() {
 
 func (vd *VirtualDevices) addMQTTCounter(dev *vdevices.Device, chType counterChannelType) vdevices.GenericChannel {
 	ch := new(mqttCounter)
+	ch.virtualDevices = vd
+	ch.device = dev
 
 	// inititalize baseChannel
 	var setter counterChannelSetter
@@ -52,7 +54,6 @@ func (vd *VirtualDevices) addMQTTCounter(dev *vdevices.Device, chType counterCha
 	default:
 		panic("invalid counterChannelType")
 	}
-	ch.store = vd.Store
 
 	// setup handlers
 	ch.energyCounter.channel = ch

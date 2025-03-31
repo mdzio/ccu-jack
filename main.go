@@ -349,8 +349,12 @@ func runApp() error {
 	// find RUnlock right below
 	cfg := store.Config
 
+	// usage of internal ports
+	// useInternalPorts := cfg.CCU.Address == "localhost" || cfg.CCU.Address == "127.0.0.1"
+	// not enabled, because of problems with virtual devices
+	useInternalPorts := false
+
 	// configure HM script client
-	useInternalPorts := cfg.CCU.Address == "localhost" || cfg.CCU.Address == "127.0.0.1"
 	scriptClient = &script.Client{
 		Addr:            cfg.CCU.Address,
 		UseInternalPort: useInternalPorts,

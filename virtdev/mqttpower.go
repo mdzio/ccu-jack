@@ -32,11 +32,12 @@ func (c *mqttPowerMeter) stop() {
 
 func (vd *VirtualDevices) addMQTTPowerMeter(dev *vdevices.Device) vdevices.GenericChannel {
 	ch := new(mqttPowerMeter)
+	ch.virtualDevices = vd
+	ch.device = dev
 
 	// inititalize baseChannel
 	specificCh := vdevices.NewPowerMeterChannel(dev)
 	ch.GenericChannel = specificCh
-	ch.store = vd.Store
 
 	// setup handlers
 	ch.energyCounter.channel = ch

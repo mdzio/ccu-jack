@@ -1,7 +1,6 @@
 package virtdev
 
 import (
-	"github.com/mdzio/ccu-jack/mqtt"
 	"github.com/mdzio/go-hmccu/itf/vdevices"
 	"github.com/mdzio/go-mqtt/message"
 	"github.com/mdzio/go-mqtt/service"
@@ -10,7 +9,6 @@ import (
 type mqttKeyReceiver struct {
 	baseChannel
 	keyChannel *vdevices.KeyChannel
-	mqttServer *mqtt.Server
 
 	paramShortTopic       *vdevices.StringParameter
 	paramShortPattern     *vdevices.StringParameter
@@ -41,7 +39,7 @@ func (c *mqttKeyReceiver) start() {
 				}
 				return nil
 			}
-			if err := c.mqttServer.Subscribe(shortTopic, message.QosExactlyOnce, &c.shortOnPublish); err != nil {
+			if err := c.virtualDevices.MQTTServer.Subscribe(shortTopic, message.QosExactlyOnce, &c.shortOnPublish); err != nil {
 				log.Errorf("Subscribe failed on topic %s: %v", shortTopic, err)
 			} else {
 				c.shortSubscribedTopic = shortTopic
@@ -64,7 +62,7 @@ func (c *mqttKeyReceiver) start() {
 				}
 				return nil
 			}
-			if err := c.mqttServer.Subscribe(longTopic, message.QosExactlyOnce, &c.longOnPublish); err != nil {
+			if err := c.virtualDevices.MQTTServer.Subscribe(longTopic, message.QosExactlyOnce, &c.longOnPublish); err != nil {
 				log.Errorf("Subscribe failed on topic %s: %v", longTopic, err)
 			} else {
 				c.longSubscribedTopic = longTopic
@@ -75,23 +73,23 @@ func (c *mqttKeyReceiver) start() {
 
 func (c *mqttKeyReceiver) stop() {
 	if c.shortSubscribedTopic != "" {
-		c.mqttServer.Unsubscribe(c.shortSubscribedTopic, &c.shortOnPublish)
+		c.virtualDevices.MQTTServer.Unsubscribe(c.shortSubscribedTopic, &c.shortOnPublish)
 		c.shortSubscribedTopic = ""
 	}
 	if c.longSubscribedTopic != "" {
-		c.mqttServer.Unsubscribe(c.longSubscribedTopic, &c.longOnPublish)
+		c.virtualDevices.MQTTServer.Unsubscribe(c.longSubscribedTopic, &c.longOnPublish)
 		c.longSubscribedTopic = ""
 	}
 }
 
 func (vd *VirtualDevices) addMQTTKeyReceiver(dev *vdevices.Device) vdevices.GenericChannel {
 	ch := new(mqttKeyReceiver)
+	ch.virtualDevices = vd
+	ch.device = dev
 
 	// inititalize
 	ch.keyChannel = vdevices.NewKeyChannel(dev)
 	ch.GenericChannel = ch.keyChannel
-	ch.store = vd.Store
-	ch.mqttServer = vd.MQTTServer
 
 	// SHORT_TOPIC
 	ch.paramShortTopic = vdevices.NewStringParameter("SHORT_TOPIC")

@@ -1,7 +1,6 @@
 package virtdev
 
 import (
-	"github.com/mdzio/ccu-jack/mqtt"
 	"github.com/mdzio/go-hmccu/itf/vdevices"
 	"github.com/mdzio/go-mqtt/message"
 	"github.com/mdzio/go-mqtt/service"
@@ -10,7 +9,6 @@ import (
 type mqttTemperature struct {
 	baseChannel
 	temperatureChannel *vdevices.TemperatureChannel
-	mqttServer         *mqtt.Server
 
 	temperatureTopic           *vdevices.StringParameter
 	temperaturePattern         *vdevices.StringParameter
@@ -52,7 +50,7 @@ func (c *mqttTemperature) start() {
 			c.temperatureChannel.SetTemperatureStatus(0)
 			return nil
 		}
-		if err := c.mqttServer.Subscribe(temperatureTopic, message.QosExactlyOnce, &c.temperatureOnPublish); err != nil {
+		if err := c.virtualDevices.MQTTServer.Subscribe(temperatureTopic, message.QosExactlyOnce, &c.temperatureOnPublish); err != nil {
 			log.Errorf("Subscribe failed on topic %s: %v", temperatureTopic, err)
 		} else {
 			c.temperatureSubscribedTopic = temperatureTopic
@@ -83,7 +81,7 @@ func (c *mqttTemperature) start() {
 			c.temperatureChannel.SetHumidityStatus(0)
 			return nil
 		}
-		if err := c.mqttServer.Subscribe(humidityTopic, message.QosExactlyOnce, &c.humidityOnPublish); err != nil {
+		if err := c.virtualDevices.MQTTServer.Subscribe(humidityTopic, message.QosExactlyOnce, &c.humidityOnPublish); err != nil {
 			log.Errorf("Subscribe failed on topic %s: %v", humidityTopic, err)
 		} else {
 			c.humiditySubscribedTopic = humidityTopic
@@ -93,24 +91,24 @@ func (c *mqttTemperature) start() {
 
 func (c *mqttTemperature) stop() {
 	if c.temperatureSubscribedTopic != "" {
-		c.mqttServer.Unsubscribe(c.temperatureSubscribedTopic, &c.temperatureOnPublish)
+		c.virtualDevices.MQTTServer.Unsubscribe(c.temperatureSubscribedTopic, &c.temperatureOnPublish)
 		c.temperatureSubscribedTopic = ""
 	}
 
 	if c.humiditySubscribedTopic != "" {
-		c.mqttServer.Unsubscribe(c.humiditySubscribedTopic, &c.humidityOnPublish)
+		c.virtualDevices.MQTTServer.Unsubscribe(c.humiditySubscribedTopic, &c.humidityOnPublish)
 		c.humiditySubscribedTopic = ""
 	}
 }
 
 func (vd *VirtualDevices) addMQTTTemperature(dev *vdevices.Device) vdevices.GenericChannel {
 	ch := new(mqttTemperature)
+	ch.virtualDevices = vd
+	ch.device = dev
 
 	// inititalize baseChannel
 	ch.temperatureChannel = vdevices.NewTemperatureChannel(dev)
 	ch.GenericChannel = ch.temperatureChannel
-	ch.store = vd.Store
-	ch.mqttServer = vd.MQTTServer
 
 	// TEMPERATURE_TOPIC
 	ch.temperatureTopic = vdevices.NewStringParameter("TEMPERATURE_TOPIC")

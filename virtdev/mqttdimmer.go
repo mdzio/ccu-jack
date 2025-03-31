@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"text/template"
 
-	"github.com/mdzio/ccu-jack/mqtt"
 	"github.com/mdzio/go-hmccu/itf/vdevices"
 	"github.com/mdzio/go-mqtt/message"
 	"github.com/mdzio/go-mqtt/service"
@@ -13,7 +12,6 @@ import (
 type mqttDimmer struct {
 	baseChannel
 	dimmerChannel   *vdevices.DimmerChannel
-	mqttServer      *mqtt.Server
 	subscribedTopic string
 	onPublish       service.OnPublishFunc
 	oldLevel        float64
@@ -37,7 +35,8 @@ type mqttDimmer struct {
 
 func (c *mqttDimmer) start() {
 	tmplText := c.paramTemplate.Value().(string)
-	tmpl, err := template.New("mqttdimmer").Funcs(tmplFuncs).Parse(tmplText)
+	specFuncs := createSpecificFuncs(c.virtualDevices.Devices, c.device, c)
+	tmpl, err := template.New("mqttdimmer").Funcs(tmplFuncs).Funcs(specFuncs).Parse(tmplText)
 	if err != nil {
 		log.Errorf("Invalid template '%s': %v", tmplText, err)
 		tmpl = nil
@@ -71,7 +70,7 @@ func (c *mqttDimmer) start() {
 			c.dimmerChannel.SetLevel(mappedValue)
 			return nil
 		}
-		if err := c.mqttServer.Subscribe(fbTopic, message.QosExactlyOnce, &c.onPublish); err != nil {
+		if err := c.virtualDevices.MQTTServer.Subscribe(fbTopic, message.QosExactlyOnce, &c.onPublish); err != nil {
 			log.Errorf("Subscribe failed on topic %s: %v", fbTopic, err)
 		} else {
 			c.subscribedTopic = fbTopic
@@ -81,7 +80,7 @@ func (c *mqttDimmer) start() {
 
 func (c *mqttDimmer) stop() {
 	if c.subscribedTopic != "" {
-		c.mqttServer.Unsubscribe(c.subscribedTopic, &c.onPublish)
+		c.virtualDevices.MQTTServer.Unsubscribe(c.subscribedTopic, &c.onPublish)
 		c.subscribedTopic = ""
 	}
 }
@@ -120,7 +119,7 @@ func (c *mqttDimmer) publishToMQTT(value float64) {
 		log.Errorf("Execution of template '%s' failed for value %g: %v", c.paramTemplate.Value().(string), mappedValue, err)
 		return
 	}
-	c.mqttServer.Publish(
+	c.virtualDevices.MQTTServer.Publish(
 		c.paramCommandTopic.Value().(string),
 		buf.Bytes(),
 		message.QosExactlyOnce,
@@ -130,12 +129,12 @@ func (c *mqttDimmer) publishToMQTT(value float64) {
 
 func (vd *VirtualDevices) addMQTTDimmer(dev *vdevices.Device) vdevices.GenericChannel {
 	ch := new(mqttDimmer)
+	ch.virtualDevices = vd
+	ch.device = dev
 
 	// inititalize baseChannel
 	ch.dimmerChannel = vdevices.NewDimmerChannel(dev)
 	ch.GenericChannel = ch.dimmerChannel
-	ch.store = vd.Store
-	ch.mqttServer = vd.MQTTServer
 
 	// RANGE_MIN
 	ch.paramRangeMin = vdevices.NewFloatParameter("RANGE_MIN")
@@ -184,11 +183,16 @@ func (vd *VirtualDevices) addMQTTDimmer(dev *vdevices.Device) vdevices.GenericCh
 
 	// level change
 	ch.dimmerChannel.OnSetLevel = func(value float64) bool {
+		// update level for usage in template
+		ch.dimmerChannel.SetLevel(value)
+
 		if value != 0.0 {
 			// remember previous dimmer level
 			ch.oldLevel = value
 		}
 		ch.publishToMQTT(value)
+
+		// update level in channel and publish event to CCU
 		return true
 	}
 
@@ -197,6 +201,8 @@ func (vd *VirtualDevices) addMQTTDimmer(dev *vdevices.Device) vdevices.GenericCh
 		// restore previous dimmer level
 		ch.dimmerChannel.SetLevel(ch.oldLevel)
 		ch.publishToMQTT(ch.oldLevel)
+
+		// update level in channel and publish event to CCU
 		return true
 	}
 

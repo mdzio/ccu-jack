@@ -259,6 +259,7 @@ const (
 	ChannelPowerMeter
 	ChannelEnergyCounter
 	ChannelGasCounter
+	ChannelUnreach
 
 	ChannelMQTTKeySender
 	ChannelMQTTKeyReceiver
@@ -284,6 +285,7 @@ var (
 		ChannelPowerMeter:    "STATIC_POWER_METER",
 		ChannelEnergyCounter: "STATIC_ENERGY_COUNTER",
 		ChannelGasCounter:    "STATIC_GAS_COUNTER",
+		ChannelUnreach:       "STATIC_UNREACH",
 
 		ChannelMQTTKeySender:      "MQTT_KEY_SENDER",
 		ChannelMQTTKeyReceiver:    "MQTT_KEY_RECEIVER",

@@ -1,7 +1,6 @@
 package virtdev
 
 import (
-	"github.com/mdzio/ccu-jack/mqtt"
 	"github.com/mdzio/go-hmccu/itf/vdevices"
 	"github.com/mdzio/go-mqtt/message"
 	"github.com/mdzio/go-mqtt/service"
@@ -10,7 +9,6 @@ import (
 type mqttAnalogReceiver struct {
 	baseChannel
 	analogChannel *vdevices.AnalogInputChannel
-	mqttServer    *mqtt.Server
 
 	paramTopic         *vdevices.StringParameter
 	paramPattern       *vdevices.StringParameter
@@ -46,7 +44,7 @@ func (c *mqttAnalogReceiver) start() {
 			c.analogChannel.SetVoltageStatus(0)
 			return nil
 		}
-		if err := c.mqttServer.Subscribe(topic, message.QosExactlyOnce, &c.onPublish); err != nil {
+		if err := c.virtualDevices.MQTTServer.Subscribe(topic, message.QosExactlyOnce, &c.onPublish); err != nil {
 			log.Errorf("Subscribe failed on topic %s: %v", topic, err)
 		} else {
 			c.subscribedTopic = topic
@@ -56,19 +54,19 @@ func (c *mqttAnalogReceiver) start() {
 
 func (c *mqttAnalogReceiver) stop() {
 	if c.subscribedTopic != "" {
-		c.mqttServer.Unsubscribe(c.subscribedTopic, &c.onPublish)
+		c.virtualDevices.MQTTServer.Unsubscribe(c.subscribedTopic, &c.onPublish)
 		c.subscribedTopic = ""
 	}
 }
 
 func (vd *VirtualDevices) addMQTTAnalogReceiver(dev *vdevices.Device) vdevices.GenericChannel {
 	ch := new(mqttAnalogReceiver)
+	ch.virtualDevices = vd
+	ch.device = dev
 
 	// inititalize baseChannel
 	ch.analogChannel = vdevices.NewAnalogInputChannel(dev)
 	ch.GenericChannel = ch.analogChannel
-	ch.store = vd.Store
-	ch.mqttServer = vd.MQTTServer
 
 	// TOPIC
 	ch.paramTopic = vdevices.NewStringParameter("TOPIC")

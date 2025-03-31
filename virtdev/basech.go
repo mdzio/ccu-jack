@@ -9,13 +9,14 @@ import (
 
 type baseChannel struct {
 	vdevices.GenericChannel
-	store *rtcfg.Store
+	virtualDevices *VirtualDevices  // root of all virtual devices
+	device         *vdevices.Device // device of this channel
 }
 
 // channelConfig returns the configuration of this channel. channelConfig must
 // be called with the config store locked.
 func (c *baseChannel) channelConfig() (*rtcfg.Channel, error) {
-	d, ok := c.store.Config.VirtualDevices.Devices[c.Description().Parent]
+	d, ok := c.virtualDevices.Store.Config.VirtualDevices.Devices[c.Description().Parent]
 	if !ok {
 		return nil, fmt.Errorf("Virtual device %s not found in config", c.Description().Parent)
 	}
@@ -58,8 +59,8 @@ func (c *baseChannel) loadMasterParamset() {
 // The config store will be locked!
 func (c *baseChannel) storeMasterParamset() {
 	// lock config store
-	c.store.Lock()
-	defer c.store.Unlock()
+	c.virtualDevices.Store.Lock()
+	defer c.virtualDevices.Store.Unlock()
 	chcfg, err := c.channelConfig()
 	if err != nil {
 		log.Error(err)

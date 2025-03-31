@@ -1,7 +1,9 @@
 package virtdev
 
 import (
-	"github.com/mdzio/ccu-jack/mqtt"
+	"bytes"
+	"text/template"
+
 	"github.com/mdzio/go-hmccu/itf/vdevices"
 	"github.com/mdzio/go-mqtt/message"
 	"github.com/mdzio/go-mqtt/service"
@@ -10,13 +12,12 @@ import (
 type mqttSwitchFeedback struct {
 	baseChannel
 	digitalChannel *vdevices.DigitalChannel
-	mqttServer     *mqtt.Server
 
 	// sending parameters
 	paramCommandTopic *vdevices.StringParameter
 	paramRetain       *vdevices.BoolParameter
-	paramOnPayload    *vdevices.StringParameter
-	paramOffPayload   *vdevices.StringParameter
+	on                switchPayload
+	off               switchPayload
 
 	// feedback parameters
 	paramFBTopic     *vdevices.StringParameter
@@ -28,7 +29,21 @@ type mqttSwitchFeedback struct {
 	onPublish       service.OnPublishFunc
 }
 
+func (c *mqttSwitchFeedback) createTemplate(sw *switchPayload) {
+	txt := sw.payload.Value().(string)
+	specFuncs := createSpecificFuncs(c.virtualDevices.Devices, c.device, c)
+	tmpl, err := template.New("mqttswitch").Funcs(tmplFuncs).Funcs(specFuncs).Parse(txt)
+	if err != nil {
+		log.Errorf("Invalid template '%s': %v", txt, err)
+		return
+	}
+	sw.template = tmpl
+}
+
 func (c *mqttSwitchFeedback) start() {
+	c.createTemplate(&c.on)
+	c.createTemplate(&c.off)
+
 	fbTopic := c.paramFBTopic.Value().(string)
 	if fbTopic != "" {
 		cmdTopic := c.paramCommandTopic.Value().(string)
@@ -61,7 +76,7 @@ func (c *mqttSwitchFeedback) start() {
 			}
 			return nil
 		}
-		if err := c.mqttServer.Subscribe(fbTopic, message.QosExactlyOnce, &c.onPublish); err != nil {
+		if err := c.virtualDevices.MQTTServer.Subscribe(fbTopic, message.QosExactlyOnce, &c.onPublish); err != nil {
 			log.Errorf("Subscribe failed on topic %s: %v", fbTopic, err)
 		} else {
 			c.subscribedTopic = fbTopic
@@ -69,21 +84,40 @@ func (c *mqttSwitchFeedback) start() {
 	}
 }
 
+func (c *mqttSwitchFeedback) publish(sw *switchPayload, value interface{}) {
+	if sw.template == nil {
+		log.Warningf("Invalid template: %s", sw.payload.Value().(string))
+		return
+	}
+	var buf bytes.Buffer
+	err := sw.template.Execute(&buf, value)
+	if err != nil {
+		log.Errorf("Execution of template '%s' failed: %v", sw.payload.Value().(string), err)
+		return
+	}
+	c.virtualDevices.MQTTServer.Publish(
+		c.paramCommandTopic.Value().(string),
+		buf.Bytes(),
+		message.QosExactlyOnce,
+		c.paramRetain.Value().(bool),
+	)
+}
+
 func (c *mqttSwitchFeedback) stop() {
 	if c.subscribedTopic != "" {
-		c.mqttServer.Unsubscribe(c.subscribedTopic, &c.onPublish)
+		c.virtualDevices.MQTTServer.Unsubscribe(c.subscribedTopic, &c.onPublish)
 		c.subscribedTopic = ""
 	}
 }
 
 func (vd *VirtualDevices) addMQTTSwitchFeedback(dev *vdevices.Device) vdevices.GenericChannel {
 	ch := new(mqttSwitchFeedback)
+	ch.virtualDevices = vd
+	ch.device = dev
 
 	// inititalize baseChannel
 	ch.digitalChannel = vdevices.NewSwitchChannel(dev)
 	ch.GenericChannel = ch.digitalChannel
-	ch.store = vd.Store
-	ch.mqttServer = vd.MQTTServer
 
 	// COMMAND_TOPIC
 	ch.paramCommandTopic = vdevices.NewStringParameter("COMMAND_TOPIC")
@@ -94,12 +128,12 @@ func (vd *VirtualDevices) addMQTTSwitchFeedback(dev *vdevices.Device) vdevices.G
 	ch.AddMasterParam(ch.paramRetain)
 
 	// ON_PAYLOAD
-	ch.paramOnPayload = vdevices.NewStringParameter("ON_PAYLOAD")
-	ch.AddMasterParam(ch.paramOnPayload)
+	ch.on.payload = vdevices.NewStringParameter("ON_PAYLOAD")
+	ch.AddMasterParam(ch.on.payload)
 
 	// OFF_PAYLOAD
-	ch.paramOffPayload = vdevices.NewStringParameter("OFF_PAYLOAD")
-	ch.AddMasterParam(ch.paramOffPayload)
+	ch.off.payload = vdevices.NewStringParameter("OFF_PAYLOAD")
+	ch.AddMasterParam(ch.off.payload)
 
 	// FEEDBACK_TOPIC
 	ch.paramFBTopic = vdevices.NewStringParameter("FEEDBACK_TOPIC")
@@ -119,18 +153,11 @@ func (vd *VirtualDevices) addMQTTSwitchFeedback(dev *vdevices.Device) vdevices.G
 
 	// state change
 	ch.digitalChannel.OnSetState = func(state bool) bool {
-		var payload string
 		if state {
-			payload = ch.paramOnPayload.Value().(string)
+			ch.publish(&ch.on, true)
 		} else {
-			payload = ch.paramOffPayload.Value().(string)
+			ch.publish(&ch.off, false)
 		}
-		vd.MQTTServer.Publish(
-			ch.paramCommandTopic.Value().(string),
-			[]byte(payload),
-			message.QosExactlyOnce,
-			ch.paramRetain.Value().(bool),
-		)
 		// do not update state in channel
 		return false
 	}

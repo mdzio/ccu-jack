@@ -182,6 +182,9 @@ func (vd *VirtualDevices) createDevice(devcfg *rtcfg.Device) error {
 		case rtcfg.ChannelGasCounter:
 			ch := vdevices.NewGasCounterChannel(dev)
 			log.Debugf("Created static gas counter channel: %s", ch.Description().Address)
+		case rtcfg.ChannelUnreach:
+			ch := vd.addStaticUnreach(dev)
+			log.Debugf("Created static unreach channel: %s", ch.Description().Address)
 
 		case rtcfg.ChannelMQTTKeySender:
 			ch := vd.addMQTTKeySender(dev)

@@ -254,6 +254,53 @@ var tmplFuncs = template.FuncMap{
 	"mapRange":  mapRange,
 }
 
+type paramResolver func(address string) (vdevices.GenericParameter, error)
+
+// Returns a functions that resolves a VALUE parameter by its full address
+// (format DEVICE:CHANNEL.PARAM) or relative to the device (format
+// CHANNEL.PARAMNAME) or channel (format PARAM).
+func createParamResolver(container *vdevices.Container, device vdevices.GenericDevice, channel vdevices.GenericChannel) paramResolver {
+	return func(address string) (param vdevices.GenericParameter, err error) {
+		// resolve absolute address
+		selectedDevice := device
+		colonPos := strings.IndexRune(address, ':')
+		if colonPos != -1 {
+			deviceAddr := address[:colonPos]
+			selectedDevice, err = container.Device(deviceAddr)
+			if err != nil {
+				return
+			}
+			address = address[colonPos+1:]
+		}
+		// resolve relative to device
+		selectedChannel := channel
+		dotPos := strings.IndexRune(address, '.')
+		if dotPos != -1 {
+			channelAddr := address[:dotPos]
+			selectedChannel, err = selectedDevice.Channel(channelAddr)
+			if err != nil {
+				return
+			}
+			address = address[dotPos+1:]
+		}
+		// resolve relative to channel
+		return selectedChannel.ValueParamset().Parameter(address)
+	}
+}
+
+func createSpecificFuncs(container *vdevices.Container, device vdevices.GenericDevice, channel vdevices.GenericChannel) template.FuncMap {
+	resolveParam := createParamResolver(container, device, channel)
+	return template.FuncMap{
+		"param": func(address string) (interface{}, error) {
+			param, err := resolveParam(address)
+			if err != nil {
+				return nil, err
+			}
+			return param.Value(), nil
+		},
+	}
+}
+
 func (e *extractorTmpl) Extract(payload []byte) (float64, error) {
 	var sb strings.Builder
 	err := e.tmpl.Execute(&sb, string(payload))

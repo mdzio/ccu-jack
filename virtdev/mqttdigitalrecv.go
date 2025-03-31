@@ -1,7 +1,6 @@
 package virtdev
 
 import (
-	"github.com/mdzio/ccu-jack/mqtt"
 	"github.com/mdzio/go-hmccu/itf/vdevices"
 	"github.com/mdzio/go-mqtt/message"
 	"github.com/mdzio/go-mqtt/service"
@@ -10,7 +9,6 @@ import (
 type mqttDigitalReceiver struct {
 	baseChannel
 	digitalChannel *vdevices.DigitalChannel
-	mqttServer     *mqtt.Server
 
 	paramTopic       *vdevices.StringParameter
 	paramOnPattern   *vdevices.StringParameter
@@ -49,7 +47,7 @@ func (c *mqttDigitalReceiver) start() {
 			}
 			return nil
 		}
-		if err := c.mqttServer.Subscribe(topic, message.QosExactlyOnce, &c.onPublish); err != nil {
+		if err := c.virtualDevices.MQTTServer.Subscribe(topic, message.QosExactlyOnce, &c.onPublish); err != nil {
 			log.Errorf("Subscribe failed on topic %s: %v", topic, err)
 			return
 		}
@@ -59,19 +57,19 @@ func (c *mqttDigitalReceiver) start() {
 
 func (c *mqttDigitalReceiver) stop() {
 	if c.subscribedTopic != "" {
-		c.mqttServer.Unsubscribe(c.subscribedTopic, &c.onPublish)
+		c.virtualDevices.MQTTServer.Unsubscribe(c.subscribedTopic, &c.onPublish)
 		c.subscribedTopic = ""
 	}
 }
 
 func (vd *VirtualDevices) addMQTTDoorSensor(dev *vdevices.Device) vdevices.GenericChannel {
 	ch := new(mqttDigitalReceiver)
+	ch.virtualDevices = vd
+	ch.device = dev
 
 	// inititalize baseChannel
 	ch.digitalChannel = vdevices.NewDoorSensorChannel(dev)
 	ch.GenericChannel = ch.digitalChannel
-	ch.store = vd.Store
-	ch.mqttServer = vd.MQTTServer
 
 	// TOPIC
 	ch.paramTopic = vdevices.NewStringParameter("TOPIC")
