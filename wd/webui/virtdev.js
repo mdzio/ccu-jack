@@ -29,6 +29,7 @@ function ChannelKindSelect() {
                 m("option[value=MQTT_POWER_METER]", { selected: channel.Kind === "MQTT_POWER_METER" }, "MQTT Energiemessung"),
                 m("option[value=MQTT_ENERGY_COUNTER]", { selected: channel.Kind === "MQTT_ENERGY_COUNTER" }, "MQTT Energiezähler"),
                 m("option[value=MQTT_GAS_COUNTER]", { selected: channel.Kind === "MQTT_GAS_COUNTER" }, "MQTT Gaszähler"),
+                m("option[value=MQTT_UNREACH]", { selected: channel.Kind === "MQTT_UNREACH" }, "MQTT Kommunikationsstörung"),
             )
         }
     }

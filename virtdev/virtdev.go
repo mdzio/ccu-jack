@@ -219,6 +219,9 @@ func (vd *VirtualDevices) createDevice(devcfg *rtcfg.Device) error {
 		case rtcfg.ChannelMQTTGasCounter:
 			ch := vd.addMQTTGasCounter(dev)
 			log.Debugf("Created MQTT gas counter channel: %s", ch.Description().Address)
+		case rtcfg.ChannelMQTTUnreach:
+			ch := vd.addMQTTUnreach(dev)
+			log.Debugf("Created MQTT connection error channel: %s", ch.Description().Address)
 
 		default:
 			return fmt.Errorf("Unsupported kind of channel in device %s: %v", devcfg.Address, chcfg.Kind)
