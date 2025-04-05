@@ -8,7 +8,7 @@ require (
 	github.com/mdzio/go-lib v0.2.2
 	github.com/mdzio/go-logging v1.0.0
 	github.com/mdzio/go-mqtt v1.0.3
-	github.com/mdzio/go-veap v0.5.0
+	github.com/mdzio/go-veap v0.5.1
 	golang.org/x/crypto v0.36.0
 )
 

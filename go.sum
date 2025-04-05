@@ -17,8 +17,8 @@ github.com/mdzio/go-logging v1.0.0 h1:5ykv9QZfEEn3G8Xt2Kcq7FIXDUpXyvp9PUiqWtLDaP
 github.com/mdzio/go-logging v1.0.0/go.mod h1:PAR0NsQwdZiUSy/yykXTWm+kZsbYCLTkBnKgJ6O50rw=
 github.com/mdzio/go-mqtt v1.0.3 h1:vHEjpThS7okr26Qa/vaOh0+iLoBfqDp8hH0/mnXU6zw=
 github.com/mdzio/go-mqtt v1.0.3/go.mod h1:t50yUg5iAtGdYcyXKf8++fTOQ6wnUuROs3aZM7Gcu+I=
-github.com/mdzio/go-veap v0.5.0 h1:tkMReXc9jvl05dcoyp7WL/PLZ0cUVFgJF6hHt6+9qyU=
-github.com/mdzio/go-veap v0.5.0/go.mod h1:i3h5W4bhxYYgT6WUfBLzAfr8VymSfOV6NMW5y1SiWi4=
+github.com/mdzio/go-veap v0.5.1 h1:nBVfYH8ZYOJPgs3/NDmEVe7dOJWSEqTQxbfIgfMKxr8=
+github.com/mdzio/go-veap v0.5.1/go.mod h1:i3h5W4bhxYYgT6WUfBLzAfr8VymSfOV6NMW5y1SiWi4=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
