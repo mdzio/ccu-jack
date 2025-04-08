@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -119,7 +119,7 @@ func (b *Bridge) runClient(ctx conc.Context) error {
 		// CA certificates provided?
 		if b.caCertFile != "" {
 			caCerts := x509.NewCertPool()
-			data, err := ioutil.ReadFile(b.caCertFile)
+			data, err := os.ReadFile(b.caCertFile)
 			if err != nil {
 				return fmt.Errorf("Loading of CA certificates from file %s failed: %w", b.caCertFile, err)
 			}

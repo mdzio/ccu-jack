@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"strings"
 	"sync"
 	"time"
@@ -165,7 +165,7 @@ func wireToPV(payload []byte) (veap.PV, error) {
 	err := dec.Decode(&w)
 	if err == nil {
 		// check for unexpected content
-		c, err2 := ioutil.ReadAll(dec.Buffered())
+		c, err2 := io.ReadAll(dec.Buffered())
 		if err2 != nil {
 			return veap.PV{}, fmt.Errorf("ReadAll failed: %v", err2)
 		}

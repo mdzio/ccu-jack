@@ -65,7 +65,8 @@ func (r *EventReceiver) publishEvent(_, address, valueKey string, value interfac
 	var dev, ch string
 	var p int
 	if p = strings.IndexRune(address, ':'); p == -1 {
-		return fmt.Errorf("Unexpected event from a device: %s", address)
+		log.Debug("Publish is suppressed, unexpected event from a device: ", address)
+		return nil
 	}
 	dev = address[0:p]
 	ch = address[p+1:]

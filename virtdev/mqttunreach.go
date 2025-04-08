@@ -1,13 +1,95 @@
 package virtdev
 
 import (
-	"sync"
 	"time"
 
 	"github.com/mdzio/go-hmccu/itf/vdevices"
 	"github.com/mdzio/go-mqtt/message"
 	"github.com/mdzio/go-mqtt/service"
 )
+
+type udEvent int
+
+const (
+	udEventStop udEvent = iota
+	udEventOk
+	udEventError
+)
+
+type unreachDelay struct {
+	okDur    time.Duration
+	errorDur time.Duration
+	cmd      chan udEvent
+	done     chan struct{}
+	onOk     func()
+	onError  func()
+}
+
+func (ud *unreachDelay) start() {
+	ud.cmd = make(chan udEvent)
+	ud.done = make(chan struct{})
+	go ud.run()
+}
+
+func (ud *unreachDelay) run() {
+	var okT *time.Timer
+	var errorT *time.Timer
+	var okC <-chan time.Time
+	var errorC <-chan time.Time
+out:
+	for {
+		select {
+		case cmd := <-ud.cmd:
+			switch cmd {
+			case udEventStop:
+				break out
+			case udEventOk:
+				if errorT != nil {
+					errorT.Stop()
+					errorT = nil
+					errorC = nil
+				}
+				ud.onOk()
+				if ud.okDur != time.Duration(0) {
+					if okT != nil {
+						okT.Stop()
+					}
+					okT = time.NewTimer(ud.okDur)
+					okC = okT.C
+				}
+			case udEventError:
+				if errorT != nil {
+					break
+				}
+				errorT = time.NewTimer(ud.errorDur)
+				errorC = errorT.C
+			}
+		case <-okC:
+			if errorT != nil {
+				errorT.Stop()
+				errorT = nil
+				errorC = nil
+			}
+			ud.onOk()
+		case <-errorC:
+			errorT = nil
+			errorC = nil
+			ud.onError()
+		}
+	}
+	if okT != nil {
+		okT.Stop()
+	}
+	if errorT != nil {
+		errorT.Stop()
+	}
+	ud.done <- struct{}{}
+}
+
+func (ud *unreachDelay) stop() {
+	ud.cmd <- udEventStop
+	<-ud.done
+}
 
 // Meaning of the STATE parameter: 0=contact is closed/off/OK; 1=contact is
 // open/on/Error
@@ -19,12 +101,12 @@ type mqttUnreach struct {
 	paramErrorPattern *vdevices.StringParameter
 	paramOkPattern    *vdevices.StringParameter
 	paramMatcherKind  *vdevices.IntParameter
-	paramDelay        *vdevices.FloatParameter
+	paramOkDelay      *vdevices.FloatParameter
+	paramErrorDelay   *vdevices.FloatParameter
 
 	subscribedTopic string
 	onPublish       service.OnPublishFunc
-	delayTimer      *time.Timer
-	delayMutex      sync.Mutex
+	delay           unreachDelay
 }
 
 func (c *mqttUnreach) setConnError(connError bool) {
@@ -45,46 +127,13 @@ func (c *mqttUnreach) setConnError(connError bool) {
 	mch.SetUnreach(connError)
 }
 
-func (c *mqttUnreach) delayConnError(connError bool) {
-	// no delay
-	delayTime := c.paramDelay.Value().(float64)
-	if delayTime <= 0.0 {
-		c.setConnError(connError)
-		return
-	}
-
-	// use timer
-	c.delayMutex.Lock()
-	defer c.delayMutex.Unlock()
-	if connError {
-		// start timer, if not already running
-		if c.delayTimer == nil {
-			c.delayTimer = time.AfterFunc(
-				time.Duration(delayTime*float64(time.Second)),
-				func() {
-					c.delayMutex.Lock()
-					defer c.delayMutex.Unlock()
-					// check, if not stopped in the meantime
-					if c.delayTimer != nil {
-						c.setConnError(true)
-					}
-				},
-			)
-		}
-	} else {
-		// stop timer
-		if c.delayTimer != nil {
-			c.delayTimer.Stop()
-			c.delayTimer = nil
-		}
-		// reset conn. error
-		c.setConnError(false)
-	}
-}
-
 func (c *mqttUnreach) start() {
 	topic := c.paramTopic.Value().(string)
 	if topic != "" {
+		c.delay.okDur = time.Duration(c.paramOkDelay.Value().(float64) * float64(time.Second))
+		c.delay.errorDur = time.Duration(c.paramErrorDelay.Value().(float64) * float64(time.Second))
+		c.delay.start()
+
 		errorMatcher, err := newMatcher(c.paramMatcherKind, c.paramErrorPattern)
 		if err != nil {
 			log.Errorf("Creation of matcher for 'error' failed: %v", err)
@@ -100,10 +149,10 @@ func (c *mqttUnreach) start() {
 				c.Description().Index, msg.Topic(), msg.Payload())
 			if errorMatcher.Match(msg.Payload()) {
 				log.Debugf("Setting connection error %s:%d", c.Description().Parent, c.Description().Index)
-				c.delayConnError(true)
+				c.delay.cmd <- udEventError
 			} else if okMatcher.Match(msg.Payload()) {
 				log.Debugf("Clearing connection error %s:%d", c.Description().Parent, c.Description().Index)
-				c.delayConnError(false)
+				c.delay.cmd <- udEventOk
 			} else {
 				log.Warningf("Invalid message for connection state %s:%d received: %s", c.Description().Parent,
 					c.Description().Index, msg.Payload())
@@ -124,13 +173,8 @@ func (c *mqttUnreach) stop() {
 		c.virtualDevices.MQTTServer.Unsubscribe(c.subscribedTopic, &c.onPublish)
 		c.subscribedTopic = ""
 
-		// stop timer
-		c.delayMutex.Lock()
-		defer c.delayMutex.Unlock()
-		if c.delayTimer != nil {
-			c.delayTimer.Stop()
-			c.delayTimer = nil
-		}
+		// stop delay
+		c.delay.stop()
 	}
 }
 
@@ -138,6 +182,8 @@ func (vd *VirtualDevices) addMQTTUnreach(dev *vdevices.Device) vdevices.GenericC
 	ch := new(mqttUnreach)
 	ch.virtualDevices = vd
 	ch.device = dev
+	ch.delay.onOk = func() { ch.setConnError(false) }
+	ch.delay.onError = func() { ch.setConnError(true) }
 
 	// inititalize baseChannel
 	ch.digitalChannel = vdevices.NewDoorSensorChannel(dev)
@@ -159,11 +205,17 @@ func (vd *VirtualDevices) addMQTTUnreach(dev *vdevices.Device) vdevices.GenericC
 	ch.paramMatcherKind = newMatcherKindParameter("MATCHER")
 	ch.AddMasterParam(ch.paramMatcherKind)
 
-	// DELAY [s]
-	ch.paramDelay = vdevices.NewFloatParameter("DELAY_TIME")
-	ch.paramDelay.Description().Min = 0.0
-	ch.paramDelay.Description().Unit = "s"
-	ch.AddMasterParam(ch.paramDelay)
+	// OK_DELAY [s]
+	ch.paramOkDelay = vdevices.NewFloatParameter("OK_DELAY")
+	ch.paramOkDelay.Description().Min = 0.0
+	ch.paramOkDelay.Description().Unit = "s"
+	ch.AddMasterParam(ch.paramOkDelay)
+
+	// ERROR_DELAY [s]
+	ch.paramErrorDelay = vdevices.NewFloatParameter("ERROR_DELAY")
+	ch.paramErrorDelay.Description().Min = 0.0
+	ch.paramErrorDelay.Description().Unit = "s"
+	ch.AddMasterParam(ch.paramErrorDelay)
 
 	// clean up
 	ch.digitalChannel.OnDispose = ch.stop

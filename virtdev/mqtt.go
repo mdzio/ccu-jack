@@ -254,12 +254,19 @@ var tmplFuncs = template.FuncMap{
 	"mapRange":  mapRange,
 }
 
+type paramSet int
+
+const (
+	psMaster paramSet = iota
+	psValues
+)
+
 type paramResolver func(address string) (vdevices.GenericParameter, error)
 
 // Returns a functions that resolves a VALUE parameter by its full address
 // (format DEVICE:CHANNEL.PARAM) or relative to the device (format
 // CHANNEL.PARAMNAME) or channel (format PARAM).
-func createParamResolver(container *vdevices.Container, device vdevices.GenericDevice, channel vdevices.GenericChannel) paramResolver {
+func createParamResolver(ps paramSet, container *vdevices.Container, device vdevices.GenericDevice, channel vdevices.GenericChannel) paramResolver {
 	return func(address string) (param vdevices.GenericParameter, err error) {
 		// resolve absolute address
 		selectedDevice := device
@@ -283,21 +290,40 @@ func createParamResolver(container *vdevices.Container, device vdevices.GenericD
 			}
 			address = address[dotPos+1:]
 		}
-		// resolve relative to channel
-		return selectedChannel.ValueParamset().Parameter(address)
+		// select param set
+		switch ps {
+		case psMaster:
+			// resolve relative to channel
+			return selectedChannel.MasterParamset().Parameter(address)
+		case psValues:
+			// resolve relative to channel
+			return selectedChannel.ValueParamset().Parameter(address)
+		default:
+			panic("invalid paramSet")
+		}
 	}
 }
 
 func createSpecificFuncs(container *vdevices.Container, device vdevices.GenericDevice, channel vdevices.GenericChannel) template.FuncMap {
-	resolveParam := createParamResolver(container, device, channel)
+	resolveValueParam := createParamResolver(psValues, container, device, channel)
+	param := func(address string) (interface{}, error) {
+		param, err := resolveValueParam(address)
+		if err != nil {
+			return nil, err
+		}
+		return param.Value(), nil
+	}
+	resolveMasterParam := createParamResolver(psMaster, container, device, channel)
+	masterParam := func(address string) (interface{}, error) {
+		param, err := resolveMasterParam(address)
+		if err != nil {
+			return nil, err
+		}
+		return param.Value(), nil
+	}
 	return template.FuncMap{
-		"param": func(address string) (interface{}, error) {
-			param, err := resolveParam(address)
-			if err != nil {
-				return nil, err
-			}
-			return param.Value(), nil
-		},
+		"param":       param,
+		"masterParam": masterParam,
 	}
 }
 

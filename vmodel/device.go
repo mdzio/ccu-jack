@@ -281,7 +281,7 @@ func (d *DeviceCol) handleEvent(n *deviceNotif) {
 	var dev, ch string
 	var p int
 	if p = strings.IndexRune(n.event.address, ':'); p == -1 {
-		deviceLog.Warning("Device should not send event: ", n.event.address)
+		deviceLog.Debug("Device should not send event: ", n.event.address)
 		return
 	}
 	dev = n.event.address[0:p]
