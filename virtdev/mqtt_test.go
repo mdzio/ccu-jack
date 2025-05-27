@@ -21,8 +21,8 @@ func TestExtractorTmpl(t *testing.T) {
 			[]SubCase{
 				{`{"brightness":21,"ison":false}`, 0.0, ""},
 				{`{"brightness":42,"ison":true}`, 42.0, ""},
-				{`{"brightness":"a","ison":true}`, 0.0, "invalid number literal: a"},
-				{`{"ison":true}`, 0.0, "invalid number literal: <no value>"},
+				{`{"brightness":"a","ison":true}`, 0.0, "invalid number literal 'a'"},
+				{`{"ison":true}`, 0.0, "invalid number literal '<no value>'"},
 				{``, 0.0, "unexpected end of JSON input"},
 			},
 		},
