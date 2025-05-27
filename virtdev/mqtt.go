@@ -321,9 +321,29 @@ func createSpecificFuncs(container *vdevices.Container, device vdevices.GenericD
 		}
 		return param.Value(), nil
 	}
+	dimmerOut := func(address string) (interface{}, error) {
+		rangeMin, err := masterParam(address + ".RANGE_MIN")
+		if err != nil {
+			return nil, err
+		}
+		rangeMax, err := masterParam(address + ".RANGE_MAX")
+		if err != nil {
+			return nil, err
+		}
+		value, err := param(address + ".LEVEL")
+		if err != nil {
+			return nil, err
+		}
+		out, err := mapRange(0.0, 1.0, rangeMin, rangeMax, value)
+		if err != nil {
+			return nil, err
+		}
+		return out, nil
+	}
 	return template.FuncMap{
 		"param":       param,
 		"masterParam": masterParam,
+		"dimmerOut":   dimmerOut,
 	}
 }
 
