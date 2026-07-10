@@ -9,7 +9,7 @@ require (
 	github.com/mdzio/go-logging v1.0.0
 	github.com/mdzio/go-mqtt v1.0.4
 	github.com/mdzio/go-veap v0.5.1
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.52.0
 )
 
 require (
