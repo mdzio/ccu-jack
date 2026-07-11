@@ -30,6 +30,7 @@ function ChannelKindSelect() {
                 m("option[value=MQTT_ENERGY_COUNTER]", { selected: channel.Kind === "MQTT_ENERGY_COUNTER" }, "MQTT Energiezähler"),
                 m("option[value=MQTT_GAS_COUNTER]", { selected: channel.Kind === "MQTT_GAS_COUNTER" }, "MQTT Gaszähler"),
                 m("option[value=MQTT_UNREACH]", { selected: channel.Kind === "MQTT_UNREACH" }, "MQTT Kommunikationsstörung"),
+                m("option[value=MQTT_BROLL]", { selected: channel.Kind === "MQTT_BROLL" }, "MQTT HmIP-BROLL Rollladenaktor"),
             )
         }
     }
@@ -59,6 +60,7 @@ function HMTypeSelect() {
         ["HmIP-STHO", "Temp.- und Luftf.-sensor außen"],
         ["HmIP-STHD", "Temp.- und Luftf.-sensor innen mit Display"],
         ["HM-ES-TX-WM", "Zähler-Sensor"],
+        ["HmIP-BROLL", "Rollladenaktor"],
     ]
 
     // mithril component

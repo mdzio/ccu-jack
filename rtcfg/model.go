@@ -273,6 +273,7 @@ const (
 	ChannelMQTTEnergyCounter
 	ChannelMQTTGasCounter
 	ChannelMQTTUnreach
+	ChannelMQTTBRoll
 )
 
 var (
@@ -300,6 +301,7 @@ var (
 		ChannelMQTTEnergyCounter:  "MQTT_ENERGY_COUNTER",
 		ChannelMQTTGasCounter:     "MQTT_GAS_COUNTER",
 		ChannelMQTTUnreach:        "MQTT_UNREACH",
+		ChannelMQTTBRoll:          "MQTT_BROLL",
 	}
 	errChannelKind = errors.New("invalid channel kind identifier")
 )
