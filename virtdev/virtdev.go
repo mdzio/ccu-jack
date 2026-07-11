@@ -3,7 +3,9 @@ package virtdev
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/mdzio/ccu-jack/mqtt"
 	"github.com/mdzio/ccu-jack/rtcfg"
@@ -54,16 +56,22 @@ func (vd *VirtualDevices) Start() {
 	defer vd.Store.RUnlock()
 	cfg := vd.Store.Config
 
-	// add device layer to InterfacesList.xml
-	err := vdevices.AddToInterfaceList(
-		itfListFile,
-		itfListFile,
-		InterfaceID,
-		"xmlrpc://"+cfg.CCU.Address+":"+strconv.Itoa(cfg.HTTP.Port)+xmlrpcPath,
-		InterfaceID,
-	)
-	if err != nil {
-		log.Errorf("Adding CCU-Jack device layer to CCU interface list failed: %v", err)
+	// add device layer to InterfacesList.xml only if not already present
+	// (prevents duplicate entries on every restart)
+	itfContent, readErr := os.ReadFile(itfListFile)
+	if readErr != nil || !strings.Contains(string(itfContent), "<name>"+InterfaceID+"</name>") {
+		err := vdevices.AddToInterfaceList(
+			itfListFile,
+			itfListFile,
+			InterfaceID,
+			"xmlrpc://"+cfg.CCU.Address+":"+strconv.Itoa(cfg.HTTP.Port)+xmlrpcPath,
+			InterfaceID,
+		)
+		if err != nil {
+			log.Errorf("Adding CCU-Jack device layer to CCU interface list failed: %v", err)
+		}
+	} else {
+		log.Debug("CCU-Jack already present in InterfacesList.xml, skipping insert")
 	}
 
 	// virtual device container
@@ -94,6 +102,32 @@ func (vd *VirtualDevices) Start() {
 	// HM RPC dispatcher for device layer
 	dispatcher := itf.NewDispatcher()
 	dispatcher.AddDeviceLayer(vd.deviceHandler)
+
+	// Override getParamsetId: go-hmccu's dispatcher always returns an empty
+	// string. A native HmIP device instead returns an identifier of the form
+	// "<hmtype>_<channel-index>_<paramset>" (e.g. "hmip-broll_7_master"), which
+	// the CCU WebUI uses to locate a matching config easymode. Provide the same
+	// identifier so the virtual device answers faithfully like the real one.
+	dispatcher.HandleFunc("getParamsetId", func(args *xmlrpc.Value) (*xmlrpc.Value, error) {
+		q := xmlrpc.Q(args)
+		address := q.Idx(0).String()
+		paramsetKey := q.Idx(1).String()
+		if q.Err() != nil {
+			return &xmlrpc.Value{}, nil
+		}
+		deviceAddr, channelAddr := itf.SplitAddress(address)
+		dev, err := vd.Devices.Device(deviceAddr)
+		if err != nil {
+			return &xmlrpc.Value{}, nil
+		}
+		hmType := strings.ToLower(dev.Description().Type)
+		key := strings.ToLower(paramsetKey)
+		// Only channel paramsets follow the verified native format.
+		if channelAddr == "" {
+			return &xmlrpc.Value{}, nil
+		}
+		return xmlrpc.NewString(fmt.Sprintf("%s_%s_%s", hmType, channelAddr, key)), nil
+	})
 
 	// register XML-RPC handler at the HTTP server
 	httpHandler := &xmlrpc.Handler{Dispatcher: dispatcher}
@@ -148,8 +182,17 @@ func (vd *VirtualDevices) SynchronizeDevices() {
 func (vd *VirtualDevices) createDevice(devcfg *rtcfg.Device) error {
 	// create device
 	dev := vdevices.NewDevice(devcfg.Address, devcfg.HMType, vd.eventPublisher)
+	if devcfg.HMType == string([]byte{72, 109, 73, 80, 45, 66, 82, 79, 76, 76}) {
+		dev.Description().Version = 5
+		dev.Description().Firmware = string([]byte{49, 46, 49, 48, 46, 49, 54})
+		dev.Description().Interface = string([]byte{72, 109, 73, 80, 45, 82, 70})
+	}
 	// add maintenance channel
-	vdevices.NewMaintenanceChannel(dev)
+	maintenance := vdevices.NewMaintenanceChannel(dev)
+	if devcfg.HMType == string([]byte{72, 109, 73, 80, 45, 66, 82, 79, 76, 76}) {
+		maintenance.Description().Version = 5
+		maintenance.Description().Flags = itf.DeviceFlagInternal
+	}
 
 	// create channels
 	for _, chcfg := range devcfg.Channels {
@@ -222,7 +265,9 @@ func (vd *VirtualDevices) createDevice(devcfg *rtcfg.Device) error {
 		case rtcfg.ChannelMQTTUnreach:
 			ch := vd.addMQTTUnreach(dev)
 			log.Debugf("Created MQTT connection error channel: %s", ch.Description().Address)
-
+		case rtcfg.ChannelMQTTBRoll:
+			ch := vd.addMQTTBRoll(dev)
+			log.Debugf("Created MQTT BROLL device starting at channel: %s", ch.Description().Address)
 		default:
 			return fmt.Errorf("Unsupported kind of channel in device %s: %v", devcfg.Address, chcfg.Kind)
 		}
