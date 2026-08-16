@@ -130,6 +130,15 @@ type MQTTSharedTopic struct {
 	LocalPrefix  string
 	RemotePrefix string
 	QoS          byte
+	// Last Will configuration. If StatusTopic is non-empty, the bridge publishes
+	// StateOnline (retained) on the remote StatusTopic after a successful
+	// connect and registers StateOffline as the MQTT Last Will, so the broker
+	// publishes it automatically when the connection drops unexpectedly.
+	StatusTopic  string
+	StateOnline  string
+	StateOffline string
+	StateQoS     byte
+	StateRetain  bool
 }
 
 // BINRPC configuration for CUxD support

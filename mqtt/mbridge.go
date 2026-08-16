@@ -40,6 +40,14 @@ type Bridge struct {
 	cancel func()
 	in     []rtcfg.MQTTSharedTopic
 	out    []rtcfg.MQTTSharedTopic
+
+	// Last Will status topic, taken from the first outgoing topic with a
+	// configured StatusTopic. Empty if none is configured.
+	lwtTopic   string
+	lwtOnline  string
+	lwtOffline string
+	lwtQoS     byte
+	lwtRetain  bool
 }
 
 // Start starts the bridge with the specified configuration. The configuration
@@ -70,6 +78,30 @@ func (b *Bridge) Start(cfg *rtcfg.MQTTBridge) {
 	// clone shared topics
 	b.in = cloneSharedTopics(cfg.Incoming)
 	b.out = cloneSharedTopics(cfg.Outgoing)
+
+	// setup Last Will (if configured on any outgoing topic). The first
+	// outgoing topic with a StatusTopic wins; its StateOffline is
+	// registered as the MQTT Last Will and published by the broker when the
+	// connection drops. StateOnline is published explicitly after a
+	// successful connect (see runClient).
+	for _, t := range b.out {
+		if t.StatusTopic != "" {
+			b.lwtTopic = t.StatusTopic
+			b.lwtOnline = t.StateOnline
+			b.lwtOffline = t.StateOffline
+			b.lwtQoS = t.StateQoS
+			b.lwtRetain = t.StateRetain
+			b.connMsg.SetWillTopic([]byte(b.lwtTopic))
+			b.connMsg.SetWillMessage([]byte(b.lwtOffline))
+			if err := b.connMsg.SetWillQos(b.lwtQoS); err != nil {
+				logBridge.Errorf("Invalid Last Will QoS %d: %v", b.lwtQoS, err)
+			}
+			b.connMsg.SetWillRetain(b.lwtRetain)
+			b.connMsg.SetWillFlag(true)
+			logBridge.Debugf("Configured MQTT Last Will on topic %q with offline payload %q", b.lwtTopic, b.lwtOffline)
+			break
+		}
+	}
 
 	// run daemon
 	b.cancel = conc.DaemonFunc(b.run)
@@ -139,6 +171,10 @@ func (b *Bridge) runClient(ctx conc.Context) error {
 		}
 	}
 	defer client.Disconnect()
+
+	// publish online status, so subscribers on the remote broker know the
+	// bridge is connected (the Last Will only fires on disconnect)
+	b.publishOnlineStatus(client)
 
 	// subscribe remote topics and publish local
 	for _, tt := range b.in {
@@ -218,6 +254,39 @@ func (b *Bridge) runClient(ctx conc.Context) error {
 	}
 }
 
+// publishOnlineStatus publishes the online state on the remote status topic
+// after a successful connect. The Last Will registered in the CONNECT message
+// only fires when the connection drops, so the online state must be sent
+// explicitly here.
+func (b *Bridge) publishOnlineStatus(client *service.Client) {
+	if b.lwtTopic == "" {
+		return
+	}
+	online := b.lwtOnline
+	if online == "" {
+		online = "online"
+	}
+	pubmsg := message.NewPublishMessage()
+	if err := pubmsg.SetTopic([]byte(b.lwtTopic)); err != nil {
+		logBridge.Errorf("Invalid Last Will status topic %q: %v", b.lwtTopic, err)
+		return
+	}
+	pubmsg.SetPayload([]byte(online))
+	pubmsg.SetQoS(b.lwtQoS)
+	pubmsg.SetRetain(b.lwtRetain)
+	var onComplete service.OnCompleteFunc = func(msg, ack message.Message, err error) error {
+		if err != nil {
+			logBridge.Errorf("Publishing online status on topic %q failed: %v", b.lwtTopic, err)
+		} else {
+			logBridge.Debugf("Published online status %q on topic %q", online, b.lwtTopic)
+		}
+		return nil
+	}
+	if err := client.Publish(pubmsg, onComplete); err != nil {
+		logBridge.Errorf("Publishing online status on topic %q failed: %v", b.lwtTopic, err)
+	}
+}
+
 func cloneSharedTopics(ts []rtcfg.MQTTSharedTopic) []rtcfg.MQTTSharedTopic {
 	var cts []rtcfg.MQTTSharedTopic
 	for _, t := range ts {
@@ -226,6 +295,11 @@ func cloneSharedTopics(ts []rtcfg.MQTTSharedTopic) []rtcfg.MQTTSharedTopic {
 			LocalPrefix:  t.LocalPrefix,
 			RemotePrefix: t.RemotePrefix,
 			QoS:          t.QoS,
+			StatusTopic:  t.StatusTopic,
+			StateOnline:  t.StateOnline,
+			StateOffline: t.StateOffline,
+			StateQoS:     t.StateQoS,
+			StateRetain:  t.StateRetain,
 		})
 	}
 	return cts
