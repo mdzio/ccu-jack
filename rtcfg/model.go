@@ -122,6 +122,15 @@ type MQTTBridge struct {
 	CleanSession bool
 	Incoming     []MQTTSharedTopic
 	Outgoing     []MQTTSharedTopic
+	// Last Will configuration. If WillTopic is non-empty, the bridge publishes
+	// WillConnectMessage (retained) on the remote WillTopic after a successful
+	// connect and registers WillDisconnectMessage as the MQTT Last Will, so the
+	// broker publishes it automatically when the connection drops unexpectedly.
+	WillTopic             string
+	WillConnectMessage    string
+	WillDisconnectMessage string
+	WillQoS               byte
+	WillRetain            bool
 }
 
 // MQTTSharedTopic configuration
@@ -130,15 +139,6 @@ type MQTTSharedTopic struct {
 	LocalPrefix  string
 	RemotePrefix string
 	QoS          byte
-	// Last Will configuration. If StatusTopic is non-empty, the bridge publishes
-	// StateOnline (retained) on the remote StatusTopic after a successful
-	// connect and registers StateOffline as the MQTT Last Will, so the broker
-	// publishes it automatically when the connection drops unexpectedly.
-	StatusTopic  string
-	StateOnline  string
-	StateOffline string
-	StateQoS     byte
-	StateRetain  bool
 }
 
 // BINRPC configuration for CUxD support
