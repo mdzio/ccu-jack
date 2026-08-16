@@ -7,7 +7,7 @@ require (
 	github.com/mdzio/go-hmccu v1.5.6
 	github.com/mdzio/go-lib v0.2.2
 	github.com/mdzio/go-logging v1.0.0
-	github.com/mdzio/go-mqtt v1.0.4
+	github.com/mdzio/go-mqtt v1.0.5
 	github.com/mdzio/go-veap v0.5.1
 	golang.org/x/crypto v0.55.0
 )
