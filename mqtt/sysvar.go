@@ -57,7 +57,7 @@ func (r *SysVarReader) Start() {
 			_, links, verr := r.Service.ReadProperties(sysVarVeapPath)
 			if verr != nil {
 				log.Errorf("System variable reader: %v", verr)
-				return
+				continue
 			}
 
 			// find system variables with "mqtt" in description?
@@ -68,13 +68,13 @@ func (r *SysVarReader) Start() {
 					attrs, _, verr := r.Service.ReadProperties(p)
 					if verr != nil {
 						log.Errorf("System variable reader: %v", verr)
-						return
+						continue
 					}
 					q := any.Q(map[string]interface{}(attrs))
 					descr := q.Map().TryKey(model.DescriptionProperty).String()
 					if q.Err() != nil {
 						log.Errorf("System variable reader: %v", q.Err())
-						return
+						continue
 					}
 
 					// "mqtt" in description?
@@ -83,7 +83,7 @@ func (r *SysVarReader) Start() {
 						dataType := q.Map().Key("type").String()
 						if q.Err() != nil {
 							log.Errorf("System variable reader: %v", q.Err())
-							return
+							continue
 						}
 						sysVars = append(sysVars, script.ValObjDef{
 							ISEID: iseID,
