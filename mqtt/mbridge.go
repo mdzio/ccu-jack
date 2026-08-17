@@ -19,8 +19,9 @@ import (
 var logBridge = logging.Get("mqtt-bridge")
 
 const (
-	bridgeKeepAlive       = 60 * time.Second
-	bridgeRecoverDuration = 60 * time.Second
+	bridgeKeepAlive             = 60 * time.Second
+	bridgeRecoverDuration       = 60 * time.Second
+	bridgeStatusPublishTimeout = 5 * time.Second
 )
 
 // Bridge connects the embedded MQTT server with a remote one. Messages on
@@ -244,9 +245,60 @@ func (b *Bridge) runClient(ctx conc.Context) error {
 			return fmt.Errorf("Ping failed: %w", err)
 		}
 		if err := ctx.Sleep(bridgeKeepAlive); err != nil {
-			// bridge should stop
-			return nil
+			// context canceled -> ordered shutdown
+			break
 		}
+	}
+
+	// On an ordered shutdown, publish the offline status explicitly and wait
+	// for the publish to complete (or the timeout to elapse) before
+	// disconnecting. A regular DISCONNECT makes the broker discard the MQTT
+	// Last Will, so the offline state has to be sent here.
+	b.publishOfflineStatus(client)
+	return nil
+}
+
+// publishOfflineStatus publishes the disconnect (offline) state on the remote
+// status topic on an ordered shutdown. A regular MQTT DISCONNECT makes the
+// broker discard the Last Will, so the offline state has to be sent
+// explicitly here. publishOfflineStatus waits for the publish to complete via
+// the OnCompleteFunc callback, but no longer than bridgeStatusPublishTimeout.
+func (b *Bridge) publishOfflineStatus(client *service.Client) {
+	if b.willTopic == "" {
+		return
+	}
+	offline := b.willPayloadDisconnect
+	if offline == "" {
+		offline = "offline"
+	}
+	pubmsg := message.NewPublishMessage()
+	if err := pubmsg.SetTopic([]byte(b.willTopic)); err != nil {
+		logBridge.Errorf("Invalid Last Will topic %q: %v", b.willTopic, err)
+		return
+	}
+	pubmsg.SetPayload([]byte(offline))
+	pubmsg.SetQoS(b.willQoS)
+	pubmsg.SetRetain(b.willRetain)
+	done := make(chan struct{})
+	var onComplete service.OnCompleteFunc = func(msg, ack message.Message, err error) error {
+		if err != nil {
+			logBridge.Errorf("Publishing offline status on topic %q failed: %v", b.willTopic, err)
+		} else {
+			logBridge.Debugf("Published offline status %q on topic %q", offline, b.willTopic)
+		}
+		close(done)
+		return nil
+	}
+	if err := client.Publish(pubmsg, onComplete); err != nil {
+		logBridge.Errorf("Publishing offline status on topic %q failed: %v", b.willTopic, err)
+		return
+	}
+	// wait for the publish to complete, but no longer than the timeout
+	select {
+	case <-done:
+		logBridge.Debug("Offline status publish completed")
+	case <-time.After(bridgeStatusPublishTimeout):
+		logBridge.Warningf("Timeout while waiting for offline status publish on topic %q", b.willTopic)
 	}
 }
 
