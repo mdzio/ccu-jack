@@ -123,12 +123,12 @@ type MQTTBridge struct {
 	Incoming     []MQTTSharedTopic
 	Outgoing     []MQTTSharedTopic
 	// Last Will configuration. If WillTopic is non-empty, the bridge publishes
-	// WillConnectMessage (retained) on the remote WillTopic after a successful
-	// connect and registers WillDisconnectMessage as the MQTT Last Will, so the
+	// WillPayloadConnect (retained) on the remote WillTopic after a successful
+	// connect and registers WillPayloadDisconnect as the MQTT Last Will, so the
 	// broker publishes it automatically when the connection drops unexpectedly.
 	WillTopic             string
-	WillConnectMessage    string
-	WillDisconnectMessage string
+	WillPayloadConnect    string
+	WillPayloadDisconnect string
 	WillQoS               byte
 	WillRetain            bool
 }

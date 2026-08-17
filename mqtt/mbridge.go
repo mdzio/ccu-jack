@@ -44,8 +44,8 @@ type Bridge struct {
 	// Last Will configuration, copied from the bridge config. Empty if no
 	// WillTopic is configured.
 	willTopic             string
-	willConnectMessage    string
-	willDisconnectMessage string
+	willPayloadConnect    string
+	willPayloadDisconnect string
 	willQoS               byte
 	willRetain            bool
 }
@@ -79,24 +79,24 @@ func (b *Bridge) Start(cfg *rtcfg.MQTTBridge) {
 	b.in = cloneSharedTopics(cfg.Incoming)
 	b.out = cloneSharedTopics(cfg.Outgoing)
 
-	// setup Last Will (if configured). WillDisconnectMessage is registered as
+	// setup Last Will (if configured). WillPayloadDisconnect is registered as
 	// the MQTT Last Will and published by the broker when the connection drops.
-	// WillConnectMessage is published explicitly after a successful connect
+	// WillPayloadConnect is published explicitly after a successful connect
 	// (see runClient).
 	b.willTopic = cfg.WillTopic
-	b.willConnectMessage = cfg.WillConnectMessage
-	b.willDisconnectMessage = cfg.WillDisconnectMessage
+	b.willPayloadConnect = cfg.WillPayloadConnect
+	b.willPayloadDisconnect = cfg.WillPayloadDisconnect
 	b.willQoS = cfg.WillQoS
 	b.willRetain = cfg.WillRetain
 	if b.willTopic != "" {
 		b.connMsg.SetWillTopic([]byte(b.willTopic))
-		b.connMsg.SetWillMessage([]byte(b.willDisconnectMessage))
+		b.connMsg.SetWillMessage([]byte(b.willPayloadDisconnect))
 		if err := b.connMsg.SetWillQos(b.willQoS); err != nil {
 			logBridge.Errorf("Invalid Last Will QoS %d: %v", b.willQoS, err)
 		}
 		b.connMsg.SetWillRetain(b.willRetain)
 		b.connMsg.SetWillFlag(true)
-		logBridge.Debugf("Configured MQTT Last Will on topic %q with disconnect payload %q", b.willTopic, b.willDisconnectMessage)
+		logBridge.Debugf("Configured MQTT Last Will on topic %q with disconnect payload %q", b.willTopic, b.willPayloadDisconnect)
 	}
 
 	// run daemon
@@ -258,7 +258,7 @@ func (b *Bridge) publishOnlineStatus(client *service.Client) {
 	if b.willTopic == "" {
 		return
 	}
-	online := b.willConnectMessage
+	online := b.willPayloadConnect
 	if online == "" {
 		online = "online"
 	}
