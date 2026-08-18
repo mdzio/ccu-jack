@@ -74,9 +74,7 @@ func (a *vadapter) start() {
 				select {
 				case <-a.quit:
 					// clean up timer
-					if !t.Stop() {
-						<-t.C
-					}
+					t.Stop()
 					return
 				case <-t.C:
 				}
