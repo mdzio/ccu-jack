@@ -9,8 +9,9 @@ github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aN
 github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/mdzio/go-hmccu v1.5.7 h1:jUjiLCcXFHgT5JOeT3BIy8zJD5Svoaxw8/dja+VO29s=
 github.com/mdzio/go-hmccu v1.5.7/go.mod h1:I4tGBO0/moyiFVOnQa0Q7hUhNYZ5YERcH9Dd1zKc1ck=
-github.com/mdzio/go-lib v0.2.2 h1:3/59L//wOTDLQnbdt/rYPIXsXsoBFM/eC2tffWV7gto=
 github.com/mdzio/go-lib v0.2.2/go.mod h1:iT5EGniJ9KN32ynSFImmjSTOxscncRL6h6OagK/G1PY=
+github.com/mdzio/go-lib v0.2.3 h1:+/VOYpyRA5YYBvHhdox/lTS0HBA8O4ZVrCH1nO0OD9k=
+github.com/mdzio/go-lib v0.2.3/go.mod h1:3dCdaSQzxnxJuyIaL6t8QSn2injfdHAAQWeiPibQUBU=
 github.com/mdzio/go-logging v1.0.0 h1:5ykv9QZfEEn3G8Xt2Kcq7FIXDUpXyvp9PUiqWtLDaP0=
 github.com/mdzio/go-logging v1.0.0/go.mod h1:PAR0NsQwdZiUSy/yykXTWm+kZsbYCLTkBnKgJ6O50rw=
 github.com/mdzio/go-mqtt v1.0.5 h1:belx83V4NUihZ55aTdoyjYDEKaVtXvkAaEIj8QsikL4=
