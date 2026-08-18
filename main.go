@@ -32,7 +32,6 @@ const (
 	appDisplayName = "CCU-Jack"
 	appName        = "ccu-jack"
 	appDescription = "REST/MQTT-Interface for the HomeMatic CCU"
-	appCopyright   = "(C)2019-2025"
 	appVendor      = "info@ccu-historian.de"
 
 	// wait time for ReGaHss before signaling an error
@@ -40,7 +39,9 @@ const (
 )
 
 var (
-	appVersion = "-dev-" // overwritten during build process
+	// overwritten during build process
+	appVersion   = "-dev-"
+	appCopyright = "(C)-dev-"
 
 	// command line options
 	configFile = flag.String("config", "ccu-jack.cfg", "configuration `file`")

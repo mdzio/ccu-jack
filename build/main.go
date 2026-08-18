@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/mdzio/go-lib/releng"
 	"github.com/mdzio/go-logging"
@@ -19,6 +21,10 @@ const (
 )
 
 var (
+	// generate copyright year
+	appCopyright = "(C)2019-" + strconv.Itoa(time.Now().Year())
+	ldFlagsEx    = ldFlags + " -X main.appCopyright=" + appCopyright
+
 	// target systems to be built
 	targetSystems = []string{
 		"ccu3-rm-rp2+3",
@@ -36,14 +42,14 @@ var (
 		addon  bool
 		goSpec releng.GoSpec
 	}{
-		"rm-rp0+1":      {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "6", LDFlags: ldFlags}},
-		"ccu3-rm-rp2+3": {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "7", LDFlags: ldFlags}},
-		"rm-rp4":        {true, releng.GoSpec{OS: "linux", Arch: "arm64", LDFlags: ldFlags}},
-		"vccu-x86":      {true, releng.GoSpec{OS: "linux", Arch: "386", LDFlags: ldFlags}},
-		"vccu-x86_64":   {true, releng.GoSpec{OS: "linux", Arch: "amd64", LDFlags: ldFlags}},
-		"win":           {false, releng.GoSpec{OS: "windows", Arch: "amd64", LDFlags: ldFlags}},
-		"linux":         {false, releng.GoSpec{OS: "linux", Arch: "amd64", LDFlags: ldFlags}},
-		"darwin":        {false, releng.GoSpec{OS: "darwin", Arch: "amd64", LDFlags: ldFlags}},
+		"rm-rp0+1":      {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "6", LDFlags: ldFlagsEx}},
+		"ccu3-rm-rp2+3": {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "7", LDFlags: ldFlagsEx}},
+		"rm-rp4":        {true, releng.GoSpec{OS: "linux", Arch: "arm64", LDFlags: ldFlagsEx}},
+		"vccu-x86":      {true, releng.GoSpec{OS: "linux", Arch: "386", LDFlags: ldFlagsEx}},
+		"vccu-x86_64":   {true, releng.GoSpec{OS: "linux", Arch: "amd64", LDFlags: ldFlagsEx}},
+		"win":           {false, releng.GoSpec{OS: "windows", Arch: "amd64", LDFlags: ldFlagsEx}},
+		"linux":         {false, releng.GoSpec{OS: "linux", Arch: "amd64", LDFlags: ldFlagsEx}},
+		"darwin":        {false, releng.GoSpec{OS: "darwin", Arch: "amd64", LDFlags: ldFlagsEx}},
 	}
 
 	// files for non ccu target systems
