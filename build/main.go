@@ -74,7 +74,7 @@ var (
 		{Inc: "third-party-licenses/*", DstDir: "addon/third-party-licenses"},
 		{Inc: "wd/webui/*", DstDir: "addon/webui"},
 		{Inc: "wd/webui/ext/*", DstDir: "addon/webui/ext"},
-		{Inc: "dist/ccu/rc.d/ccu-jack", DstDir: "rc.d", Exe: true},
+		{Inc: "build/tmp/ccu-jack", DstDir: "rc.d", Exe: true},
 		{Inc: "dist/ccu/etc/monit-ccu-jack.cfg", DstDir: "etc"},
 		{Inc: "dist/ccu/www/config.cgi", DstDir: "www", Exe: true},
 		{Inc: "dist/ccu/www/update-check.cgi", DstDir: "www", Exe: true},
@@ -91,6 +91,10 @@ func build() {
 	releng.RequireFiles([]string{"README.md", "LICENSE.txt", "main.go"})
 	releng.Mkdir("build/tmp")
 	releng.WriteFile("build/tmp/VERSION", []byte(appVersion))
+
+	// Generate rc.d script from template
+	tmplData := struct{ Copyright string }{Copyright: appCopyright}
+	releng.WriteTemplate("dist/ccu/rc.d/ccu-jack.tmpl", "build/tmp/ccu-jack", tmplData)
 
 	for _, ts := range targetSystems {
 		sysSpec, ok := sysSpecs[ts]
