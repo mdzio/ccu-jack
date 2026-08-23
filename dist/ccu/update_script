@@ -21,7 +21,7 @@ if [ "$1" = "" ]; then
 elif [ "$1" = "CCU2" ]; then
   echo "Installing on CCU2"
   mount -t ubifs ubi1:user /usr/local
-# A CCU3 currently masquerades as RaspberryMatic. CCU3 is currently not defined, but it can happen. 
+# A CCU3 currently masquerades as OpenCCU/RaspberryMatic. CCU3 is currently not defined, but it can happen. 
 elif [ "$1" == "HM-RASPBERRYMATIC" -o "$1" == "CCU3" ]; then
   echo "Installing on CCU3/RaspberryMatic"
   mount /usr/local 2> /dev/null
