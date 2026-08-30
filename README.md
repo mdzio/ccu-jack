@@ -57,4 +57,4 @@ Mitwirkende sind natürlich gerne gesehen. Sei es für die Dokumentation, das Te
 
 ## Lizenz und Haftungsausschluss
 
-Lizenz und Haftungsausschluss sind in der Datei [LICENSE.txt](LICENSE.txt) zu finden.
+Lizenz und Haftungsausschluss sind in der Datei [LICENSE.txt](LICENSE.txt) zu finden. Abgeleitete Werke dürfen nicht unter einer permissiveren Lizenz (z.B. MIT) veröffentlicht werden. Insbesondere darf der Quelltext nicht als Eingabe (z.B. Prompt, Trainingsdaten) für eine KI (z.B. LLM) verwendet werden, wenn die Ziellizenz nicht mit der GPLv3 kompatibel ist.
