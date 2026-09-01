@@ -2,10 +2,13 @@
 
 [Environment variables of the Go compiler for cross compiling to ARM.](https://github.com/golang/go/wiki/GoArm)
 
+## Tcl
+
+* CCU2: V8.2
+* CCU3: V8.2
+* OpenCCU v3.85.7.20260131: V8.6
+
 ## CCU2
-
-* Tcl version 8.2
-
 ```
 GOOS=linux
 GOARCH=arm
