@@ -21,6 +21,7 @@ var logBridge = logging.Get("mqtt-bridge")
 const (
 	bridgeKeepAlive       = 60 * time.Second
 	bridgeRecoverDuration = 60 * time.Second
+	bridgePublishTimeout  = 5 * time.Second
 )
 
 // Bridge connects the embedded MQTT server with a remote one. Messages on
@@ -40,6 +41,13 @@ type Bridge struct {
 	cancel func()
 	in     []rtcfg.MQTTSharedTopic
 	out    []rtcfg.MQTTSharedTopic
+
+	// Last Will configuration, copied from the bridge config.
+	willTopic               string
+	willPayloadConnected    string
+	willPayloadDisconnected string
+	willQoS                 byte
+	willRetain              bool
 }
 
 // Start starts the bridge with the specified configuration. The configuration
@@ -66,6 +74,26 @@ func (b *Bridge) Start(cfg *rtcfg.MQTTBridge) {
 	b.connMsg.SetUsername([]byte(cfg.Username))
 	b.connMsg.SetVersion(0x4) // MQTT V3.1.1
 	b.connMsg.SetKeepAlive(uint16(bridgeKeepAlive / time.Second))
+
+	// setup Last Will (if configured). WillPayloadDisconnect is registered as
+	// the MQTT Last Will and published by the broker when the connection drops.
+	// WillPayloadConnect is published explicitly after a successful connect
+	// (see runClient).
+	if cfg.WillTopic != "" {
+		b.willTopic = cfg.WillTopic
+		b.willPayloadConnected = cfg.WillPayloadConnected
+		b.willPayloadDisconnected = cfg.WillPayloadDisconnected
+		b.willQoS = cfg.WillQoS
+		b.willRetain = cfg.WillRetain
+		b.connMsg.SetWillTopic([]byte(b.willTopic))
+		b.connMsg.SetWillMessage([]byte(b.willPayloadDisconnected))
+		if err := b.connMsg.SetWillQos(b.willQoS); err != nil {
+			logBridge.Errorf("Invalid Last Will QoS %d: %v", b.willQoS, err)
+		}
+		b.connMsg.SetWillRetain(b.willRetain)
+		b.connMsg.SetWillFlag(true)
+		logBridge.Debugf("Configured MQTT Last Will on topic %q with disconnect payload %q", b.willTopic, b.willPayloadDisconnected)
+	}
 
 	// clone shared topics
 	b.in = cloneSharedTopics(cfg.Incoming)
@@ -140,6 +168,10 @@ func (b *Bridge) runClient(ctx conc.Context) error {
 	}
 	defer client.Disconnect()
 
+	// publish status connected, so subscribers on the remote broker know the
+	// bridge is connected (the Last Will only fires on disconnect)
+	b.publishStatus(client, b.willPayloadConnected, false)
+
 	// subscribe remote topics and publish local
 	for _, tt := range b.in {
 		t := tt // clone for callbacks
@@ -212,8 +244,56 @@ func (b *Bridge) runClient(ctx conc.Context) error {
 			return fmt.Errorf("Ping failed: %w", err)
 		}
 		if err := ctx.Sleep(bridgeKeepAlive); err != nil {
-			// bridge should stop
-			return nil
+			// context canceled -> ordered shutdown
+			break
+		}
+	}
+
+	// On an ordered shutdown, publish the status disconnected explicitly and
+	// wait for the publish to complete (or the timeout to elapse) before
+	// disconnecting. A regular DISCONNECT makes the broker discard the MQTT
+	// Last Will, so the status disconnected has to be sent here.
+	b.publishStatus(client, b.willPayloadDisconnected, true)
+	return nil
+}
+
+// publishStatus publishes a status payload on the will topic. If
+// waitForCompletion is true, it waits for the publish to complete (or timeout),
+// otherwise it fires and forgets.
+func (b *Bridge) publishStatus(client *service.Client, payload string, waitForCompletion bool) {
+	if b.willTopic == "" {
+		return
+	}
+	pubmsg := message.NewPublishMessage()
+	if err := pubmsg.SetTopic([]byte(b.willTopic)); err != nil {
+		logBridge.Errorf("Invalid Last Will topic %q: %v", b.willTopic, err)
+		return
+	}
+	pubmsg.SetPayload([]byte(payload))
+	pubmsg.SetQoS(b.willQoS)
+	pubmsg.SetRetain(b.willRetain)
+
+	done := make(chan struct{})
+	onComplete := func(msg, ack message.Message, err error) error {
+		if err != nil {
+			logBridge.Errorf("Publishing %q on topic %q failed: %v", payload, b.willTopic, err)
+		} else {
+			logBridge.Debugf("Published %q on topic %q", payload, b.willTopic)
+		}
+		close(done)
+		return nil
+	}
+
+	if err := client.Publish(pubmsg, onComplete); err != nil {
+		logBridge.Errorf("Publishing %q on topic %q failed: %v", payload, b.willTopic, err)
+		return
+	}
+
+	if waitForCompletion {
+		select {
+		case <-done:
+		case <-time.After(bridgePublishTimeout):
+			logBridge.Warningf("Timeout while waiting for status publish on topic %q", b.willTopic)
 		}
 	}
 }

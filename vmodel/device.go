@@ -240,9 +240,7 @@ func (d *DeviceCol) handleNew(n *deviceNotif) bool {
 				select {
 				case <-d.stopRequest:
 					// clean up timer
-					if !t.Stop() {
-						<-t.C
-					}
+					t.Stop()
 					return false
 				case <-t.C:
 				}

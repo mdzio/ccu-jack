@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/mdzio/go-lib/releng"
 	"github.com/mdzio/go-logging"
@@ -12,13 +14,17 @@ import (
 const (
 	logLevel   = logging.InfoLevel
 	appName    = "ccu-jack"
-	appVersion = "2.12.4"
+	appVersion = "2.13.0"
 	appPkg     = "github.com/mdzio/ccu-jack"
 	ldFlags    = "-s -w -X main.appVersion=" + appVersion
 	buildDir   = ".."
 )
 
 var (
+	// generate copyright year
+	appCopyright = "(C)2019-" + strconv.Itoa(time.Now().Year())
+	ldFlagsEx    = ldFlags + " -X main.appCopyright=" + appCopyright
+
 	// target systems to be built
 	targetSystems = []string{
 		"ccu3-rm-rp2+3",
@@ -36,14 +42,14 @@ var (
 		addon  bool
 		goSpec releng.GoSpec
 	}{
-		"rm-rp0+1":      {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "6", LDFlags: ldFlags}},
-		"ccu3-rm-rp2+3": {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "7", LDFlags: ldFlags}},
-		"rm-rp4":        {true, releng.GoSpec{OS: "linux", Arch: "arm64", LDFlags: ldFlags}},
-		"vccu-x86":      {true, releng.GoSpec{OS: "linux", Arch: "386", LDFlags: ldFlags}},
-		"vccu-x86_64":   {true, releng.GoSpec{OS: "linux", Arch: "amd64", LDFlags: ldFlags}},
-		"win":           {false, releng.GoSpec{OS: "windows", Arch: "amd64", LDFlags: ldFlags}},
-		"linux":         {false, releng.GoSpec{OS: "linux", Arch: "amd64", LDFlags: ldFlags}},
-		"darwin":        {false, releng.GoSpec{OS: "darwin", Arch: "amd64", LDFlags: ldFlags}},
+		"rm-rp0+1":      {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "6", LDFlags: ldFlagsEx}},
+		"ccu3-rm-rp2+3": {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "7", LDFlags: ldFlagsEx}},
+		"rm-rp4":        {true, releng.GoSpec{OS: "linux", Arch: "arm64", LDFlags: ldFlagsEx}},
+		"vccu-x86":      {true, releng.GoSpec{OS: "linux", Arch: "386", LDFlags: ldFlagsEx}},
+		"vccu-x86_64":   {true, releng.GoSpec{OS: "linux", Arch: "amd64", LDFlags: ldFlagsEx}},
+		"win":           {false, releng.GoSpec{OS: "windows", Arch: "amd64", LDFlags: ldFlagsEx}},
+		"linux":         {false, releng.GoSpec{OS: "linux", Arch: "amd64", LDFlags: ldFlagsEx}},
+		"darwin":        {false, releng.GoSpec{OS: "darwin", Arch: "amd64", LDFlags: ldFlagsEx}},
 	}
 
 	// files for non ccu target systems
@@ -68,7 +74,7 @@ var (
 		{Inc: "third-party-licenses/*", DstDir: "addon/third-party-licenses"},
 		{Inc: "wd/webui/*", DstDir: "addon/webui"},
 		{Inc: "wd/webui/ext/*", DstDir: "addon/webui/ext"},
-		{Inc: "dist/ccu/rc.d/ccu-jack", DstDir: "rc.d", Exe: true},
+		{Inc: "build/tmp/ccu-jack", DstDir: "rc.d", Exe: true},
 		{Inc: "dist/ccu/etc/monit-ccu-jack.cfg", DstDir: "etc"},
 		{Inc: "dist/ccu/www/config.cgi", DstDir: "www", Exe: true},
 		{Inc: "dist/ccu/www/update-check.cgi", DstDir: "www", Exe: true},
@@ -85,6 +91,10 @@ func build() {
 	releng.RequireFiles([]string{"README.md", "LICENSE.txt", "main.go"})
 	releng.Mkdir("build/tmp")
 	releng.WriteFile("build/tmp/VERSION", []byte(appVersion))
+
+	// Generate rc.d script from template
+	tmplData := struct{ Copyright string }{Copyright: appCopyright}
+	releng.WriteTemplate("dist/ccu/rc.d/ccu-jack.tmpl", "build/tmp/ccu-jack", tmplData)
 
 	for _, ts := range targetSystems {
 		sysSpec, ok := sysSpecs[ts]
