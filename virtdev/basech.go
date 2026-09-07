@@ -11,6 +11,10 @@ type baseChannel struct {
 	vdevices.GenericChannel
 	virtualDevices *VirtualDevices  // root of all virtual devices
 	device         *vdevices.Device // device of this channel
+	// configChannelIndex overrides the automatic config-index lookup
+	// (channel.Index - 1). Set via a non-nil pointer when one config channel
+	// maps to multiple device channels (e.g. MQTT_BROLL).
+	configChannelIndex *int
 }
 
 // channelConfig returns the configuration of this channel. channelConfig must
@@ -20,8 +24,14 @@ func (c *baseChannel) channelConfig() (*rtcfg.Channel, error) {
 	if !ok {
 		return nil, fmt.Errorf("Virtual device %s not found in config", c.Description().Parent)
 	}
-	// maintenance channel (index 0) is skipped
-	i := c.Description().Index - 1
+	var i int
+	if c.configChannelIndex != nil {
+		// explicit override: one config entry covers multiple device channels
+		i = *c.configChannelIndex
+	} else {
+		// default: maintenance channel (index 0) is skipped
+		i = c.Description().Index - 1
+	}
 	if i < 0 || i >= len(d.Channels) {
 		return nil, fmt.Errorf("Virtual device channel %s:%d not found in config", c.Description().Parent, c.Description().Index)
 	}
