@@ -80,6 +80,10 @@ func (s *Store) Read() error {
 		s.Config.MQTT.WebSocketPath = "/ws-mqtt"
 		s.modified = true
 	}
+	if s.Config.MQTT.BufferSize == 0 {
+		s.Config.MQTT.BufferSize = 1024 * 1024
+		s.modified = true
+	}
 	// save, if modified
 	if s.modified {
 		s.delayedWrite()
