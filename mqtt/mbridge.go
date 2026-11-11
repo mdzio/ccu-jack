@@ -20,7 +20,7 @@ var logBridge = logging.Get("mqtt-bridge")
 
 const (
 	bridgeKeepAlive       = 60 * time.Second
-	bridgeRecoverDuration = 60 * time.Second
+	bridgeRecoverDuration = 10 * time.Second
 	bridgePublishTimeout  = 5 * time.Second
 )
 
