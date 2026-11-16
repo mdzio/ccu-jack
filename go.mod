@@ -7,7 +7,7 @@ require (
 	github.com/mdzio/go-hmccu v1.5.7
 	github.com/mdzio/go-lib v0.3.0
 	github.com/mdzio/go-logging v1.0.0
-	github.com/mdzio/go-mqtt v1.0.6
+	github.com/mdzio/go-mqtt v1.0.7
 	github.com/mdzio/go-veap v0.5.1
 	golang.org/x/crypto v0.55.0
 )
@@ -18,6 +18,3 @@ require (
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 )
-
-// Use local go-mqtt with ErrServiceClosed fix for issue #239
-replace github.com/mdzio/go-mqtt => ../go-mqtt
