@@ -38,6 +38,19 @@ func (vd *VirtualDevices) addStaticDimmer(dev *vdevices.Device) vdevices.Generic
 	return ch
 }
 
+func (vd *VirtualDevices) addStaticBlind(dev *vdevices.Device) vdevices.GenericChannel {
+
+	ch := new(baseChannel)
+	ch.virtualDevices = vd
+	ch.device = dev
+
+	// inititalize baseChannel
+	bch := vdevices.NewBlindChannel(dev)
+	ch.GenericChannel = bch
+
+	return ch
+}
+
 func (vd *VirtualDevices) addStaticUnreach(dev *vdevices.Device) vdevices.GenericChannel {
 	ch := new(baseChannel)
 	ch.virtualDevices = vd

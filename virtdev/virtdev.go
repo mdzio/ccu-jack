@@ -185,6 +185,9 @@ func (vd *VirtualDevices) createDevice(devcfg *rtcfg.Device) error {
 		case rtcfg.ChannelUnreach:
 			ch := vd.addStaticUnreach(dev)
 			log.Debugf("Created static unreach channel: %s", ch.Description().Address)
+		case rtcfg.ChannelBlind:
+			ch := vd.addStaticBlind(dev)
+			log.Debugf("Created static blind channel: %s", ch.Description().Address)
 
 		case rtcfg.ChannelMQTTKeySender:
 			ch := vd.addMQTTKeySender(dev)
