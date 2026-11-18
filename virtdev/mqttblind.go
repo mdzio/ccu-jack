@@ -1,0 +1,259 @@
+package virtdev
+
+import (
+	"bytes"
+	"text/template"
+
+	"github.com/mdzio/go-hmccu/itf/vdevices"
+	"github.com/mdzio/go-mqtt/message"
+	"github.com/mdzio/go-mqtt/service"
+)
+
+type mqttBlind struct {
+
+	baseChannel
+	blindChannel    *vdevices.BlindChannel
+	subscribedTopic string
+	onPublish       service.OnPublishFunc
+	template        *template.Template
+
+	// range parameters
+	paramRangeMin *vdevices.FloatParameter
+	paramRangeMax *vdevices.FloatParameter
+
+	// command parameters
+	paramCommandTopic *vdevices.StringParameter
+	paramRetain       *vdevices.BoolParameter
+	paramTemplate     *vdevices.StringParameter
+	paramStopTopic    *vdevices.StringParameter
+	paramStopPayload  *vdevices.StringParameter
+
+	// feedback parameters
+	paramFBTopic       *vdevices.StringParameter
+	paramPattern       *vdevices.StringParameter
+	paramExtractorKind *vdevices.IntParameter
+	paramRegexpGroup   *vdevices.IntParameter
+}
+
+func (c *mqttBlind) start() {
+
+	tmplText := c.paramTemplate.Value().(string)
+	specFuncs := createSpecificFuncs(c.virtualDevices.Devices, c.device, c)
+	tmpl, err := template.New("mqttblind").Funcs(tmplFuncs).Funcs(specFuncs).Parse(tmplText)
+	if err != nil {
+		log.Errorf("Invalid template '%s': %v", tmplText, err)
+		tmpl = nil
+	}
+	c.template = tmpl
+
+	fbTopic := c.paramFBTopic.Value().(string)
+	if fbTopic != "" {
+		cmdTopic := c.paramCommandTopic.Value().(string)
+		if matchTopic(fbTopic, cmdTopic) {
+			log.Errorf("Feedback topic '%s' must not overlap with command topic '%s'", fbTopic, cmdTopic)
+			return
+		}
+		stopTopic := c.paramStopTopic.Value().(string)
+		if stopTopic != "" && matchTopic(fbTopic, stopTopic) {
+			log.Errorf("Feedback topic '%s' must not overlap with stop topic '%s'", fbTopic, stopTopic)
+			return
+		}
+		extractor, err := newExtractor(c.paramExtractorKind, c.paramPattern, c.paramRegexpGroup)
+		if err != nil {
+			log.Errorf("Creation of value extractor for MQTT blind %s:%d failed: %v", c.Description().Parent,
+				c.Description().Index, err)
+			return
+		}
+		c.onPublish = func(msg *message.PublishMessage) error {
+
+			log.Debugf("Message for MQTT blind %s:%d received: %s, %s", c.Description().Parent,
+				c.Description().Index, msg.Topic(), msg.Payload())
+			value, err := extractor.Extract(msg.Payload())
+			if err != nil {
+				log.Warningf("Extraction of value for MQTT blind %s:%d failed: %v", c.Description().Parent,
+					c.Description().Index, err)
+				// nothing can be done
+				return nil
+			}
+			mappedValue := c.mapFromRange(value)
+			c.blindChannel.SetLevel(mappedValue)
+			return nil
+		}
+		if err := c.virtualDevices.MQTTServer.Subscribe(fbTopic, message.QosExactlyOnce, &c.onPublish); err != nil {
+
+			log.Errorf("Subscribe failed on topic %s: %v", fbTopic, err)
+		} else {
+			c.subscribedTopic = fbTopic
+		}
+	}
+}
+
+func (c *mqttBlind) stop() {
+
+	if c.subscribedTopic != "" {
+		c.virtualDevices.MQTTServer.Unsubscribe(c.subscribedTopic, &c.onPublish)
+		c.subscribedTopic = ""
+	}
+}
+
+func (c *mqttBlind) mapToRange(value float64) float64 {
+
+	min := c.paramRangeMin.Value().(float64)
+	max := c.paramRangeMax.Value().(float64)
+	return value*(max-min) + min
+}
+
+func (c *mqttBlind) mapFromRange(value float64) float64 {
+
+	min := c.paramRangeMin.Value().(float64)
+	max := c.paramRangeMax.Value().(float64)
+	if min == max {
+		return 0.0
+	}
+	out := (value - min) / (max - min)
+	if out < 0.0 {
+		out = 0.0
+	}
+	if out > 1.0 {
+		out = 1.0
+	}
+	return out
+}
+
+func (c *mqttBlind) publishToMQTT(value float64) {
+
+	if c.template == nil {
+		log.Warningf("Invalid template: %s", c.paramTemplate.Value().(string))
+		return
+	}
+	mappedValue := c.mapToRange(value)
+	var buf bytes.Buffer
+	err := c.template.Execute(&buf, mappedValue)
+	if err != nil {
+		log.Errorf("Execution of template '%s' failed for value %g: %v", c.paramTemplate.Value().(string), mappedValue, err)
+		return
+	}
+	c.virtualDevices.MQTTServer.Publish(
+		c.paramCommandTopic.Value().(string),
+		buf.Bytes(),
+		message.QosExactlyOnce,
+		c.paramRetain.Value().(bool),
+	)
+}
+
+func (c *mqttBlind) publishStopToMQTT() {
+
+	stopTopic := c.paramStopTopic.Value().(string)
+	if stopTopic == "" {
+		return
+	}
+	c.virtualDevices.MQTTServer.Publish(
+		stopTopic,
+		[]byte(c.paramStopPayload.Value().(string)),
+		message.QosExactlyOnce,
+		false,
+	)
+}
+
+func (vd *VirtualDevices) addMQTTBlind(dev *vdevices.Device) vdevices.GenericChannel {
+
+	ch := new(mqttBlind)
+	ch.virtualDevices = vd
+	ch.device = dev
+
+	// inititalize baseChannel
+	ch.blindChannel = vdevices.NewBlindChannel(dev)
+	ch.GenericChannel = ch.blindChannel
+
+	// RANGE_MIN
+	ch.paramRangeMin = vdevices.NewFloatParameter("RANGE_MIN")
+	ch.paramRangeMin.Description().Default = 0.0
+	ch.paramRangeMin.InternalSetValue(0.0)
+	ch.AddMasterParam(ch.paramRangeMin)
+
+	// RANGE_MAX
+	ch.paramRangeMax = vdevices.NewFloatParameter("RANGE_MAX")
+	ch.paramRangeMax.Description().Default = 1.0
+	ch.paramRangeMax.InternalSetValue(1.0)
+	ch.AddMasterParam(ch.paramRangeMax)
+
+	// COMMAND_TOPIC
+	ch.paramCommandTopic = vdevices.NewStringParameter("COMMAND_TOPIC")
+	ch.AddMasterParam(ch.paramCommandTopic)
+
+	// RETAIN
+	ch.paramRetain = vdevices.NewBoolParameter("RETAIN")
+	ch.AddMasterParam(ch.paramRetain)
+
+	// TEMPLATE
+	ch.paramTemplate = vdevices.NewStringParameter("TEMPLATE")
+	ch.paramTemplate.Description().Default = "{{ . }}"
+	ch.paramTemplate.InternalSetValue("{{ . }}")
+	ch.AddMasterParam(ch.paramTemplate)
+
+	// STOP_TOPIC
+	ch.paramStopTopic = vdevices.NewStringParameter("STOP_TOPIC")
+	ch.AddMasterParam(ch.paramStopTopic)
+
+	// STOP_PAYLOAD
+	ch.paramStopPayload = vdevices.NewStringParameter("STOP_PAYLOAD")
+	ch.paramStopPayload.Description().Default = "STOP"
+	ch.paramStopPayload.InternalSetValue("STOP")
+	ch.AddMasterParam(ch.paramStopPayload)
+
+	// FEEDBACK_TOPIC
+	ch.paramFBTopic = vdevices.NewStringParameter("FEEDBACK_TOPIC")
+	ch.AddMasterParam(ch.paramFBTopic)
+
+	// PATTERN
+	ch.paramPattern = vdevices.NewStringParameter("PATTERN")
+	ch.AddMasterParam(ch.paramPattern)
+
+	// EXTRACTOR
+	ch.paramExtractorKind = newExtractorKindParameter("EXTRACTOR")
+	ch.AddMasterParam(ch.paramExtractorKind)
+
+	// REGEXP_GROUP
+	ch.paramRegexpGroup = vdevices.NewIntParameter("REGEXP_GROUP")
+	ch.paramRegexpGroup.Description().Min = 0
+	ch.paramRegexpGroup.Description().Max = 100
+	ch.paramRegexpGroup.Description().Default = 0
+	ch.AddMasterParam(ch.paramRegexpGroup)
+
+	// level change
+	ch.blindChannel.OnSetLevel = func(value float64) bool {
+
+		// update level for usage in template
+		ch.blindChannel.SetLevel(value)
+
+		ch.publishToMQTT(value)
+
+		// update level in channel and publish event to CCU
+		return true
+	}
+
+	// stop
+	ch.blindChannel.OnSetStop = func() bool {
+
+		ch.publishStopToMQTT()
+
+		return true
+	}
+
+	// clean up
+	ch.blindChannel.OnDispose = ch.stop
+
+	// store master param on PutParamset, reregister topics
+	ch.MasterParamset().HandlePutParamset(func() {
+		ch.stop()
+		ch.storeMasterParamset()
+		ch.start()
+	})
+
+	// load master parameters from config
+	ch.loadMasterParamset()
+
+	// register topics
+	ch.start()
+	return ch
+}

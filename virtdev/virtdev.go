@@ -225,6 +225,9 @@ func (vd *VirtualDevices) createDevice(devcfg *rtcfg.Device) error {
 		case rtcfg.ChannelMQTTUnreach:
 			ch := vd.addMQTTUnreach(dev)
 			log.Debugf("Created MQTT connection error channel: %s", ch.Description().Address)
+		case rtcfg.ChannelMQTTBlind:
+			ch := vd.addMQTTBlind(dev)
+			log.Debugf("Created MQTT blind channel: %s", ch.Description().Address)
 
 		default:
 			return fmt.Errorf("Unsupported kind of channel in device %s: %v", devcfg.Address, chcfg.Kind)
