@@ -125,7 +125,38 @@ func build() {
 			arcExt = ".tar.gz"
 		}
 		releng.Archive(appName+"-"+ts+"-"+appVersion+arcExt, allFiles)
+		if ts == "ccu3-rm-rp2+3" {
+			buildDebmaticArchive(binFile)
+		}
 	}
+}
+
+func buildDebmaticArchive(binFile string) {
+	const src = "dist/debmatic/"
+	const addonDir = "usr/local/addons/ccu-jack"
+
+	releng.RequireFiles([]string{
+		src + "ccu-jack.cfg",
+		src + "config.cgi",
+		src + "ccu-jack.service",
+		src + "update-hm_addons",
+	})
+	debmaticFiles := []releng.CopySpec{
+		{Inc: binFile, DstDir: addonDir, Exe: true},
+		{Inc: "build/tmp/VERSION", DstDir: addonDir},
+		{Inc: "README.md", DstDir: addonDir},
+		{Inc: "LICENSE.txt", DstDir: addonDir},
+		{Inc: src + "ccu-jack.cfg", DstDir: "etc/config/addons"},
+		{Inc: "dist/update_hm_addons.tcl", DstDir: addonDir, Exe: true},
+		{Inc: "third-party-licenses/*", DstDir: addonDir + "/third-party-licenses"},
+		{Inc: "wd/webui/*", DstDir: addonDir + "/webui"},
+		{Inc: "wd/webui/ext/*", DstDir: addonDir + "/webui/ext"},
+		{Inc: src + "config.cgi", DstDir: "etc/config/addons/www/ccu-jack", Exe: true},
+		{Inc: src + "ccu-jack.service", DstDir: "usr/lib/systemd/system"},
+		{Inc: src + "update-hm_addons", DstDir: addonDir, Exe: true},
+	}
+
+	releng.Archive(appName+"-debmatic-rp2+3-"+appVersion+".tar.gz", debmaticFiles)
 }
 
 // launcher
