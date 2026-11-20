@@ -126,42 +126,40 @@ func build() {
 		}
 		releng.Archive(appName+"-"+ts+"-"+appVersion+arcExt, allFiles)
 		if ts == "ccu3-rm-rp2+3" {
-			buildDebmaticArchives(binFile)
+			buildDebmaticArchive(binFile)
 		}
 	}
 }
 
-func buildDebmaticArchives(binFile string) {
+func buildDebmaticArchive(binFile string) {
 	const src = "dist/debmatic/"
 	const addonDir = "usr/local/addons/ccu-jack"
+	const defaultConfig = "build/tmp/ccu-jack-default.cfg"
 
+	config, err := os.ReadFile(src + "ccu-jack.cfg")
+	releng.Must(err)
+	releng.WriteFile(defaultConfig, config)
 	releng.RequireFiles([]string{
-		src + "ccu-jack.cfg",
 		src + "config.cgi",
 		src + "ccu-jack.service",
 		src + "update-hm_addons",
 	})
-	update := []releng.CopySpec{
+	debmaticFiles := []releng.CopySpec{
 		{Inc: binFile, DstDir: addonDir, Exe: true},
 		{Inc: "build/tmp/VERSION", DstDir: addonDir},
 		{Inc: "README.md", DstDir: addonDir},
 		{Inc: "LICENSE.txt", DstDir: addonDir},
+		{Inc: defaultConfig, DstDir: addonDir},
 		{Inc: "dist/update_hm_addons.tcl", DstDir: addonDir, Exe: true},
 		{Inc: "third-party-licenses/*", DstDir: addonDir + "/third-party-licenses"},
 		{Inc: "wd/webui/*", DstDir: addonDir + "/webui"},
 		{Inc: "wd/webui/ext/*", DstDir: addonDir + "/webui/ext"},
+		{Inc: src + "config.cgi", DstDir: "etc/config/addons/www/ccu-jack", Exe: true},
+		{Inc: src + "ccu-jack.service", DstDir: "usr/lib/systemd/system"},
+		{Inc: src + "update-hm_addons", DstDir: addonDir, Exe: true},
 	}
-	install := append([]releng.CopySpec(nil), update...)
-	install = append(install,
-		releng.CopySpec{Inc: src + "ccu-jack.cfg", DstDir: "etc/config/addons"},
-		releng.CopySpec{Inc: src + "config.cgi", DstDir: "etc/config/addons/www/ccu-jack", Exe: true},
-		releng.CopySpec{Inc: src + "ccu-jack.service", DstDir: "usr/lib/systemd/system"},
-		releng.CopySpec{Inc: src + "update-hm_addons", DstDir: addonDir, Exe: true},
-	)
 
-	stem := appName + "-debmatic-armv7-" + appVersion
-	releng.Archive(stem+"-install.tar.gz", install)
-	releng.Archive(stem+"-update.tar.gz", update)
+	releng.Archive(appName+"-debmatic-armv7-"+appVersion+".tar.gz", debmaticFiles)
 }
 
 // launcher

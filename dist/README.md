@@ -32,14 +32,32 @@ GOARM=7
 ## Debmatic (ARMv7)
 
 The Go release build (`go run .` from `build`) reuses the CCU3/OpenCCU
-ARMv7 binary and packages it with the templates in [debmatic/](./debmatic).
-The templates come from the original Debmatic 2.7.1 package and are
-independent of the local `build\deploy` staging directory.
+ARMv7 binary and packages it with the templates in [debmatic/](./debmatic),
+based on the original Debmatic 2.7.1 package. GitHub Actions uploads
+`ccu-jack-debmatic-armv7-<version>.tar.gz` as a build artifact.
 
-The `-install.tar.gz` archive is for fresh installations only. It includes a
-configuration template at the live configuration path. The `-update.tar.gz`
-archive omits the configuration, systemd unit, and Debmatic menu integration.
-GitHub Actions uploads both archives as build artifacts.
+Use the same archive for installation and updates. Before updating, back up
+`/etc/config/addons/ccu-jack.cfg` and stop CCU-Jack with
+`sudo systemctl stop ccu-jack.service`. Do not uninstall the previous version.
+
+On the Debmatic host, replace `<version>` with the package version and run:
+
+```sh
+(
+    set -e
+    sudo tar --no-overwrite-dir -xzf 'ccu-jack-debmatic-armv7-<version>.tar.gz' -C /
+    config=/etc/config/addons/ccu-jack.cfg
+    if [ ! -e "$config" ] && [ ! -L "$config" ]; then
+        sudo cp -n /usr/local/addons/ccu-jack/ccu-jack-default.cfg "$config"
+    fi
+    sudo systemctl daemon-reload
+)
+```
+
+For a fresh installation, run `sudo systemctl enable ccu-jack.service`, then
+`sudo systemctl restart debmatic.service`. After an update, run
+`sudo systemctl start ccu-jack.service`. Verify with
+`systemctl status ccu-jack.service`.
 
 ## Windows
 ```
