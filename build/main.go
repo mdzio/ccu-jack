@@ -134,12 +134,9 @@ func build() {
 func buildDebmaticArchive(binFile string) {
 	const src = "dist/debmatic/"
 	const addonDir = "usr/local/addons/ccu-jack"
-	const defaultConfig = "build/tmp/ccu-jack-default.cfg"
 
-	config, err := os.ReadFile(src + "ccu-jack.cfg")
-	releng.Must(err)
-	releng.WriteFile(defaultConfig, config)
 	releng.RequireFiles([]string{
+		src + "ccu-jack.cfg",
 		src + "config.cgi",
 		src + "ccu-jack.service",
 		src + "update-hm_addons",
@@ -149,7 +146,7 @@ func buildDebmaticArchive(binFile string) {
 		{Inc: "build/tmp/VERSION", DstDir: addonDir},
 		{Inc: "README.md", DstDir: addonDir},
 		{Inc: "LICENSE.txt", DstDir: addonDir},
-		{Inc: defaultConfig, DstDir: addonDir},
+		{Inc: src + "ccu-jack.cfg", DstDir: "etc/config/addons"},
 		{Inc: "dist/update_hm_addons.tcl", DstDir: addonDir, Exe: true},
 		{Inc: "third-party-licenses/*", DstDir: addonDir + "/third-party-licenses"},
 		{Inc: "wd/webui/*", DstDir: addonDir + "/webui"},
@@ -159,7 +156,7 @@ func buildDebmaticArchive(binFile string) {
 		{Inc: src + "update-hm_addons", DstDir: addonDir, Exe: true},
 	}
 
-	releng.Archive(appName+"-debmatic-armv7-"+appVersion+".tar.gz", debmaticFiles)
+	releng.Archive(appName+"-debmatic-rp2+3-"+appVersion+".tar.gz", debmaticFiles)
 }
 
 // launcher

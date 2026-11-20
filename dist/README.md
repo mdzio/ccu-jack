@@ -32,32 +32,56 @@ GOARM=7
 ## Debmatic (ARMv7)
 
 The Go release build (`go run .` from `build`) reuses the CCU3/OpenCCU
-ARMv7 binary and packages it with the templates in [debmatic/](./debmatic),
-based on the original Debmatic 2.7.1 package. GitHub Actions uploads
-`ccu-jack-debmatic-armv7-<version>.tar.gz` as a build artifact.
+ARMv7 binary and packages it with the templates in [debmatic/](./debmatic).
+The layout follows the [original Debmatic package](https://homematic-forum.de/forum/viewtopic.php?p=777847#p777847).
+GitHub Actions uploads `ccu-jack-debmatic-rp2+3-<version>.tar.gz` as a build
+artifact. The binary targets ARMv7 (Raspberry Pi 2/3). On ARM64, the host
+must support running 32-bit ARM executables.
 
-Use the same archive for installation and updates. Before updating, back up
-`/etc/config/addons/ccu-jack.cfg` and stop CCU-Jack with
-`sudo systemctl stop ccu-jack.service`. Do not uninstall the previous version.
+### Fresh installation
 
-On the Debmatic host, replace `<version>` with the package version and run:
+Replace `<version>` with the package version. Use this command only on a
+fresh installation: the archive includes `/etc/config/addons/ccu-jack.cfg`
+and extracting it without an exclusion overwrites any existing configuration.
 
 ```sh
-(
-    set -e
-    sudo tar --no-overwrite-dir -xzf 'ccu-jack-debmatic-armv7-<version>.tar.gz' -C /
-    config=/etc/config/addons/ccu-jack.cfg
-    if [ ! -e "$config" ] && [ ! -L "$config" ]; then
-        sudo cp -n /usr/local/addons/ccu-jack/ccu-jack-default.cfg "$config"
-    fi
-    sudo systemctl daemon-reload
-)
+sudo tar -C / -xzf 'ccu-jack-debmatic-rp2+3-<version>.tar.gz' &&
+    sudo systemctl daemon-reload &&
+    sudo systemctl enable ccu-jack.service &&
+    sudo systemctl restart debmatic.service
 ```
 
-For a fresh installation, run `sudo systemctl enable ccu-jack.service`, then
-`sudo systemctl restart debmatic.service`. After an update, run
-`sudo systemctl start ccu-jack.service`. Verify with
-`systemctl status ccu-jack.service`.
+Open CCU-Jack from the Debmatic control panel or at `http://<CCU-IP>:2121`.
+
+### Update
+
+Back up `/etc/config/addons/ccu-jack.cfg` before updating. Do not uninstall the
+previous version. Use the same archive, but exclude the configuration entry
+to preserve settings and virtual devices:
+
+```sh
+sudo systemctl stop ccu-jack.service &&
+    sudo tar --no-overwrite-dir --exclude='etc/config/addons/ccu-jack.cfg' \
+        -C / -xzf 'ccu-jack-debmatic-rp2+3-<version>.tar.gz' &&
+    sudo systemctl daemon-reload &&
+    sudo systemctl start ccu-jack.service
+```
+
+### Uninstall
+
+Stop and disable `ccu-jack.service`, then remove the CCU-Jack files listed
+below and run `sudo systemctl daemon-reload`. Back up the configuration
+before deleting it. Remove only the `ccu-jack` entry from the shared add-on
+list, not the entries of other add-ons.
+
+| Path | Purpose |
+| --- | --- |
+| `/usr/local/addons/ccu-jack/` | Application files and Web UI |
+| `/etc/config/addons/ccu-jack.cfg` | Active configuration |
+| `/etc/config/addons/www/ccu-jack/` | Debmatic control panel integration |
+| `/usr/lib/systemd/system/ccu-jack.service` | systemd unit |
+| `/etc/config/hm_addons.cfg` | Shared add-on list; edit only the CCU-Jack entry |
+| `/var/log/ccu-jack.log` | Log file; keep or remove as needed |
 
 ## Windows
 ```
