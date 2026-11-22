@@ -1,0 +1,31 @@
+#!/bin/sh
+set -eu
+
+case "$(uname -m)" in
+  armv6l)
+    target=rm-rp0+1
+    ;;
+  armv7l|armv8l)
+    target=ccu3-rm-rp2+3
+    ;;
+  aarch64|arm64)
+    target=rm-rp4
+    ;;
+  i386|i486|i586|i686|x86)
+    target=vccu-x86
+    ;;
+  x86_64|amd64)
+    target=vccu-x86_64
+    ;;
+  *)
+    printf 'ccu-jack: unsupported machine architecture: %s\n' "$(uname -m)" >&2
+    exit 1
+    ;;
+esac
+
+script_dir=${0%/*}
+if [ "$script_dir" = "$0" ]; then
+  script_dir=.
+fi
+script_dir=$(CDPATH= cd "$script_dir" && pwd)
+exec "$script_dir/bin/ccu-jack-$target" "$@"

@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "configure" ]; then
+  systemctl daemon-reload
+  systemctl enable ccu-jack.service
+
+  # Nur (neu) starten, wenn Debmatic bereits läuft. Der Eintrag in
+  # hm_addons.cfg erfolgt beim Dienststart über ExecStartPre.
+  if systemctl is-active --quiet debmatic.service; then
+    systemctl restart ccu-jack.service
+  fi
+fi
+
+exit 0

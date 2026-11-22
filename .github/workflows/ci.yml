@@ -5,25 +5,41 @@ name: CI
 on:
   push:
     branches: [ "master" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ "master" ]
+
+permissions:
+  contents: read
 
 jobs:
 
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
+
+    - name: Validate release tag
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        version="$(sed -n 's/^[[:space:]]*appVersion = "\([^"]*\)".*/\1/p' build/main.go)"
+        if [ -z "$version" ] || [ "$GITHUB_REF_NAME" != "v$version" ]; then
+          echo "Tag $GITHUB_REF_NAME does not match appVersion $version" >&2
+          exit 1
+        fi
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v7
       with:
-        go-version: '1.22.x'
+        go-version-file: go.mod
 
     - name: Build
       run: |
         cd build
         go run .
+
+    - name: Build Debian packages
+      run: dist/debmatic/create_ccu_jack_deb.sh
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -31,5 +47,47 @@ jobs:
         path: |
           ccu-jack-*.tar.gz
           ccu-jack-*.zip
+          ccu-jack_*.deb
         name: ccu-jack-${{ github.sha }}
         retention-days: 30
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: ccu-jack-${{ github.sha }}
+        path: release-assets
+
+    - name: Publish GitHub release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -euo pipefail
+        shopt -s nullglob
+        assets=(release-assets/*)
+        if ((${#assets[@]} == 0)); then
+          echo "No build artifacts found to publish" >&2
+          exit 1
+        fi
+
+        tag="$GITHUB_REF_NAME"
+        prerelease=()
+        if [[ "$tag" == *-* ]]; then
+          prerelease=(--prerelease)
+        fi
+
+        if gh release view "$tag" >/dev/null 2>&1; then
+          gh release upload "$tag" "${assets[@]}" --clobber
+        else
+          gh release create "$tag" "${assets[@]}" \
+            --verify-tag \
+            --title "CCU-Jack $tag" \
+            --generate-notes \
+            "${prerelease[@]}"
+        fi

@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+
+architecture=$(dpkg --print-architecture)
+case "$architecture" in
+  armhf|arm64|i386|amd64)
+    ;;
+  *)
+    printf 'ccu-jack: unsupported Debian architecture: %s\n' "$architecture" >&2
+    exit 1
+    ;;
+esac
+
+exec "/usr/local/addons/ccu-jack/bin/ccu-jack-$architecture" "$@"

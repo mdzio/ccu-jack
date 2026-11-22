@@ -1,0 +1,18 @@
+[Unit]
+Description=CCU-Jack
+PartOf=debmatic.service
+After=debmatic.service
+After=debmatic-prepareinterfaceslist.service
+Before=debmatic-lighttpd.service
+Before=debmatic-rega.service
+
+[Service]
+Type=simple
+WorkingDirectory=/usr/local/addons/ccu-jack
+ExecStartPre=/usr/local/addons/ccu-jack/update-hm_addons
+ExecStart=/usr/local/addons/ccu-jack/ccu-jack -config /etc/config/addons/ccu-jack.cfg
+
+[Install]
+WantedBy=debmatic.service
+WantedBy=debmatic-rega.service
+WantedBy=debmatic-startupfinished.service

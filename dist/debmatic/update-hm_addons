@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Add-on information
+ADDON_ID=ccu-jack
+ADDON_NAME="CCU-Jack"
+ADDON_DESCR_EN="CCU-Jack provides simple and secure REST-based access to CCU data points."
+ADDON_DESCR_DE="CCU-Jack bietet einen einfachen und sicheren REST-basierten Zugriff auf die Datenpunkte der CCU."
+
+# Directories
+ADDON_DIR=/usr/local/addons/${ADDON_ID}
+
+# Add menu entry
+touch /etc/config/hm_addons.cfg
+${ADDON_DIR}/update_hm_addons.tcl -a ${ADDON_ID} -name "${ADDON_NAME}" -url /addons/${ADDON_ID}/config.cgi -de "${ADDON_DESCR_DE}" -en "${ADDON_DESCR_EN}"
+
+echo "Updated hm_addons.cfg"

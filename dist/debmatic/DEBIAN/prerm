@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+  remove)
+    systemctl stop ccu-jack.service || true
+    systemctl disable ccu-jack.service || true
+    # Menüeintrag austragen, solange das Skript noch installiert ist
+    if [ -x /usr/local/addons/ccu-jack/update_hm_addons.tcl ]; then
+      /usr/local/addons/ccu-jack/update_hm_addons.tcl -d ccu-jack || true
+    fi
+    ;;
+  upgrade)
+    systemctl stop ccu-jack.service || true
+    ;;
+esac
+
+exit 0
