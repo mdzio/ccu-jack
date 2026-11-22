@@ -69,7 +69,6 @@ var (
 		{Inc: "dist/ccu/update_script", Exe: true},
 		{Inc: "README.md", DstDir: "addon"},
 		{Inc: "LICENSE.txt", DstDir: "addon"},
-		{Inc: "dist/ccu/addon/ccu-jack", DstDir: "addon", Exe: true},
 		{Inc: "dist/ccu/addon/ccu-jack-default.cfg", DstDir: "addon"},
 		{Inc: "build/tmp/VERSION", DstDir: "addon"},
 		{Inc: "dist/update_hm_addons.tcl", DstDir: "addon", Exe: true},
@@ -138,7 +137,7 @@ func buildCCUAddonArchive() {
 		releng.BuildGo(appPkg, binFile, sysSpec.goSpec)
 		allFiles = append(allFiles, releng.CopySpec{
 			Inc:    binFile,
-			DstDir: "addon/bin",
+			DstDir: "bin",
 			Exe:    true,
 		})
 	}

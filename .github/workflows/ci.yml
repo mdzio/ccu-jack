@@ -33,6 +33,9 @@ jobs:
       with:
         go-version-file: go.mod
 
+    - name: Test CCU add-on installation
+      run: sh dist/ccu/update_script_test.sh
+
     - name: Build
       run: |
         cd build

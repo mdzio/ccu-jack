@@ -34,8 +34,9 @@ GOARM=7
 The Go release build (`go run .` from `build`) creates one universal
 `ccu-jack-ccu-addon-<version>.tar.gz` archive. It contains binaries for
 OpenCCU Raspberry Pi 0/1 (ARMv6), Pi 2/3 (ARMv7), Pi 4/5 (ARM64), and VCCU
-32-bit and 64-bit x86. Its launcher selects the binary from `uname -m`, so
-users do not need to choose an architecture-specific archive.
+32-bit and 64-bit x86. The installation script selects and installs only the
+binary matching `uname -m`, so users do not need to choose an
+architecture-specific archive.
 
 ### Debian packages (all architectures)
 
