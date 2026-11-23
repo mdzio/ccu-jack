@@ -57,6 +57,12 @@ The `armhf` binary uses `GOARM=7`; ARMv6 devices such as Raspberry Pi
 1/Zero are not supported by Debmatic. The `arm64` binary is native, so no
 32-bit multiarch support is required.
 
+On a fresh installation, CCU-Jack determines `Host.Name` from the system
+hostname and uses it when generating a server certificate. The hostname must
+match the name used by clients; accessing the server by an IP address or alias
+may require a suitable configured name and certificate. Existing configurations
+and certificates are not automatically replaced.
+
 To build the packages locally from the project root:
 
 ```sh

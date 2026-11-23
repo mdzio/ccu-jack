@@ -41,6 +41,7 @@ jobs:
 
     - name: Build
       run: |
+        go test .
         cd build
         go run .
 
