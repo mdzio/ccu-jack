@@ -1,0 +1,3 @@
+dist/debmatic/** text eol=lf
+dist/ccu/** text eol=lf
+dist/update_hm_addons.tcl text eol=lf

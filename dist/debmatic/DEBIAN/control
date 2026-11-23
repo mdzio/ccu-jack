@@ -1,0 +1,12 @@
+Package: ccu-jack
+Version: {PKG_VERSION}
+Architecture: {PKG_ARCH}
+Maintainer: CCU-Jack <info@ccu-historian.de>
+Depends: debmatic
+Section: misc
+Priority: extra
+Homepage: https://github.com/mdzio/ccu-jack
+Description: REST/MQTT interface for the Homematic CCU
+ CCU-Jack provides simple and secure REST and MQTT based access to the
+ data points of a Homematic CCU. This package integrates CCU-Jack as an
+ add-on into a Debmatic installation.

@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+  remove)
+    systemctl daemon-reload || true
+    ;;
+  purge)
+    # Laufzeitdaten entfernen; die conffile räumt dpkg selbst auf.
+    rm -f /var/log/ccu-jack.log
+    rm -rf /usr/local/addons/ccu-jack
+    rm -rf /etc/config/addons/www/ccu-jack
+    systemctl daemon-reload || true
+    ;;
+esac
+
+exit 0

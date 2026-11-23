@@ -26,12 +26,14 @@ var (
 	ldFlagsEx    = ldFlags + " -X main.appCopyright=" + appCopyright
 
 	// target systems to be built
-	targetSystems = []string{
+	ccuTargetSystems = []string{
 		"ccu3-rm-rp2+3",
 		"rm-rp0+1",
 		"rm-rp4",
 		"vccu-x86",
 		"vccu-x86_64",
+	}
+	targetSystems = []string{
 		"win",
 		"linux",
 		"darwin",
@@ -39,17 +41,16 @@ var (
 
 	// target system specifications
 	sysSpecs = map[string]struct {
-		addon  bool
 		goSpec releng.GoSpec
 	}{
-		"rm-rp0+1":      {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "6", LDFlags: ldFlagsEx}},
-		"ccu3-rm-rp2+3": {true, releng.GoSpec{OS: "linux", Arch: "arm", Arm: "7", LDFlags: ldFlagsEx}},
-		"rm-rp4":        {true, releng.GoSpec{OS: "linux", Arch: "arm64", LDFlags: ldFlagsEx}},
-		"vccu-x86":      {true, releng.GoSpec{OS: "linux", Arch: "386", LDFlags: ldFlagsEx}},
-		"vccu-x86_64":   {true, releng.GoSpec{OS: "linux", Arch: "amd64", LDFlags: ldFlagsEx}},
-		"win":           {false, releng.GoSpec{OS: "windows", Arch: "amd64", LDFlags: ldFlagsEx}},
-		"linux":         {false, releng.GoSpec{OS: "linux", Arch: "amd64", LDFlags: ldFlagsEx}},
-		"darwin":        {false, releng.GoSpec{OS: "darwin", Arch: "amd64", LDFlags: ldFlagsEx}},
+		"rm-rp0+1":      {releng.GoSpec{OS: "linux", Arch: "arm", Arm: "6", LDFlags: ldFlagsEx}},
+		"ccu3-rm-rp2+3": {releng.GoSpec{OS: "linux", Arch: "arm", Arm: "7", LDFlags: ldFlagsEx}},
+		"rm-rp4":        {releng.GoSpec{OS: "linux", Arch: "arm64", LDFlags: ldFlagsEx}},
+		"vccu-x86":      {releng.GoSpec{OS: "linux", Arch: "386", LDFlags: ldFlagsEx}},
+		"vccu-x86_64":   {releng.GoSpec{OS: "linux", Arch: "amd64", LDFlags: ldFlagsEx}},
+		"win":           {releng.GoSpec{OS: "windows", Arch: "amd64", LDFlags: ldFlagsEx}},
+		"linux":         {releng.GoSpec{OS: "linux", Arch: "amd64", LDFlags: ldFlagsEx}},
+		"darwin":        {releng.GoSpec{OS: "darwin", Arch: "amd64", LDFlags: ldFlagsEx}},
 	}
 
 	// files for non ccu target systems
@@ -74,10 +75,10 @@ var (
 		{Inc: "third-party-licenses/*", DstDir: "addon/third-party-licenses"},
 		{Inc: "wd/webui/*", DstDir: "addon/webui"},
 		{Inc: "wd/webui/ext/*", DstDir: "addon/webui/ext"},
-		{Inc: "build/tmp/ccu-jack", DstDir: "rc.d", Exe: true},
 		{Inc: "dist/ccu/etc/monit-ccu-jack.cfg", DstDir: "etc"},
 		{Inc: "dist/ccu/www/config.cgi", DstDir: "www", Exe: true},
 		{Inc: "dist/ccu/www/update-check.cgi", DstDir: "www", Exe: true},
+		{Inc: "build/tmp/ccu-jack", DstDir: "rc.d", Exe: true},
 	}
 )
 
@@ -95,6 +96,7 @@ func build() {
 	// Generate rc.d script from template
 	tmplData := struct{ Copyright string }{Copyright: appCopyright}
 	releng.WriteTemplate("dist/ccu/rc.d/ccu-jack.tmpl", "build/tmp/ccu-jack", tmplData)
+	buildCCUAddonArchive()
 
 	for _, ts := range targetSystems {
 		sysSpec, ok := sysSpecs[ts]
@@ -110,14 +112,8 @@ func build() {
 		releng.BuildGo(appPkg, binFile, sysSpec.goSpec)
 
 		// build archive
-		var allFiles []releng.CopySpec
-		if sysSpec.addon {
-			allFiles = addonFiles
-			allFiles = append(allFiles, releng.CopySpec{Inc: binFile, DstDir: "addon", Exe: true})
-		} else {
-			allFiles = files
-			allFiles = append(allFiles, releng.CopySpec{Inc: binFile, Exe: true})
-		}
+		allFiles := append([]releng.CopySpec{}, files...)
+		allFiles = append(allFiles, releng.CopySpec{Inc: binFile, Exe: true})
 		var arcExt string
 		if sysSpec.goSpec.OS == "windows" {
 			arcExt = ".zip"
@@ -126,6 +122,27 @@ func build() {
 		}
 		releng.Archive(appName+"-"+ts+"-"+appVersion+arcExt, allFiles)
 	}
+}
+
+func buildCCUAddonArchive() {
+	allFiles := append([]releng.CopySpec{}, addonFiles...)
+	releng.Mkdir("build/tmp/ccu-addon")
+	for _, ts := range ccuTargetSystems {
+		sysSpec, ok := sysSpecs[ts]
+		if !ok {
+			releng.Must(fmt.Errorf("Missing Go build specification: %s", ts))
+		}
+
+		binFile := "build/tmp/ccu-addon/" + appName + "-" + ts
+		releng.BuildGo(appPkg, binFile, sysSpec.goSpec)
+		allFiles = append(allFiles, releng.CopySpec{
+			Inc:    binFile,
+			DstDir: "bin",
+			Exe:    true,
+		})
+	}
+
+	releng.Archive(appName+"-ccu-addon-"+appVersion+".tar.gz", allFiles)
 }
 
 // launcher

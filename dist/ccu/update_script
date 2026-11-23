@@ -14,6 +14,28 @@ WWW_DIR=/usr/local/etc/config/addons/www/${ADDON_ID}
 
 # Logging to syslog is currently not supported by the CCU during the install process.
 
+if ! machine=$(uname -m); then
+  echo "${ADDON_NAME}: failed to determine machine architecture" >&2
+  exit 1
+fi
+case "$machine" in
+  armv6l) target=rm-rp0+1 ;;
+  armv7l|armv8l) target=ccu3-rm-rp2+3 ;;
+  aarch64|arm64) target=rm-rp4 ;;
+  i386|i486|i586|i686|x86) target=vccu-x86 ;;
+  x86_64|amd64) target=vccu-x86_64 ;;
+  *)
+    echo "${ADDON_NAME}: unsupported machine architecture: $machine" >&2
+    exit 1
+    ;;
+esac
+
+BINARY="bin/ccu-jack-$target"
+if [ ! -f "$BINARY" ]; then
+  echo "${ADDON_NAME}: missing binary: $BINARY" >&2
+  exit 1
+fi
+
 if [ "$1" = "" ]; then
   echo "${ADDON_NAME} Add-On is not for CCU1"
   lcdtool "Add-On is not for CCU1   "
@@ -22,7 +44,7 @@ elif [ "$1" = "CCU2" ]; then
   echo "Installing on CCU2"
   mount -t ubifs ubi1:user /usr/local
 # A CCU3 currently masquerades as OpenCCU/RaspberryMatic. CCU3 is currently not defined, but it can happen. 
-elif [ "$1" == "HM-RASPBERRYMATIC" -o "$1" == "CCU3" ]; then
+elif [ "$1" = "HM-RASPBERRYMATIC" ] || [ "$1" = "CCU3" ]; then
   echo "Installing on CCU3/RaspberryMatic"
   mount /usr/local 2> /dev/null
 fi
@@ -42,7 +64,24 @@ mkdir -p ${WWW_DIR}
 chmod 755 ${WWW_DIR}
 
 # Copy addon
-cp -af addon/* ${ADDON_DIR}/
+if ! cp -af addon/* "${ADDON_DIR}/"; then
+  echo "${ADDON_NAME}: failed to copy add-on files" >&2
+  exit 1
+fi
+if ! cp -af "$BINARY" "${ADDON_DIR}/${ADDON_ID}"; then
+  echo "${ADDON_NAME}: failed to install binary: $BINARY" >&2
+  exit 1
+fi
+
+# Remove binaries installed by the earlier universal add-on launcher.
+if ! rm -f "${ADDON_DIR}/bin/ccu-jack-rm-rp0+1" \
+  "${ADDON_DIR}/bin/ccu-jack-ccu3-rm-rp2+3" \
+  "${ADDON_DIR}/bin/ccu-jack-rm-rp4" \
+  "${ADDON_DIR}/bin/ccu-jack-vccu-x86" \
+  "${ADDON_DIR}/bin/ccu-jack-vccu-x86_64"; then
+  echo "${ADDON_NAME}: failed to remove previous binaries" >&2
+  exit 1
+fi
 
 # Copy startup script
 cp -af rc.d/* ${RCD_DIR}/
@@ -54,7 +93,7 @@ cp -af www/* ${WWW_DIR}/
 cp -af etc/* ${ETC_DIR}/
 
 # Create configuration file, if it does not already exist.
-if [[ ! -e ${ADDON_DIR}/ccu-jack.cfg ]]; then
+if [ ! -e "${ADDON_DIR}/ccu-jack.cfg" ]; then
   echo "Creating configuration file"
   cp ${ADDON_DIR}/ccu-jack-default.cfg ${ADDON_DIR}/ccu-jack.cfg
 fi
