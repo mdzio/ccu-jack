@@ -36,13 +36,20 @@ jobs:
     - name: Test CCU add-on installation
       run: sh dist/ccu/update_script_test.sh
 
+    - name: Test Debmatic installer
+      run: sh dist/debmatic/install_ccu_jack_test.sh
+
     - name: Build
       run: |
         cd build
         go run .
 
     - name: Build Debian packages
-      run: dist/debmatic/create_ccu_jack_deb.sh
+      run: |
+        dist/debmatic/create_ccu_jack_deb.sh
+        version="$(sed -n 's/^[[:space:]]*appVersion = "\([^"]*\)".*/\1/p' build/main.go)"
+        sh dist/debmatic/test_deb_packages.sh "$version"
+        cp dist/debmatic/install_ccu_jack.sh ccu-jack-install-debmatic.sh
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -51,6 +58,7 @@ jobs:
           ccu-jack-*.tar.gz
           ccu-jack-*.zip
           ccu-jack_*.deb
+          ccu-jack-install-debmatic.sh
         name: ccu-jack-${{ github.sha }}
         retention-days: 30
 

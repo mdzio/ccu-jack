@@ -10,7 +10,6 @@
 # Benötigt: go, dpkg-deb (dpkg >= 1.19.0 wegen --root-owner-group)
 
 PKG_BUILD=1
-PKG_ARCH=all
 
 # Debian-Architektur => GOARCH. Debmatic armhf setzt ARMv7 voraus.
 declare -A architectures=(["armhf"]="arm" ["arm64"]="arm64" ["i386"]="386" ["amd64"]="amd64")
@@ -57,7 +56,6 @@ ADDON_DIR=$STAGE_DIR/usr/local/addons/ccu-jack
 # Architekturunabhängigen Paketinhalt einmalig zusammenstellen.
 function build_stage {
   mkdir -p "$ADDON_DIR"
-  mkdir -p "$ADDON_DIR/bin"
   mkdir -p "$STAGE_DIR/etc/config/addons/www/ccu-jack"
   mkdir -p "$STAGE_DIR/usr/lib/systemd/system"
 
@@ -65,7 +63,6 @@ function build_stage {
   run "Copy config.cgi" cp "$SCRIPT_DIR/config.cgi" "$STAGE_DIR/etc/config/addons/www/ccu-jack/"
   run "Copy ccu-jack.service" cp "$SCRIPT_DIR/ccu-jack.service" "$STAGE_DIR/usr/lib/systemd/system/"
   run "Copy update-hm_addons" cp "$SCRIPT_DIR/update-hm_addons" "$ADDON_DIR/"
-  run "Copy launcher" cp "$SCRIPT_DIR/ccu-jack-launcher" "$ADDON_DIR/ccu-jack"
   run "Copy update_hm_addons.tcl" cp "$PROJECT_DIR/dist/update_hm_addons.tcl" "$ADDON_DIR/"
   run "Copy webui" cp -R "$PROJECT_DIR/wd/webui" "$ADDON_DIR/"
   run "Copy third-party-licenses" cp -R "$PROJECT_DIR/third-party-licenses" "$ADDON_DIR/"
@@ -77,7 +74,7 @@ function build_stage {
   # Dateirechte unabhängig vom Checkout setzen.
   find "$STAGE_DIR" -type d -exec chmod 755 {} +
   find "$STAGE_DIR" -type f -exec chmod 644 {} +
-  chmod 755 "$ADDON_DIR/ccu-jack" "$ADDON_DIR/update-hm_addons" "$ADDON_DIR/update_hm_addons.tcl"
+  chmod 755 "$ADDON_DIR/update-hm_addons" "$ADDON_DIR/update_hm_addons.tcl"
   chmod 755 "$STAGE_DIR/etc/config/addons/www/ccu-jack/config.cgi"
 }
 echo -n "Build package stage ... "
@@ -91,25 +88,16 @@ function build_binary {
     -o "$BINARY" .
 }
 
-function build_binaries {
-  for ARCH in armhf arm64 i386 amd64
-  do
-    GOARCH=${architectures[$ARCH]}
-    GOARM=
-    [ "$GOARCH" == "arm" ] && GOARM=7
-    BINARY="$ADDON_DIR/bin/ccu-jack-$ARCH"
-
-    run "Compile binary ($ARCH)" build_binary
-    chmod 755 "$BINARY"
-  done
-}
-echo -n "Build architecture binaries ... "
-build_binaries
-echo -e "\033[0;32mDone\033[0;0m"
-
 function build_package {
   TARGET_DIR="$WORK_DIR/ccu-jack_${PKG_VERSION}_$PKG_ARCH"
   run "Copy stage" cp -pR "$STAGE_DIR" "$TARGET_DIR"
+
+  GOARCH=${architectures[$PKG_ARCH]}
+  GOARM=
+  [ "$GOARCH" == "arm" ] && GOARM=7
+  BINARY="$TARGET_DIR/usr/local/addons/ccu-jack/ccu-jack"
+  run "Compile binary ($PKG_ARCH)" build_binary
+  chmod 755 "$BINARY"
 
   mkdir -p "$TARGET_DIR/DEBIAN"
   run "Copy DEBIAN templates" cp "$SCRIPT_DIR"/DEBIAN/* "$TARGET_DIR/DEBIAN/"
@@ -125,9 +113,10 @@ function build_package {
   dpkg-deb --build --root-owner-group -Zxz "ccu-jack_${PKG_VERSION}_$PKG_ARCH" || throw "Error on dpkg-deb"
 }
 
-echo -n "Build universal package ... "
-build_package
-echo -e "\033[0;32mDone\033[0;0m"
+for PKG_ARCH in armhf arm64 i386 amd64; do
+  echo "Build package ($PKG_ARCH) ..."
+  build_package
+done
 
 cd "$WORK_DIR"
 

@@ -9,5 +9,4 @@ Homepage: https://github.com/mdzio/ccu-jack
 Description: REST/MQTT interface for the Homematic CCU
  CCU-Jack provides simple and secure REST and MQTT based access to the
  data points of a Homematic CCU. This package integrates CCU-Jack as an
- add-on into a Debmatic installation and includes binaries for all
- supported Debian architectures.
+ add-on into a Debmatic installation.
